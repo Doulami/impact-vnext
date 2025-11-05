@@ -249,6 +249,6 @@ export class CustomerVerificationAdminResolver {
         schema: adminApiExtensions,
         resolvers: [CustomerVerificationAdminResolver]
     },
-    compatibility: '^2.0.0',
+    compatibility: '^3.0.0',
 })
 export class CustomerAdminVerificationPlugin {}
