@@ -33,31 +33,69 @@
 
 ---
 
-## ⏳ **IN PROGRESS / NEXT STEPS**
+## 🎯 **STRATEGIC ROADMAP**
 
-### 1. **Vendure API Setup** (Immediate Priority)
-**Status**: Ready to start  
-**Action**: `cd apps/api && npm run dev`  
-**Goal**: Get GraphQL API running on http://localhost:3000
+### **Phase 1: Revenue Foundation** (4-6 weeks)
+**Goal**: Core e-commerce functionality to enable revenue flow
 
-### 2. **GraphQL Connection Testing**
-**Status**: Pending Vendure startup  
-**Action**: Verify Apollo Client → Vendure communication  
-**Goal**: End-to-end data flow working
+#### 1. **Vendure API Integration** (Week 1)
+- **Status**: ⏳ Ready to start  
+- **Action**: `cd apps/api && npm run dev`
+- **Deliverable**: GraphQL API running on http://localhost:3000
 
-### 3. **Product Data Population**
-**Status**: Placeholder data exists  
-**Action**: Seed Vendure database with real product information  
-**Goal**: Replace mock data with actual products
+#### 2. **Search Functionality** (Week 2)
+- **Status**: 📋 Planned
+- **Action**: Connect existing search UI to Vendure GraphQL
+- **Deliverable**: Working product search and filtering
 
-### 4. **Missing Assets**
-**Status**: Some images missing  
-**Action**: Add product images to `/apps/web/public/products/`  
-**Files Needed**:
-- `product-citrulline.png`
-- `product-hydro-eaa.png`  
-- `woman-kitchen.jpg`
-- Payment method icons (Visa, Mastercard, etc.)
+#### 3. **User Authentication** (Week 3)
+- **Status**: 📋 Planned  
+- **Action**: Implement login/register for user icon
+- **Deliverable**: User accounts, sessions, protected routes
+
+#### 4. **Checkout & Payments** (Week 4)
+- **Status**: 📋 Planned
+- **Action**: Complete purchase flow with Stripe/PayPal
+- **Deliverable**: End-to-end purchase capability
+
+### **Phase 2: Plugin Architecture** (2-3 weeks)
+**Goal**: Foundation for business logic plugins
+
+#### 5. **Plugin System Foundation**
+- **Event System**: Cart events, user events, order events
+- **Hook Architecture**: Plugin injection points
+- **Feature Flags**: Enable/disable plugins dynamically
+
+#### 6. **Cart Plugin Interface**
+- **Calculation Hooks**: Discounts, bundles, points
+- **UI Extension Points**: Cart modifications
+- **Validation System**: Plugin-based cart validation
+
+### **Phase 3: Business Logic Plugins** (Parallel Development)
+**Goal**: Revenue-generating features
+
+#### 7. **Bundle Plugin** 📦
+- Multi-product bundles
+- Bundle pricing logic
+- Cart bundle management
+
+#### 8. **Discount Plugin** 💰
+- Sumo discount integration
+- Coupon code system
+- Promotional pricing
+
+#### 9. **Loyalty Plugin** ⭐
+- Points earning/burning
+- User point balance
+- Redemption system
+
+### **Phase 4: UX Enhancements** (Polish Phase)
+**Goal**: Enhanced user experience
+
+- Wishlist feature
+- Product reviews system
+- Image zoom functionality
+- Advanced mobile optimization
 
 ---
 
@@ -110,12 +148,19 @@
 - [x] Development environment ready
 - [x] Team onboarding documentation complete
 
-### **Next Milestone Targets** 🎯
+### **Phase 1 Targets** 🎯 (Revenue Foundation)
 - [ ] Vendure API operational
 - [ ] GraphQL integration tested
-- [ ] Product catalog populated
-- [ ] End-to-end cart workflow verified
-- [ ] All images loading correctly
+- [ ] Search functionality connected
+- [ ] User authentication system
+- [ ] Basic checkout with payments
+
+### **Phase 2 Targets** 🏗️ (Plugin Architecture)
+- [ ] Plugin registration system
+- [ ] Event/hook architecture
+- [ ] Feature flag integration
+- [ ] Cart calculation plugins
+- [ ] Plugin development framework
 
 ---
 
