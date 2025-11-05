@@ -1,0 +1,123 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;500;600;700;800&display=swap');
+
+/* Sports Nutrition Brand Theme - Admin Editable via Strapi */
+:root {
+  /* Primary brand colors - editable via Strapi StoreConfig */
+  --brand-primary: #2c75ff;    /* Main brand blue */
+  --brand-secondary: #222222;   /* Dark charcoal */
+  --brand-accent: #00d4ff;      /* Sports accent blue */
+  
+  /* Sports nutrition category colors */
+  --color-energy: #ff6b35;      /* Energy orange */
+  --color-protein: #4ecdc4;     /* Protein teal */
+  --color-recovery: #96ceb4;    /* Recovery green */
+  --color-focus: #feca57;       /* Focus yellow */
+  
+  /* Semantic colors */
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --muted: #f8f9fa;
+  --border: #e9ecef;
+  --success: #28a745;
+  --warning: #ffc107;
+  --danger: #dc3545;
+  --info: var(--brand-accent);
+}
+
+@theme inline {
+  /* Brand colors (admin-editable) */
+  --color-primary: var(--brand-primary);
+  --color-secondary: var(--brand-secondary);
+  --color-accent: var(--brand-accent);
+  
+  /* Category colors */
+  --color-energy: var(--color-energy);
+  --color-protein: var(--color-protein);
+  --color-recovery: var(--color-recovery);
+  --color-focus: var(--color-focus);
+  
+  /* Semantic colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  
+  /* Typography */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-heading: 'Montserrat', 'Inter', system-ui, sans-serif;
+  
+  /* Product category specific colors */
+  --color-category-protein: #4ecdc4;
+  --color-category-pre-workout: #ff6b35;
+  --color-category-post-workout: #96ceb4;
+  --color-category-vitamins: #feca57;
+  --color-category-accessories: #6c5ce7;
+  
+  /* Animation durations */
+  --duration-fast: 0.2s;
+  --duration-normal: 0.3s;
+  --duration-slow: 0.5s;
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --muted: #1a1a1a;
+    --border: #333333;
+  }
+}
+
+/* Base styling */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Sports-specific utility classes */
+.gradient-energy {
+  background: linear-gradient(135deg, var(--color-energy), #ff8c42);
+}
+
+.gradient-protein {
+  background: linear-gradient(135deg, var(--color-protein), #6ee4db);
+}
+
+.gradient-primary {
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
+}
+
+/* Custom animations for sports theme */
+@keyframes pulse-energy {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 53, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(255, 107, 53, 0); }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-pulse-energy {
+  animation: pulse-energy 2s infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out forwards;
+}

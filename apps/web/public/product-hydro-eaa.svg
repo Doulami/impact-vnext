@@ -1,0 +1,16 @@
+<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="400" fill="#f3f4f6"/>
+  <ellipse cx="200" cy="250" rx="80" ry="120" fill="#1f2937"/>
+  <ellipse cx="200" cy="150" rx="75" ry="30" fill="#ef4444"/>
+  <circle cx="300" cy="320" r="25" fill="#ec4899"/>
+  <circle cx="320" cy="300" r="20" fill="#ec4899"/>
+  <text x="200" y="240" text-anchor="middle" font-family="Arial" font-size="20" font-weight="bold" fill="#ffffff">
+    HYDRO
+  </text>
+  <text x="200" y="265" text-anchor="middle" font-family="Arial" font-size="20" font-weight="bold" fill="#ef4444">
+    EAA
+  </text>
+  <text x="200" y="360" text-anchor="middle" font-family="Arial" font-size="12" fill="#6b7280">
+    Replace with actual image
+  </text>
+</svg>

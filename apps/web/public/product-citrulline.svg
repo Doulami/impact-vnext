@@ -1,0 +1,15 @@
+<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="400" fill="#f3f4f6"/>
+  <rect x="80" y="50" width="240" height="320" fill="#e5e7eb" rx="5"/>
+  <rect x="80" y="50" width="240" height="60" fill="#2563eb" rx="5"/>
+  <rect x="120" y="140" width="160" height="80" fill="#f97316"/>
+  <text x="200" y="190" text-anchor="middle" font-family="Arial" font-size="24" font-weight="bold" fill="#ffffff">
+    CITRULLINE
+  </text>
+  <text x="200" y="280" text-anchor="middle" font-family="Arial" font-size="12" fill="#6b7280">
+    Replace with actual
+  </text>
+  <text x="200" y="300" text-anchor="middle" font-family="Arial" font-size="12" fill="#6b7280">
+    product image
+  </text>
+</svg>

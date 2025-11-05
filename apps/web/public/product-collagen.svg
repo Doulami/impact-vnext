@@ -1,0 +1,15 @@
+<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="400" fill="#f3f4f6"/>
+  <rect x="100" y="50" width="200" height="300" fill="#e5e7eb" rx="10"/>
+  <circle cx="80" cy="320" r="30" fill="#ef4444"/>
+  <circle cx="320" cy="300" r="35" fill="#3b82f6"/>
+  <text x="200" y="200" text-anchor="middle" font-family="Arial" font-size="24" font-weight="bold" fill="#1f2937">
+    COLLAGEN-C
+  </text>
+  <text x="200" y="230" text-anchor="middle" font-family="Arial" font-size="14" fill="#6b7280">
+    Replace with actual
+  </text>
+  <text x="200" y="250" text-anchor="middle" font-family="Arial" font-size="14" fill="#6b7280">
+    product image
+  </text>
+</svg>

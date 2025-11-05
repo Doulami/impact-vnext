@@ -1,0 +1,2 @@
+PLACEHOLDER: Save your Collagen-C product image as /public/product-collagen.png
+This should be the silver pouch with berries and the green "ARÔMES NATURELS" badge.

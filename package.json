@@ -27,7 +27,8 @@
     "install:apps": "cd apps/web && npm install && cd ../cms && npm install"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "rxjs": "^7.8.1"
   },
   "engines": {
     "node": ">=18.17.0",
