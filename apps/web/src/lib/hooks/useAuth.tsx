@@ -31,6 +31,7 @@ type AuthAction =
   | { type: 'AUTH_FAILURE'; payload: string }
   | { type: 'LOGOUT_SUCCESS' }
   | { type: 'UPDATE_CUSTOMER'; payload: Customer }
+  | { type: 'SET_ERROR'; payload: string }
   | { type: 'CLEAR_ERROR' };
 
 // Initial state
@@ -82,6 +83,11 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       return {
         ...state,
         customer: action.payload,
+      };
+    case 'SET_ERROR':
+      return {
+        ...state,
+        error: action.payload,
       };
     case 'CLEAR_ERROR':
       return {
@@ -268,12 +274,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       const errorMessage = result?.message || 'Profile update failed';
-      dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
+      dispatch({ type: 'SET_ERROR', payload: errorMessage });
       return false;
       
     } catch (error) {
       console.error('Profile update error:', error);
-      dispatch({ type: 'AUTH_FAILURE', payload: 'An error occurred while updating profile' });
+      dispatch({ type: 'SET_ERROR', payload: 'An error occurred while updating profile' });
       return false;
     }
   }, [updateCustomerMutation]);
@@ -295,12 +301,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       const errorMessage = result?.message || 'Password update failed';
-      dispatch({ type: 'AUTH_FAILURE', payload: errorMessage });
+      dispatch({ type: 'SET_ERROR', payload: errorMessage });
       return false;
       
     } catch (error) {
       console.error('Password update error:', error);
-      dispatch({ type: 'AUTH_FAILURE', payload: 'An error occurred while updating password' });
+      dispatch({ type: 'SET_ERROR', payload: 'An error occurred while updating password' });
       return false;
     }
   }, [updatePasswordMutation]);

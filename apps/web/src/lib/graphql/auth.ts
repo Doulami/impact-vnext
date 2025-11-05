@@ -152,39 +152,34 @@ export const RESET_PASSWORD = gql`
 export const UPDATE_CUSTOMER = gql`
   mutation UpdateCustomer($input: UpdateCustomerInput!) {
     updateCustomer(input: $input) {
-      ... on Customer {
+      id
+      title
+      firstName
+      lastName
+      emailAddress
+      phoneNumber
+      user {
         id
-        title
-        firstName
-        lastName
-        emailAddress
-        phoneNumber
-        user {
-          id
-          verified
-          lastLogin
-        }
-        addresses {
-          id
-          fullName
-          company
-          streetLine1
-          streetLine2
-          city
-          province
-          postalCode
-          country {
-            id
-            code
-            name
-          }
-          phoneNumber
-          defaultShippingAddress
-          defaultBillingAddress
-        }
+        verified
+        lastLogin
       }
-      ... on ErrorResult {
-        message
+      addresses {
+        id
+        fullName
+        company
+        streetLine1
+        streetLine2
+        city
+        province
+        postalCode
+        country {
+          id
+          code
+          name
+        }
+        phoneNumber
+        defaultShippingAddress
+        defaultBillingAddress
       }
     }
   }
