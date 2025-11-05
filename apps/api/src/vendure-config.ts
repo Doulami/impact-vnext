@@ -8,6 +8,7 @@ import {
 import { defaultEmailHandlers, EmailPlugin, FileBasedTemplateLoader } from '@vendure/email-plugin';
 import { AssetServerPlugin } from '@vendure/asset-server-plugin';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
+import { compileUiExtensions } from '@vendure/ui-devkit/compiler';
 import { DashboardPlugin } from '@vendure/dashboard/plugin';
 import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
 import 'dotenv/config';
@@ -92,6 +93,21 @@ export const config: VendureConfig = {
         AdminUiPlugin.init({
             route: 'admin',
             port: 3002,
+            app: compileUiExtensions({
+                outputPath: path.join(__dirname, '../admin-ui'),
+                extensions: [
+                    {
+                        extensionPath: path.join(__dirname, '../ui-extensions'),
+                        providers: ['providers.ts'],
+                    },
+                ],
+                devMode: IS_DEV,
+            }),
+            compatibilityMode: true,
+        }),
+        DashboardPlugin.init({
+            route: 'dashboard',
+            appDir: path.join(__dirname, '../ui-extensions'),
         }),
         // Custom plugin for manual customer verification
         CustomerAdminVerificationPlugin,

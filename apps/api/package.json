@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@elastic/elasticsearch": "^9.2.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
     "@vendure/admin-ui-plugin": "^3.5.0",
     "@vendure/asset-server-plugin": "3.5.0",
     "@vendure/core": "3.5.0",
@@ -20,8 +22,11 @@
     "@vendure/elasticsearch-plugin": "^3.5.0",
     "@vendure/email-plugin": "3.5.0",
     "@vendure/graphiql-plugin": "3.5.0",
+    "@vendure/ui-devkit": "^3.5.0",
     "dotenv": "17.2.3",
-    "pg": "8.16.3"
+    "pg": "8.16.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@vendure/cli": "3.5.0",
