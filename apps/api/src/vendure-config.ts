@@ -15,6 +15,7 @@ import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
 import 'dotenv/config';
 import path from 'path';
 import { CustomerAdminVerificationPlugin } from './plugins/customer-admin-verification.plugin';
+import { BundlePlugin } from './plugins/bundle-plugin/bundle.plugin';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
 const serverPort = +process.env.PORT || 3000;
@@ -117,9 +118,11 @@ export const config: VendureConfig = {
         }),
         DashboardPlugin.init({
             route: 'dashboard',
-            appDir: path.join(__dirname, '../ui-extensions'),
+            appDir: path.join(__dirname, '../dist/dashboard'),
         }),
         // Custom plugin for manual customer verification
         CustomerAdminVerificationPlugin,
+        // Bundle Plugin for product bundles
+        BundlePlugin,
     ],
 };

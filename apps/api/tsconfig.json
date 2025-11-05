@@ -20,6 +20,7 @@
     "src/plugins/**/ui/*",
     "admin-ui",
     "src/plugins/**/dashboard/*",
+    "ui-extensions/dashboard/*",
     "src/gql/*",
     "vite.*.*ts"
   ],
