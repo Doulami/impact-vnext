@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ApolloProvider } from "@/components/providers/ApolloProvider";
 import { CartProvider } from "@/lib/hooks/useCart";
+import { AuthProvider } from "@/lib/hooks/useAuth";
 import CartDrawer from "@/components/CartDrawer";
 
 const geistSans = Geist({
@@ -31,10 +32,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ApolloProvider>
-          <CartProvider>
-            {children}
-            <CartDrawer />
-          </CartProvider>
+          <AuthProvider>
+            <CartProvider>
+              {children}
+              <CartDrawer />
+            </CartProvider>
+          </AuthProvider>
         </ApolloProvider>
       </body>
     </html>
