@@ -6,16 +6,31 @@ Complete setup guide for the Impact Nutrition monorepo project with Next.js fron
 
 Before you begin, make sure you have the following installed:
 
-- **Node.js** (v18.17.0 or higher)
+- **Node.js** (v18.17.0 or higher, **Node 22** recommended for CMS)
 - **npm** (v9.0.0 or higher) 
 - **Git**
 - **Docker** and **Docker Compose** (optional, for database)
+- **Volta** (recommended for Node version management)
+
+### Recommended: Install Volta for Node Version Management
+
+[Volta](https://volta.sh/) automatically manages Node.js versions per project:
+
+```bash
+# Install Volta (macOS/Linux)
+curl https://get.volta.sh | bash
+
+# Restart your terminal, then install Node 22
+volta install node@22
+volta install npm@10
+```
 
 Check your versions:
 ```bash
-node --version  # Should be v18.17.0+
-npm --version   # Should be v9.0.0+
+node --version  # Should be v18.17.0+ (v22.x.x recommended)
+npm --version   # Should be v9.0.0+ (v10.x.x recommended)
 git --version
+volta --version # If using Volta
 ```
 
 ## 🚀 Quick Start
@@ -61,6 +76,8 @@ cd apps/cms
 cp .env.example .env
 ```
 
+> **Note:** The CMS is configured to use Node.js 22 via Volta. If you have Volta installed, it will automatically switch to the correct Node version when you enter the `apps/cms` directory.
+
 Edit `.env` with your configuration:
 ```env
 # Server Configuration
@@ -91,7 +108,7 @@ npm run dev
 
 **Start CMS (Strapi):**
 ```bash
-cd apps/cms
+cd apps/cms  # Volta will auto-switch to Node 22 if installed
 npm run dev
 # Strapi will be available at http://localhost:1337
 ```
