@@ -1,0 +1,51 @@
+{
+  "name": "impact-nutrition",
+  "version": "1.0.0",
+  "description": "Impact Nutrition E-commerce Platform - Monorepo with Next.js frontend and Strapi CMS",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:cms\" \"npm run dev:web\"",
+    "dev:web": "cd apps/web && npm run dev",
+    "dev:cms": "cd apps/cms && npm run develop",
+    "build": "npm run build:web && npm run build:cms",
+    "build:web": "cd apps/web && npm run build",
+    "build:cms": "cd apps/cms && npm run build",
+    "start": "npm run start:web && npm run start:cms",
+    "start:web": "cd apps/web && npm run start",
+    "start:cms": "cd apps/cms && npm run start",
+    "lint": "npm run lint:web && npm run lint:cms",
+    "lint:web": "cd apps/web && npm run lint",
+    "lint:cms": "echo 'No lint script for CMS'",
+    "clean": "npm run clean:deps && npm run clean:build",
+    "clean:deps": "rm -rf node_modules apps/*/node_modules packages/*/node_modules",
+    "clean:build": "rm -rf apps/web/.next apps/cms/build apps/cms/.tmp",
+    "install:all": "npm install && npm run install:apps",
+    "install:apps": "cd apps/web && npm install && cd ../cms && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.17.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Doulami/impact-vnext.git"
+  },
+  "keywords": [
+    "ecommerce",
+    "nextjs",
+    "strapi",
+    "typescript",
+    "tailwindcss",
+    "graphql",
+    "monorepo"
+  ],
+  "author": "Impact Nutrition Team",
+  "license": "MIT"
+}
