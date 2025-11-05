@@ -91,7 +91,7 @@ function ProductsPageContent() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <Header 
-        showSearchDropdown={false} 
+        showSearchDropdown={true} 
         className="sticky top-0 z-50"
       />
 

@@ -3,6 +3,8 @@
 import { useCart } from '@/lib/hooks/useCart';
 import { ArrowLeft, Plus, Minus, Trash2, ShoppingBag, User, Search } from 'lucide-react';
 import Link from 'next/link';
+import ConfirmationModal from '@/components/ConfirmationModal';
+import { useState } from 'react';
 
 export default function CartPage() {
   const { 
@@ -13,6 +15,9 @@ export default function CartPage() {
     removeItem,
     clearCart 
   } = useCart();
+  
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [itemToRemove, setItemToRemove] = useState<string | null>(null);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -137,7 +142,7 @@ export default function CartPage() {
                               </p>
                             )}
                             <button
-                              onClick={() => removeItem(item.variantId)}
+                              onClick={() => setItemToRemove(item.variantId)}
                               className="text-red-500 hover:text-red-700 transition-colors text-sm flex items-center gap-1"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -189,7 +194,7 @@ export default function CartPage() {
                 {/* Cart Actions */}
                 <div className="mt-6 flex justify-between items-center">
                   <button
-                    onClick={clearCart}
+                    onClick={() => setShowClearConfirm(true)}
                     className="text-red-600 hover:text-red-800 transition-colors flex items-center gap-2"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -257,6 +262,40 @@ export default function CartPage() {
           )}
         </div>
       </div>
+      
+      {/* Clear Cart Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showClearConfirm}
+        onClose={() => setShowClearConfirm(false)}
+        onConfirm={() => {
+          clearCart();
+        }}
+        title="Clear Cart"
+        message={`Are you sure you want to remove all ${totalItems} items from your cart? This action cannot be undone.`}
+        confirmText="Clear Cart"
+        cancelText="Keep Items"
+        icon={<Trash2 className="w-6 h-6 text-red-600" />}
+      />
+      
+      {/* Remove Item Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={itemToRemove !== null}
+        onClose={() => setItemToRemove(null)}
+        onConfirm={() => {
+          if (itemToRemove) {
+            removeItem(itemToRemove);
+            setItemToRemove(null);
+          }
+        }}
+        title="Remove Item"
+        message={itemToRemove 
+          ? `Are you sure you want to remove "${items.find(item => item.variantId === itemToRemove)?.productName}" from your cart?`
+          : "Are you sure you want to remove this item from your cart?"
+        }
+        confirmText="Remove"
+        cancelText="Keep Item"
+        icon={<Trash2 className="w-6 h-6 text-red-600" />}
+      />
     </div>
   );
 }

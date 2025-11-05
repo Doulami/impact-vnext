@@ -164,6 +164,22 @@ This web app is part of a larger composable commerce stack:
   - **Active filter management**: Clear individual filters or clear all
   - **Responsive design**: 2-4 column grid based on screen size
 
+- **Search Functionality**: Elasticsearch-powered search with independent operation
+  - **Homepage search**: Full dropdown with "View all results" navigation
+  - **PLP search**: Independent dropdown that doesn't interfere with filters
+  - **Real-time suggestions**: Debounced search with 300ms delay
+  - **URL parameter sync**: Search terms reflected in URL for sharing
+  - **Cross-page consistency**: Unified Header component with search
+
+- **Shopping Cart System**: Production-ready with confirmation safeguards
+  - **Persistent storage**: localStorage with graceful error handling
+  - **Multiple interfaces**: MiniCart dropdown, CartDrawer mobile, full Cart page
+  - **Double confirmation**: All destructive actions (remove item, clear cart) require confirmation
+  - **Confirmation modals**: Accessible with keyboard support and clear messaging
+  - **Smart interactions**: Click-based (not hover) with smooth animations
+  - **Variant handling**: "ADD TO CART" vs "CHOOSE OPTIONS" logic
+  - **Mobile optimized**: Touch-friendly drawer interface
+
 - **Backend Integration**: Vendure GraphQL API with search optimization
   - Apollo Client configured with proper search queries
   - Uses Vendure Shop API `search` with `groupByProduct: true`

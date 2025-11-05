@@ -5,6 +5,7 @@ import Link from 'next/link';
 import MiniCart from '@/components/MiniCart';
 import SearchBar from '@/components/SearchBar';
 import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
 interface HeaderProps {
   showSearch?: boolean;
@@ -13,7 +14,7 @@ interface HeaderProps {
   className?: string;
 }
 
-export default function Header({ 
+function HeaderContent({ 
   showSearch = true,
   searchPlaceholder = "Search products...",
   showSearchDropdown = true,
@@ -74,5 +75,50 @@ export default function Header({
         </nav>
       </div>
     </header>
+  );
+}
+
+export default function Header(props: HeaderProps) {
+  return (
+    <Suspense fallback={
+      <header className={`bg-black text-white ${props.className || ''}`}>
+        <div className="bg-black text-white text-center py-2 text-xs">
+          <p>Save $5 on your FIRST $30+ order • 25% off ALL code <strong>PRO25</strong> through 1/02/25</p>
+        </div>
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between py-3">
+            <Link href="/" className="flex items-center">
+              <img src="/impactlogo.webp" alt="Impact Nutrition" className="h-8" />
+            </Link>
+            {props.showSearch !== false && (
+              <div className="flex-1 max-w-md mx-8">
+                <SearchBar 
+                  placeholder={props.searchPlaceholder || "Search products..."}
+                  showDropdown={props.showSearchDropdown !== false}
+                />
+              </div>
+            )}
+            <div className="flex items-center gap-6 text-xs">
+              <a href="#" className="hover:text-gray-300">Help & Support</a>
+              <User className="w-5 h-5 cursor-pointer" />
+              <MiniCart />
+            </div>
+          </div>
+          <nav className="border-t border-gray-800">
+            <ul className="flex items-center justify-center gap-8 py-3 text-xs font-medium">
+              <li>
+                <Link href="/products" className="hover:text-gray-300 font-bold">SHOP BY PRODUCT</Link>
+              </li>
+              <li><Link href="/#goals-section" className="hover:text-gray-300">SHOP BY GOALS</Link></li>
+              <li><a href="#" className="hover:text-gray-300">BUNDLES</a></li>
+              <li><a href="#" className="hover:text-gray-300">ATHLETES</a></li>
+              <li><a href="#" className="text-red-500 hover:text-red-400">SPECIAL DEALS</a></li>
+            </ul>
+          </nav>
+        </div>
+      </header>
+    }>
+      <HeaderContent {...props} />
+    </Suspense>
   );
 }

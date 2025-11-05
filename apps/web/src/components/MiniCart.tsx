@@ -4,6 +4,7 @@ import { useCart } from '@/lib/hooks/useCart';
 import { ShoppingCart, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import ConfirmationModal from './ConfirmationModal';
 
 export default function MiniCart() {
   const { 
@@ -14,6 +15,7 @@ export default function MiniCart() {
     removeItem 
   } = useCart();
   const [isVisible, setIsVisible] = useState(false);
+  const [itemToRemove, setItemToRemove] = useState<string | null>(null);
 
   const handleToggle = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -92,7 +94,7 @@ export default function MiniCart() {
                   <button
                     onClick={(e) => {
                       e.preventDefault();
-                      removeItem(item.variantId);
+                      setItemToRemove(item.variantId);
                     }}
                     className="text-gray-400 hover:text-red-500 transition-colors p-1"
                     title="Remove item"
@@ -142,6 +144,26 @@ export default function MiniCart() {
           </div>
         </>
       )}
+      
+      {/* Remove Item Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={itemToRemove !== null}
+        onClose={() => setItemToRemove(null)}
+        onConfirm={() => {
+          if (itemToRemove) {
+            removeItem(itemToRemove);
+            setItemToRemove(null);
+          }
+        }}
+        title="Remove Item"
+        message={itemToRemove 
+          ? `Remove "${items.find(item => item.variantId === itemToRemove)?.productName}" from your cart?`
+          : "Remove this item from your cart?"
+        }
+        confirmText="Remove"
+        cancelText="Keep Item"
+        icon={<Trash2 className="w-6 h-6 text-red-600" />}
+      />
     </div>
   );
 }

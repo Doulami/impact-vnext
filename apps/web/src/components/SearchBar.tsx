@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useSearch } from '@/lib/hooks/useSearch';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 import Link from 'next/link';
@@ -26,6 +26,7 @@ export default function SearchBar({
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   // Update search term when initial value changes (e.g., from URL)
   useEffect(() => {
@@ -35,21 +36,26 @@ export default function SearchBar({
   // Debounce search term to avoid too many API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  // Use the search hook with Elasticsearch backend
-  const { products, loading, totalItems, setTerm } = useSearch({
-    term: debouncedSearchTerm || undefined,
-    take: 6, // Limit results for dropdown
-  });
+  // Use the search hook with Elasticsearch backend (only if dropdown is enabled)
+  const { products, loading, totalItems, setTerm } = useSearch(
+    showDropdown ? {
+      term: debouncedSearchTerm || undefined,
+      take: 6, // Limit results for dropdown
+    } : {
+      term: undefined, // Don't search when dropdown is disabled
+      take: 0,
+    }
+  );
 
-  // Update search when debounced term changes
+  // Update search when debounced term changes (only if dropdown is enabled)
   useEffect(() => {
-    if (debouncedSearchTerm) {
+    if (showDropdown && debouncedSearchTerm) {
       setTerm(debouncedSearchTerm);
       setIsOpen(true);
     } else {
       setIsOpen(false);
     }
-  }, [debouncedSearchTerm, setTerm]);
+  }, [debouncedSearchTerm, showDropdown]); // Remove setTerm from dependencies to fix React warning
 
   // Handle input change
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,12 +67,18 @@ export default function SearchBar({
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
-      // Navigate to products page with search term
-      router.push(`/products?search=${encodeURIComponent(searchTerm.trim())}`);
-      setIsOpen(false);
-      inputRef.current?.blur();
+      // If on products page, just close dropdown (don't interfere with filters)
+      if (pathname === '/products') {
+        setIsOpen(false);
+        inputRef.current?.blur();
+      } else {
+        // Navigate to products page with search term
+        router.push(`/products?search=${encodeURIComponent(searchTerm.trim())}`);
+        setIsOpen(false);
+        inputRef.current?.blur();
+      }
     }
-  }, [searchTerm, router]);
+  }, [searchTerm, router, pathname]);
 
   // Handle product selection from dropdown
   const handleProductSelect = useCallback((productSlug: string) => {
@@ -122,7 +134,7 @@ export default function SearchBar({
           onKeyDown={handleKeyDown}
           onFocus={() => {
             setIsFocused(true);
-            if (searchTerm.trim()) setIsOpen(true);
+            if (showDropdown && searchTerm.trim()) setIsOpen(true);
           }}
           placeholder={placeholder}
           className="w-full bg-white text-black px-4 py-2 pr-20 text-sm border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
@@ -216,12 +228,21 @@ export default function SearchBar({
               {/* View all results */}
               {showViewAll && (
                 <Link
-                  href={`/products?search=${encodeURIComponent(searchTerm)}`}
+                  href={pathname === '/products' ? '#' : `/products?search=${encodeURIComponent(searchTerm)}`}
                   className="w-full p-3 flex items-center justify-center gap-2 bg-gray-50 hover:bg-gray-100 text-blue-600 font-medium text-sm border-t border-gray-200"
-                  onClick={() => setIsOpen(false)}
+                  onClick={(e) => {
+                    setIsOpen(false);
+                    // If on products page, prevent navigation to avoid filter conflicts
+                    if (pathname === '/products') {
+                      e.preventDefault();
+                    }
+                  }}
                 >
                   <Search className="w-4 h-4" />
-                  View all {totalItems} results for "{searchTerm}"
+                  {pathname === '/products' 
+                    ? `${totalItems} results found for "${searchTerm}"`
+                    : `View all ${totalItems} results for "${searchTerm}"`
+                  }
                 </Link>
               )}
             </div>
