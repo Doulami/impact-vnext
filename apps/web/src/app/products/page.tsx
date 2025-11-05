@@ -4,10 +4,11 @@ import { useEffect, Suspense, useState, useRef } from 'react';
 import { useSearch, useCollections, useFacets, usePriceRanges } from '@/lib/hooks/useSearch';
 import { useUrlState } from '@/lib/hooks/useUrlState';
 import { toProductCardData } from '@/lib/types/product';
-import { Search, SlidersHorizontal, Star, X, User } from 'lucide-react';
+import { SlidersHorizontal, Star, X, User } from 'lucide-react';
 import Link from 'next/link';
 import { useCart } from '@/lib/hooks/useCart';
 import MiniCart from '@/components/MiniCart';
+import SearchBar from '@/components/SearchBar';
 
 function ProductsPageContent() {
   const { getSearchInputFromUrl, updateUrl, getActiveFilters, clearFilter, clearAllFilters } = useUrlState();
@@ -41,6 +42,10 @@ function ProductsPageContent() {
 
   const handleClearFilter = (filter: { id: string; type: string }) => {
     switch (filter.type) {
+      case 'search':
+        // Clear search term - this will be handled by URL state
+        clearFilter('search', 'search');
+        break;
       case 'collection':
         setCollection(undefined);
         break;
@@ -89,14 +94,7 @@ function ProductsPageContent() {
             
             {/* Search Bar */}
             <div className="flex-1 max-w-md mx-8">
-              <div className="relative">
-                <input 
-                  type="text" 
-                  placeholder="Search products..." 
-                  className="w-full bg-white text-black px-4 py-2 pr-10 text-sm"
-                />
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-              </div>
+              <SearchBar placeholder="Search products..." />
             </div>
             
             {/* Header Actions */}

@@ -1,9 +1,10 @@
 'use client';
 
-import { Search, User, Menu } from 'lucide-react';
+import { User, Menu } from 'lucide-react';
 import { FeaturedProducts } from '@/components/FeaturedProducts';
 import Link from 'next/link';
 import MiniCart from '@/components/MiniCart';
+import SearchBar from '@/components/SearchBar';
 
 export default function Home() {
   return (
@@ -24,14 +25,7 @@ export default function Home() {
             
             {/* Search Bar */}
             <div id="header-search" className="flex-1 max-w-md mx-8">
-              <div className="relative">
-                <input 
-                  type="text" 
-                  placeholder="Search" 
-                  className="w-full bg-white text-black px-4 py-2 pr-10 text-sm"
-                />
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-              </div>
+              <SearchBar placeholder="Search products..." />
             </div>
             
             {/* Header Actions */}

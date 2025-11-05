@@ -15,8 +15,8 @@ export function useUrlState() {
       groupByProduct: true,
     };
 
-    // Search term
-    const term = params.get('q');
+    // Search term (support both 'q' and 'search' parameters)
+    const term = params.get('search') || params.get('q');
     if (term) searchInput.term = term;
 
     // Collection
@@ -69,7 +69,7 @@ export function useUrlState() {
 
     // Search term
     if (searchInput.term) {
-      params.set('q', searchInput.term);
+      params.set('search', searchInput.term);
     }
 
     // Collection
@@ -116,6 +116,16 @@ export function useUrlState() {
   const getActiveFilters = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
     const filters = [];
+
+    // Search term filter
+    const searchTerm = params.get('search') || params.get('q');
+    if (searchTerm) {
+      filters.push({
+        type: 'search' as const,
+        id: 'search',
+        label: `Search: "${searchTerm}"`,
+      });
+    }
 
     // Collection filter
     const collection = params.get('collection');
@@ -168,6 +178,10 @@ export function useUrlState() {
     const params = new URLSearchParams(searchParams.toString());
 
     switch (filterType) {
+      case 'search':
+        params.delete('search');
+        params.delete('q');
+        break;
       case 'collection':
         params.delete('collection');
         break;
