@@ -32,13 +32,44 @@ export default function RegisterPage() {
     }
   }, [isAuthenticated, router]);
 
-  // Clear errors when inputs change
+  // Clear individual form validation errors when user fixes the specific field
   useEffect(() => {
-    if (error || Object.keys(formErrors).length > 0) {
-      clearError();
-      setFormErrors({});
+    if (formErrors.firstName && formData.firstName.trim().length >= 2) {
+      setFormErrors(prev => ({ ...prev, firstName: '' }));
     }
-  }, [formData, error, formErrors, clearError]);
+  }, [formData.firstName, formErrors.firstName]);
+
+  useEffect(() => {
+    if (formErrors.lastName && formData.lastName.trim().length >= 2) {
+      setFormErrors(prev => ({ ...prev, lastName: '' }));
+    }
+  }, [formData.lastName, formErrors.lastName]);
+
+  useEffect(() => {
+    if (formErrors.email && formData.email.trim() && /\S+@\S+\.\S+/.test(formData.email)) {
+      setFormErrors(prev => ({ ...prev, email: '' }));
+    }
+  }, [formData.email, formErrors.email]);
+
+  useEffect(() => {
+    if (formErrors.password && formData.password.length >= 8 && /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
+      setFormErrors(prev => ({ ...prev, password: '' }));
+    }
+  }, [formData.password, formErrors.password]);
+
+  useEffect(() => {
+    if (formErrors.confirmPassword && formData.password === formData.confirmPassword) {
+      setFormErrors(prev => ({ ...prev, confirmPassword: '' }));
+    }
+  }, [formData.password, formData.confirmPassword, formErrors.confirmPassword]);
+
+  useEffect(() => {
+    if (formErrors.phoneNumber && formData.phoneNumber.trim() && /^\+?[\d\s\-\(\)]+$/.test(formData.phoneNumber)) {
+      setFormErrors(prev => ({ ...prev, phoneNumber: '' }));
+    }
+  }, [formData.phoneNumber, formErrors.phoneNumber]);
+
+  // Server errors stay until user submits again
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
@@ -98,6 +129,11 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Clear any previous server errors when user tries again
+    if (error) {
+      clearError();
+    }
     
     if (!validateForm()) return;
 

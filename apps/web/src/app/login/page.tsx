@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Eye, EyeOff, LogIn, AlertCircle, CheckCircle } from 'lucide-react';
+import { Eye, EyeOff, LogIn, AlertCircle, CheckCircle, X } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import Header from '@/components/Header';
 
@@ -25,13 +25,20 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, router]);
 
-  // Clear errors when inputs change
+  // Clear form validation errors only when user fixes the specific field
   useEffect(() => {
-    if (error || Object.keys(formErrors).length > 0) {
-      clearError();
-      setFormErrors({});
+    if (formErrors.email && email.trim() && /\S+@\S+\.\S+/.test(email)) {
+      setFormErrors(prev => ({ ...prev, email: '' }));
     }
-  }, [email, password, error, formErrors, clearError]);
+  }, [email, formErrors.email]);
+
+  useEffect(() => {
+    if (formErrors.password && password.length >= 6) {
+      setFormErrors(prev => ({ ...prev, password: '' }));
+    }
+  }, [password, formErrors.password]);
+
+  // Server errors stay until user submits again or manually dismisses
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
@@ -54,6 +61,11 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Clear any previous server errors when user tries again
+    if (error) {
+      clearError();
+    }
     
     if (!validateForm()) return;
 
@@ -128,7 +140,7 @@ export default function LoginPage() {
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                <div>
+                <div className="flex-1">
                   <p className="text-red-800 text-sm font-medium">
                     Sign in failed
                   </p>
@@ -136,6 +148,13 @@ export default function LoginPage() {
                     {error}
                   </p>
                 </div>
+                <button
+                  onClick={clearError}
+                  className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0"
+                  title="Dismiss"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             )}
 

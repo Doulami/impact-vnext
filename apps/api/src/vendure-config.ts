@@ -12,6 +12,7 @@ import { DashboardPlugin } from '@vendure/dashboard/plugin';
 import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
 import 'dotenv/config';
 import path from 'path';
+import { CustomerAdminVerificationPlugin } from './plugins/customer-admin-verification.plugin';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
 const serverPort = +process.env.PORT || 3000;
@@ -92,5 +93,7 @@ export const config: VendureConfig = {
             route: 'admin',
             port: 3002,
         }),
+        // Custom plugin for manual customer verification
+        CustomerAdminVerificationPlugin,
     ],
 };
