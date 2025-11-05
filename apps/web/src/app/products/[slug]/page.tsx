@@ -11,6 +11,7 @@ import { ProductReviews } from '@/components/ProductReviews';
 import { RelatedProducts } from '@/components/RelatedProducts';
 import { useCart } from '@/lib/hooks/useCart';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 interface ProductVariant {
   id: string;
@@ -353,6 +354,7 @@ export default function ProductDetailPage() {
           <RelatedProducts currentProductId={product.id} />
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

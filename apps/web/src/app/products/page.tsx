@@ -10,6 +10,7 @@ import { useCart } from '@/lib/hooks/useCart';
 import MiniCart from '@/components/MiniCart';
 import SearchBar from '@/components/SearchBar';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import { useSearchParams } from 'next/navigation';
 
 function ProductsPageContent() {
@@ -438,6 +439,7 @@ function ProductsPageContent() {
           </main>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
