@@ -4,13 +4,13 @@ import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { GET_PRODUCT_BY_SLUG } from '@/lib/graphql/queries';
-import { Star, Heart, Share2, Truck, Shield, RotateCcw, Plus, Minus, Search, User, ArrowLeft, ShoppingCart } from 'lucide-react';
+import { Star, Heart, Share2, Truck, Shield, RotateCcw, Plus, Minus, ArrowLeft, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ProductReviews } from '@/components/ProductReviews';
 import { RelatedProducts } from '@/components/RelatedProducts';
 import { useCart } from '@/lib/hooks/useCart';
-import MiniCart from '@/components/MiniCart';
+import Header from '@/components/Header';
 
 interface ProductVariant {
   id: string;
@@ -94,19 +94,7 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
-        <header className="bg-black text-white">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between py-3">
-              <Link href="/" className="flex items-center">
-                <img src="/impactlogo.webp" alt="Impact Nutrition" className="h-8" />
-              </Link>
-              <div className="flex items-center gap-6 text-xs">
-                <Link href="/products" className="hover:text-gray-300">Products</Link>
-                <MiniCart />
-              </div>
-            </div>
-          </div>
-        </header>
+        <Header />
         
         <div className="container mx-auto px-4 py-8">
           <div className="animate-pulse">
@@ -128,19 +116,7 @@ export default function ProductDetailPage() {
   if (error || !product) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <header className="bg-black text-white">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between py-3">
-              <Link href="/" className="flex items-center">
-                <img src="/impactlogo.webp" alt="Impact Nutrition" className="h-8" />
-              </Link>
-              <div className="flex items-center gap-6 text-xs">
-                <Link href="/products" className="hover:text-gray-300">Products</Link>
-                <MiniCart />
-              </div>
-            </div>
-          </div>
-        </header>
+        <Header />
         
         <div className="container mx-auto px-4 py-8 text-center">
           <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
@@ -162,46 +138,7 @@ export default function ProductDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-black text-white">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between py-3">
-            {/* Logo */}
-            <Link href="/" className="flex items-center">
-              <img src="/impactlogo.webp" alt="Impact Nutrition" className="h-8" />
-            </Link>
-            
-            {/* Search Bar */}
-            <div className="flex-1 max-w-md mx-8">
-              <div className="relative">
-                <input 
-                  type="text" 
-                  placeholder="Search" 
-                  className="w-full bg-white text-black px-4 py-2 pr-10 text-sm"
-                />
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-              </div>
-            </div>
-            
-            {/* Header Actions */}
-            <div className="flex items-center gap-6 text-xs">
-              <a href="#" className="hover:text-gray-300">Help & Support</a>
-              <User className="w-5 h-5 cursor-pointer" />
-              <MiniCart />
-            </div>
-          </div>
-          
-          {/* Main Navigation */}
-          <nav className="border-t border-gray-800">
-            <ul className="flex items-center justify-center gap-8 py-3 text-xs font-medium">
-              <li><Link href="/products" className="hover:text-gray-300">SHOP BY PRODUCT</Link></li>
-              <li><a href="/#goals-section" className="hover:text-gray-300">SHOP BY GOALS</a></li>
-              <li><a href="#" className="hover:text-gray-300">BUNDLES</a></li>
-              <li><a href="#" className="hover:text-gray-300">ATHLETES</a></li>
-              <li><a href="#" className="text-red-500 hover:text-red-400">SPECIAL DEALS</a></li>
-            </ul>
-          </nav>
-        </div>
-      </header>
+      <Header />
 
       {/* Breadcrumb with Back Button */}
       <div className="bg-white border-b">
