@@ -141,7 +141,8 @@ This web app is part of a larger composable commerce stack:
 
 ### ✅ Completed
 - **Homepage Design**: Full Optimum Nutrition-inspired layout implemented
-  - Black header with search bar and navigation
+  - Animated gradient navigation bar (blue wave effect with CSS variables)
+  - Black header with search bar and user account dropdown
   - Top announcement bar for promotions
   - Split hero banner (left: content + CTA, right: product image)
   - Product carousel with ratings and prices (real data from Vendure!)
@@ -192,10 +193,46 @@ This web app is part of a larger composable commerce stack:
   - Collagen-C, Hydro EAA, Citrulline, Isotonic
   - Images located in `/public/products/`
 
+- **User Authentication System**: Complete auth flow with JWT token management
+  - Login/Register pages with form validation
+  - Customer verification workflow (email verification required)
+  - Persistent authentication state with useAuth hook
+  - Account dashboard with navigation hub
+  - Profile settings (update name, email, phone, title)
+  - Security settings (password management with strength indicator)
+  - User menu dropdown in header
+  - Protected routes with redirect logic
+
+- **Checkout & Payment System**: Full COD checkout flow
+  - Multi-step checkout (Shipping → Delivery → Payment → Confirmation)
+  - Cash on Delivery (COD) payment method configured
+  - Custom COD payment handler for Vendure backend
+  - Address form with customer pre-fill
+  - Shipping method selection
+  - Order placement with Vendure integration
+  - Thank you page (`/thank-you`) with order details and tracking info
+  - Analytics-ready (Google Analytics, Facebook Pixel hooks)
+
+- **Order Management**: Complete order history and details
+  - Order History page (`/account/orders`) with filtering, sorting, search
+  - Order Details page (`/account/orders/[code]`) with:
+    - Full order information and item list
+    - Order timeline visualization
+    - Shipping address and customer info
+    - Payment method and shipping method details
+    - Status badges with proper formatting
+  - Order status tracking (PaymentAuthorized, PaymentSettled, Shipped, Delivered, etc.)
+
+- **Unified Button Component**: Reusable button system with CSS variables
+  - Variants: primary, secondary, outline, danger, ghost
+  - Sizes: sm, md, lg
+  - Support for buttons and links (Next.js Link)
+  - Loading states with spinner
+  - All colors use CSS variables (no hardcoded colors)
+  - Used across: Cart, Checkout, Auth pages, Account pages, Thank You page
+
 ### 🚧 In Progress
-- **ElasticSearch Integration**: DefaultSearchPlugin currently used, ElasticSearch plugin available for enhanced features
-- **Product Detail Pages (PDP)**: GraphQL queries ready, UI components not implemented
-- **Search Interface**: Backend search ready, need to add search bar functionality
+- None currently
 
 ### 📋 TODO
 - **ElasticSearch Plugin**: Replace DefaultSearchPlugin with ElasticSearchPlugin for:
@@ -203,12 +240,18 @@ This web app is part of a larger composable commerce stack:
   - Advanced sorting options (by date, relevance)
   - Price aggregations and buckets
   - Spatial search capabilities
-- **Product Detail Pages**: Build PDP using existing `GET_PRODUCT_BY_SLUG` query
-- **Search Interface**: Add search bar with autocomplete and suggestions
-- **Shopping Cart**: Implement cart functionality
-- **User Authentication**: Add login/register flow
+- **Account Management Features** (from ACCOUNT_MANAGEMENT_TODO.md):
+  - Address Book Management
+  - Wishlist/Favorites System
+  - Loyalty Points & Rewards
+  - Email Preferences & Notifications
+  - Customer Support Integration
+  - Returns & Refunds Management
+- **Button Unification Remaining**:
+  - Replace hardcoded buttons in other components (Header dropdowns, Footer, SearchBar, ProductReviews, FeaturedProducts, RelatedProducts, ConfirmationModal)
 - **Performance**: Optimize images, lazy loading, caching
 - **SEO**: Add meta tags, structured data, sitemaps
+- **Payment Methods**: Add Stripe/PayPal for online payments (COD is production-ready)
 
 ## Common Development Tasks
 

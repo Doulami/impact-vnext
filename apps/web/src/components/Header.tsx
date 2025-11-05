@@ -153,99 +153,116 @@ function HeaderContent({
   const currentSearchTerm = searchParams.get('search') || searchParams.get('q') || '';
 
   return (
-    <header className={`bg-black text-white ${className}`}>
-      {/* Top Announcement Bar */}
-      <div className="bg-black text-white text-center py-2 text-xs">
-        <p>Save $5 on your FIRST $30+ order • 25% off ALL code <strong>PRO25</strong> through 1/02/25</p>
-      </div>
+    <>
+      <header className={`bg-black text-white ${className}`}>
+        {/* Top Announcement Bar */}
+        <div className="bg-black text-white text-center py-2 text-xs">
+          <p>Save $5 on your FIRST $30+ order • 25% off ALL code <strong>PRO25</strong> through 1/02/25</p>
+        </div>
 
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between py-3">
-          {/* Logo */}
-          <Link href="/" className="flex items-center">
-            <img src="/impactlogo.webp" alt="Impact Nutrition" className="h-8" />
-          </Link>
-          
-          {/* Search Bar */}
-          {showSearch && (
-            <div className="flex-1 max-w-md mx-8">
-              <SearchBar 
-                placeholder={searchPlaceholder}
-                initialValue={currentSearchTerm}
-                showDropdown={showSearchDropdown}
-              />
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between py-3">
+            {/* Logo */}
+            <Link href="/" className="flex items-center">
+              <img src="/impactlogo.webp" alt="Impact Nutrition" className="h-8" />
+            </Link>
+            
+            {/* Search Bar */}
+            {showSearch && (
+              <div className="flex-1 max-w-md mx-8">
+                <SearchBar 
+                  placeholder={searchPlaceholder}
+                  initialValue={currentSearchTerm}
+                  showDropdown={showSearchDropdown}
+                />
+              </div>
+            )}
+            
+            {/* Header Actions */}
+            <div className="flex items-center gap-6 text-xs">
+              <a href="#" className="hover:text-gray-300">Help & Support</a>
+              <UserMenu />
+              <MiniCart />
             </div>
-          )}
-          
-          {/* Header Actions */}
-          <div className="flex items-center gap-6 text-xs">
-            <a href="#" className="hover:text-gray-300">Help & Support</a>
-            <UserMenu />
-            <MiniCart />
           </div>
         </div>
-        
-        {/* Main Navigation */}
-        <nav className="border-t border-gray-800">
+      </header>
+      
+      {/* Main Navigation - Full Width */}
+      <nav id="main-navigation" className="border-t border-gray-800 nav-gradient-wave">
+        <div className="container mx-auto px-4">
           <ul className="flex items-center justify-center gap-8 py-3 text-xs font-medium">
             <li>
               <Link 
                 href="/products" 
-                className="hover:text-gray-300 font-bold"
+                className="nav-text font-bold"
               >
                 SHOP BY PRODUCT
               </Link>
             </li>
-            <li><Link href="/#goals-section" className="hover:text-gray-300">SHOP BY GOALS</Link></li>
-            <li><a href="#" className="hover:text-gray-300">BUNDLES</a></li>
-            <li><a href="#" className="hover:text-gray-300">ATHLETES</a></li>
-            <li><a href="#" className="text-red-500 hover:text-red-400">SPECIAL DEALS</a></li>
+            <li><Link href="/#goals-section" className="nav-text">SHOP BY GOALS</Link></li>
+            <li><a href="#" className="nav-text">BUNDLES</a></li>
+            <li><a href="#" className="nav-text">ATHLETES</a></li>
+            <li>
+              <a href="#" className="bg-white text-[var(--brand-primary)] px-4 py-1.5 rounded-md hover:bg-gray-100 transition-colors font-bold shadow-lg">
+                SPECIAL DEALS
+              </a>
+            </li>
           </ul>
-        </nav>
-      </div>
-    </header>
+        </div>
+      </nav>
+    </>
   );
 }
 
 export default function Header(props: HeaderProps) {
   return (
     <Suspense fallback={
-      <header className={`bg-black text-white ${props.className || ''}`}>
-        <div className="bg-black text-white text-center py-2 text-xs">
-          <p>Save $5 on your FIRST $30+ order • 25% off ALL code <strong>PRO25</strong> through 1/02/25</p>
-        </div>
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between py-3">
-            <Link href="/" className="flex items-center">
-              <img src="/impactlogo.webp" alt="Impact Nutrition" className="h-8" />
-            </Link>
-            {props.showSearch !== false && (
-              <div className="flex-1 max-w-md mx-8">
-                <SearchBar 
-                  placeholder={props.searchPlaceholder || "Search products..."}
-                  showDropdown={props.showSearchDropdown !== false}
-                />
+      <>
+        <header className={`bg-black text-white ${props.className || ''}`}>
+          <div className="bg-black text-white text-center py-2 text-xs">
+            <p>Save $5 on your FIRST $30+ order • 25% off ALL code <strong>PRO25</strong> through 1/02/25</p>
+          </div>
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between py-3">
+              <Link href="/" className="flex items-center">
+                <img src="/impactlogo.webp" alt="Impact Nutrition" className="h-8" />
+              </Link>
+              {props.showSearch !== false && (
+                <div className="flex-1 max-w-md mx-8">
+                  <SearchBar 
+                    placeholder={props.searchPlaceholder || "Search products..."}
+                    showDropdown={props.showSearchDropdown !== false}
+                  />
+                </div>
+              )}
+              <div className="flex items-center gap-6 text-xs">
+                <a href="#" className="hover:text-gray-300">Help & Support</a>
+                <User className="w-5 h-5 cursor-pointer" />
+                <MiniCart />
               </div>
-            )}
-            <div className="flex items-center gap-6 text-xs">
-              <a href="#" className="hover:text-gray-300">Help & Support</a>
-              <User className="w-5 h-5 cursor-pointer" />
-              <MiniCart />
             </div>
           </div>
-          <nav className="border-t border-gray-800">
+        </header>
+        
+        <nav id="main-navigation" className="border-t border-gray-800 nav-gradient-wave">
+          <div className="container mx-auto px-4">
             <ul className="flex items-center justify-center gap-8 py-3 text-xs font-medium">
               <li>
-                <Link href="/products" className="hover:text-gray-300 font-bold">SHOP BY PRODUCT</Link>
+                <Link href="/products" className="nav-text font-bold">SHOP BY PRODUCT</Link>
               </li>
-              <li><Link href="/#goals-section" className="hover:text-gray-300">SHOP BY GOALS</Link></li>
-              <li><a href="#" className="hover:text-gray-300">BUNDLES</a></li>
-              <li><a href="#" className="hover:text-gray-300">ATHLETES</a></li>
-              <li><a href="#" className="text-red-500 hover:text-red-400">SPECIAL DEALS</a></li>
+              <li><Link href="/#goals-section" className="nav-text">SHOP BY GOALS</Link></li>
+              <li><a href="#" className="nav-text">BUNDLES</a></li>
+              <li><a href="#" className="nav-text">ATHLETES</a></li>
+              <li>
+                <a href="#" className="bg-white text-[var(--brand-primary)] px-4 py-1.5 rounded-md hover:bg-gray-100 transition-colors font-bold shadow-lg">
+                  SPECIAL DEALS
+                </a>
+              </li>
             </ul>
-          </nav>
-        </div>
-      </header>
+          </div>
+        </nav>
+      </>
     }>
       <HeaderContent {...props} />
     </Suspense>

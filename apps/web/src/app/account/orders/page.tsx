@@ -8,7 +8,7 @@ import { GET_CUSTOMER_ORDERS } from '@/lib/graphql/auth';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { ArrowLeft, Package, Search, Filter, ChevronRight, Calendar, DollarSign } from 'lucide-react';
+import { ArrowLeft, Package, Search, Filter, ChevronRight, Calendar } from 'lucide-react';
 import type { Order } from '@/lib/types/auth';
 
 export default function OrderHistory() {
@@ -241,8 +241,7 @@ export default function OrderHistory() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="flex items-center gap-1 text-lg font-bold text-gray-900">
-                          <DollarSign className="h-5 w-5" />
+                        <div className="text-lg font-bold text-gray-900">
                           {formatPrice(order.totalWithTax, order.currencyCode)}
                         </div>
                         <ChevronRight className="h-5 w-5 text-gray-400 ml-auto mt-2" />

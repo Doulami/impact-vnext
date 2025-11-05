@@ -1,9 +1,11 @@
 'use client';
 
 import { useCart } from '@/lib/hooks/useCart';
-import { ArrowLeft, Plus, Minus, Trash2, ShoppingBag, User, Search } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import ConfirmationModal from '@/components/ConfirmationModal';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import { useState } from 'react';
 
 export default function CartPage() {
@@ -20,57 +22,11 @@ export default function CartPage() {
   const [itemToRemove, setItemToRemove] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-black text-white sticky top-0 z-50">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between py-3">
-            {/* Logo */}
-            <Link href="/" className="flex items-center">
-              <img src="/impactlogo.webp" alt="Impact Nutrition" className="h-8" />
-            </Link>
-            
-            {/* Search Bar */}
-            <div className="flex-1 max-w-md mx-8">
-              <div className="relative">
-                <input 
-                  type="text" 
-                  placeholder="Search products..." 
-                  className="w-full bg-white text-black px-4 py-2 pr-10 text-sm"
-                />
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
-              </div>
-            </div>
-            
-            {/* Header Actions */}
-            <div className="flex items-center gap-6 text-xs">
-              <a href="#" className="hover:text-gray-300">Help & Support</a>
-              <User className="w-5 h-5 cursor-pointer" />
-              <Link href="/cart" className="relative">
-                <ShoppingBag className="w-5 h-5 cursor-pointer" />
-                {totalItems > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                    {totalItems}
-                  </span>
-                )}
-              </Link>
-            </div>
-          </div>
-          
-          {/* Main Navigation */}
-          <nav className="border-t border-gray-800">
-            <ul className="flex items-center justify-center gap-8 py-3 text-xs font-medium">
-              <li><Link href="/products" className="hover:text-gray-300">SHOP BY PRODUCT</Link></li>
-              <li><Link href="/#goals-section" className="hover:text-gray-300">SHOP BY GOALS</Link></li>
-              <li><a href="#" className="hover:text-gray-300">BUNDLES</a></li>
-              <li><a href="#" className="hover:text-gray-300">ATHLETES</a></li>
-              <li><a href="#" className="text-red-500 hover:text-red-400">SPECIAL DEALS</a></li>
-            </ul>
-          </nav>
-        </div>
-      </header>
+    <div className="min-h-screen bg-white">
+      <Header />
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="bg-gray-50 min-h-screen">
+        <div className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
         <div className="mb-8">
           <Link 
@@ -242,15 +198,12 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => {
-                    // TODO: Implement checkout
-                    alert('Checkout functionality coming soon!');
-                  }}
-                  className="w-full bg-black text-white py-4 font-medium hover:bg-gray-800 transition-colors mt-6 text-lg"
+                <Link
+                  href="/checkout"
+                  className="block w-full bg-black text-white py-4 font-medium hover:bg-gray-800 transition-colors mt-6 text-lg text-center"
                 >
                   PROCEED TO CHECKOUT
-                </button>
+                </Link>
 
                 {/* Security badges */}
                 <div className="mt-6 text-center text-sm text-gray-600">
@@ -261,7 +214,10 @@ export default function CartPage() {
             </div>
           )}
         </div>
+        </div>
       </div>
+      
+      <Footer />
       
       {/* Clear Cart Confirmation Modal */}
       <ConfirmationModal

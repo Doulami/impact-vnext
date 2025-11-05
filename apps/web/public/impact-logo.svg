@@ -1,9 +1,0 @@
-<svg width="200" height="60" xmlns="http://www.w3.org/2000/svg">
-  <!-- Blue accent bar -->
-  <rect x="0" y="0" width="30" height="60" fill="#2563eb" transform="skewX(-15)"/>
-  
-  <!-- Impact text -->
-  <text x="45" y="45" font-family="Arial Black, sans-serif" font-size="42" font-weight="900" fill="#1f2937" font-style="italic">
-    IMPACT
-  </text>
-</svg>

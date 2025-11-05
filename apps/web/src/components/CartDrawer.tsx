@@ -2,9 +2,9 @@
 
 import { useCart } from '@/lib/hooks/useCart';
 import { X, Plus, Minus, ShoppingBag, Trash2 } from 'lucide-react';
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import ConfirmationModal from './ConfirmationModal';
+import Button from './Button';
 
 export default function CartDrawer() {
   const { 
@@ -76,12 +76,12 @@ export default function CartDrawer() {
                 </div>
                 <h3 className="font-medium text-lg mb-2">Your cart is empty</h3>
                 <p className="text-gray-500 mb-6">Add some products to get started</p>
-                <button
+                <Button
+                  variant="primary"
                   onClick={closeCart}
-                  className="bg-black text-white px-6 py-2 font-medium hover:bg-gray-800 transition-colors"
                 >
                   Continue Shopping
-                </button>
+                </Button>
               </div>
             ) : (
               <>
@@ -174,22 +174,26 @@ export default function CartDrawer() {
 
                   {/* Action Buttons */}
                   <div className="space-y-2">
-                    <Link
+                    <Button
+                      as="link"
                       href="/cart"
+                      variant="secondary"
+                      size="lg"
+                      fullWidth
                       onClick={closeCart}
-                      className="block w-full text-center bg-gray-200 text-gray-800 py-3 font-medium hover:bg-gray-300 transition-colors"
                     >
                       View Cart
-                    </Link>
-                    <button
-                      onClick={() => {
-                        // TODO: Implement checkout
-                        alert('Checkout functionality coming soon!');
-                      }}
-                      className="w-full bg-black text-white py-3 font-medium hover:bg-gray-800 transition-colors"
+                    </Button>
+                    <Button
+                      as="link"
+                      href="/checkout"
+                      variant="primary"
+                      size="lg"
+                      fullWidth
+                      onClick={closeCart}
                     >
                       Checkout
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </>

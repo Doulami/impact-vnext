@@ -215,3 +215,55 @@ body {
 .animate-fade-in-backdrop {
   animation: fade-in-backdrop 0.2s ease-out;
 }
+
+/* Navigation bar gradient wave animation */
+@keyframes gradient-wave {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.nav-gradient-wave {
+  --nav-dark: #0d3d80;
+  --nav-medium: #1a5acc;
+  --nav-primary: var(--brand-primary);
+  --nav-light: #5a9aff;
+  
+  background: linear-gradient(
+    90deg,
+    var(--nav-dark) 0%,
+    var(--nav-medium) 20%,
+    var(--nav-primary) 40%,
+    var(--nav-light) 50%,
+    var(--nav-primary) 60%,
+    var(--nav-medium) 80%,
+    var(--nav-dark) 100%
+  );
+  background-size: 300% 100%;
+  animation: gradient-wave 6s ease infinite;
+}
+
+/* Navigation text styles */
+.nav-text {
+  color: white !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.nav-text:hover {
+  color: rgb(229, 229, 229) !important;
+}
+
+/* Ensure nav gradient text stays white */
+#main-navigation .nav-text {
+  color: white !important;
+}
+
+#main-navigation .nav-text:hover {
+  color: rgb(229, 229, 229) !important;
+}

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Eye, EyeOff, LogIn, AlertCircle, CheckCircle, X } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import Header from '@/components/Header';
+import Button from '@/components/Button';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -121,7 +122,7 @@ export default function LoginPage() {
           <div className="text-center">
             <Link href="/" className="inline-block mb-8">
               <img 
-                src="/impactlogo.webp" 
+                src="/logoimpactdark.png" 
                 alt="Impact Nutrition" 
                 className="h-12 mx-auto"
               />
@@ -254,23 +255,19 @@ export default function LoginPage() {
             </div>
 
             {/* Submit Button */}
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              size="lg"
+              fullWidth
               disabled={isSubmitting}
-              className="w-full bg-black text-white py-3 px-4 rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center gap-2"
+              loading={isSubmitting}
             >
-              {isSubmitting ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Signing in...
-                </>
-              ) : (
-                <>
-                  <LogIn className="w-5 h-5" />
-                  Sign in
-                </>
-              )}
-            </button>
+              <span className="flex items-center justify-center gap-2">
+                <LogIn className="w-5 h-5" />
+                Sign in
+              </span>
+            </Button>
 
             {/* Sign up link */}
             <div className="text-center">

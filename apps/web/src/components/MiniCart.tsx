@@ -2,9 +2,9 @@
 
 import { useCart } from '@/lib/hooks/useCart';
 import { ShoppingCart, Trash2 } from 'lucide-react';
-import Link from 'next/link';
 import { useState } from 'react';
 import ConfirmationModal from './ConfirmationModal';
+import Button from './Button';
 
 export default function MiniCart() {
   const { 
@@ -120,25 +120,27 @@ export default function MiniCart() {
               </div>
 
               <div className="space-y-2">
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  fullWidth
                   onClick={() => {
                     handleClose();
                     toggleCart();
                   }}
-                  className="w-full bg-gray-200 text-gray-800 py-2 text-sm font-medium hover:bg-gray-300 transition-colors"
                 >
                   View Cart
-                </button>
-                <button
-                  onClick={() => {
-                    handleClose();
-                    // TODO: Implement checkout
-                    alert('Checkout functionality coming soon!');
-                  }}
-                  className="w-full bg-black text-white py-2 text-sm font-medium hover:bg-gray-800 transition-colors"
+                </Button>
+                <Button
+                  as="link"
+                  href="/checkout"
+                  variant="primary"
+                  size="sm"
+                  fullWidth
+                  onClick={handleClose}
                 >
                   Checkout
-                </button>
+                </Button>
               </div>
             </div>
           </div>
