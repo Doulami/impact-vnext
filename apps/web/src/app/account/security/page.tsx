@@ -437,6 +437,7 @@ export default function SecuritySettings() {
             </div>
           </div>
         </div>
+        </div>
       </div>
       <Footer />
     </div>

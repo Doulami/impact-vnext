@@ -234,6 +234,7 @@ export default function AccountDashboard() {
             </p>
           </div>
         </div>
+        </div>
       </div>
       <Footer />
     </div>
