@@ -1,29 +1,5 @@
 import { addActionBarItem } from '@vendure/admin-ui/core';
-import gql from 'graphql-tag';
-import { firstValueFrom } from 'rxjs';
-import { map } from 'rxjs/operators';
 
-const MANUALLY_VERIFY_CUSTOMER = gql`
-  mutation ManuallyVerifyCustomer($customerId: ID!) {
-    manuallyVerifyCustomer(customerId: $customerId) {
-      ... on ManualVerifyCustomerSuccess {
-        success
-        message
-        customer {
-          id
-          emailAddress
-          user {
-            verified
-          }
-        }
-      }
-      ... on ManualVerifyCustomerError {
-        errorCode
-        message
-      }
-    }
-  }
-`;
 
 export default [
   addActionBarItem({
@@ -31,36 +7,44 @@ export default [
     label: 'Verify Customer',
     locationId: 'customer-detail',
     icon: 'check-circle',
-    buttonState: (context) => {
-      return context.entity$.pipe(
-        map((customer: any) => {
-          // Only show button if customer is not verified
-          const isVerified = customer?.user?.verified;
-          return {
-            disabled: false,
-            visible: !isVerified,
-          };
-        })
-      );
-    },
     onClick: async (event, context) => {
+      const customerId = context.route.snapshot.params.id;
+      
       try {
-        const customerId = context.route.snapshot.params.id;
-        
-        const result = await firstValueFrom(
-          context.dataService.mutate(MANUALLY_VERIFY_CUSTOMER, {
-            customerId,
-          })
-        );
+        const response = await fetch('http://localhost:3000/admin-api', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            query: `
+              mutation ManuallyVerifyCustomer($customerId: ID!) {
+                manuallyVerifyCustomer(customerId: $customerId) {
+                  ... on ManualVerifyCustomerSuccess {
+                    success
+                    message
+                    customer {
+                      emailAddress
+                    }
+                  }
+                  ... on ManualVerifyCustomerError {
+                    message
+                  }
+                }
+              }
+            `,
+            variables: { customerId },
+          }),
+        });
 
-        const verification = (result as any).manuallyVerifyCustomer;
+        const result = await response.json();
+        const verification = result.data.manuallyVerifyCustomer;
         
         if (verification.success) {
           context.notificationService.success(
             `Customer ${verification.customer.emailAddress} verified successfully!`
           );
-          
-          // Refresh the current page to show updated verification status
           window.location.reload();
         } else {
           context.notificationService.error(

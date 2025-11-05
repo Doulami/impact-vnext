@@ -30,6 +30,10 @@ export const config: VendureConfig = {
         ...(IS_DEV ? {
             adminApiDebug: true,
             shopApiDebug: true,
+            cors: {
+                origin: ['http://localhost:4200', 'http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
+                credentials: true,
+            },
         } : {}),
     },
     authOptions: {
@@ -40,6 +44,7 @@ export const config: VendureConfig = {
         },
         cookieOptions: {
           secret: process.env.COOKIE_SECRET,
+          sameSite: 'lax',
         },
     },
     dbConnectionOptions: {
@@ -103,6 +108,10 @@ export const config: VendureConfig = {
                 ],
                 devMode: IS_DEV,
             }),
+            adminUiConfig: {
+                apiHost: 'http://localhost',
+                apiPort: serverPort,
+            },
             compatibilityMode: true,
         }),
         DashboardPlugin.init({
