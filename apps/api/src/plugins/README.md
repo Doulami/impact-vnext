@@ -14,6 +14,35 @@ This custom Vendure plugin adds Admin API mutations and queries to manually veri
 
 The plugin is automatically loaded in the Vendure configuration. No additional setup required.
 
+## Quick Start
+
+1. **Start the API**: Make sure Vendure is running on `http://localhost:3000`
+2. **Access GraphQL**: Go to `http://localhost:3000/admin-api` 
+3. **Find unverified customers**:
+   ```graphql
+   query { unverifiedCustomers(options: { take: 10 }) { items { id emailAddress firstName lastName } } }
+   ```
+4. **Verify a customer**:
+   ```graphql
+   mutation { manuallyVerifyCustomer(customerId: "1") { ... on ManualVerifyCustomerSuccess { success message } } }
+   ```
+
+## How to Access
+
+### Via GraphQL Playground (Recommended)
+
+1. **Open Vendure Admin**: http://localhost:3002/admin
+2. **Login** with admin credentials
+3. **Go to GraphQL Playground**: http://localhost:3000/admin-api (or click the GraphQL icon in admin)
+4. **Use the mutations/queries** below
+
+### Via Vendure Admin UI
+
+The plugin adds GraphQL operations that can be accessed through:
+- The built-in GraphQL playground in Vendure Admin
+- Custom admin UI extensions (if you want to add buttons)
+- Third-party GraphQL clients
+
 ## Admin API Usage
 
 ### 1. Get Unverified Customers
