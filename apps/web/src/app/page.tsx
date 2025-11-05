@@ -1,53 +1,14 @@
 'use client';
 
-import { User, Menu } from 'lucide-react';
 import { FeaturedProducts } from '@/components/FeaturedProducts';
 import Link from 'next/link';
-import MiniCart from '@/components/MiniCart';
-import SearchBar from '@/components/SearchBar';
+import Header from '@/components/Header';
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-white">
-      {/* Top Announcement Bar */}
-      <div id="top-announcement" className="bg-black text-white text-center py-2 text-xs">
-        <p>Save $5 on your FIRST $30+ order • 25% off ALL code <strong>PRO25</strong> through 1/02/25</p>
-      </div>
-
       {/* Header */}
-      <header id="main-header" className="bg-black text-white">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between py-3">
-            {/* Logo */}
-            <Link href="/" id="header-logo" className="flex items-center">
-              <img src="/impactlogo.webp" alt="Impact Nutrition" className="h-8" />
-            </Link>
-            
-            {/* Search Bar */}
-            <div id="header-search" className="flex-1 max-w-md mx-8">
-              <SearchBar placeholder="Search products..." />
-            </div>
-            
-            {/* Header Actions */}
-            <div id="header-actions" className="flex items-center gap-6 text-xs">
-              <a href="#" className="hover:text-gray-300">Help & Support</a>
-              <User className="w-5 h-5 cursor-pointer" />
-              <MiniCart />
-            </div>
-          </div>
-          
-          {/* Main Navigation */}
-          <nav id="main-nav" className="border-t border-gray-800">
-            <ul className="flex items-center justify-center gap-8 py-3 text-xs font-medium">
-              <li><Link href="/products" className="hover:text-gray-300">SHOP BY PRODUCT</Link></li>
-              <li><a href="#goals-section" className="hover:text-gray-300">SHOP BY GOALS</a></li>
-              <li><a href="#" className="hover:text-gray-300">BUNDLES</a></li>
-              <li><a href="#" className="hover:text-gray-300">ATHLETES</a></li>
-              <li><a href="#" className="text-red-500 hover:text-red-400">SPECIAL DEALS</a></li>
-            </ul>
-          </nav>
-        </div>
-      </header>
+      <Header />
 
       {/* Hero Banner - Split Design */}
       <section id="hero-banner" className="grid lg:grid-cols-2">

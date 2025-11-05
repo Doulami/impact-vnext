@@ -10,15 +10,27 @@ import Link from 'next/link';
 interface SearchBarProps {
   placeholder?: string;
   className?: string;
+  initialValue?: string;
+  showDropdown?: boolean;
 }
 
-export default function SearchBar({ placeholder = "Search products...", className = "" }: SearchBarProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+export default function SearchBar({ 
+  placeholder = "Search products...", 
+  className = "",
+  initialValue = "",
+  showDropdown = true
+}: SearchBarProps) {
+  const [searchTerm, setSearchTerm] = useState(initialValue);
   const [isOpen, setIsOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // Update search term when initial value changes (e.g., from URL)
+  useEffect(() => {
+    setSearchTerm(initialValue);
+  }, [initialValue]);
 
   // Debounce search term to avoid too many API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -138,7 +150,7 @@ export default function SearchBar({ placeholder = "Search products...", classNam
       </form>
 
       {/* Search Results Dropdown */}
-      {isOpen && (isFocused || searchTerm) && (
+      {showDropdown && isOpen && (isFocused || searchTerm) && (
         <div 
           ref={dropdownRef}
           className="absolute top-full left-0 right-0 bg-white border border-gray-200 shadow-lg z-50 max-h-96 overflow-hidden"

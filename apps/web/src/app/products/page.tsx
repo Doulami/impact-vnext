@@ -9,8 +9,12 @@ import Link from 'next/link';
 import { useCart } from '@/lib/hooks/useCart';
 import MiniCart from '@/components/MiniCart';
 import SearchBar from '@/components/SearchBar';
+import Header from '@/components/Header';
+import { useSearchParams } from 'next/navigation';
 
 function ProductsPageContent() {
+  const searchParams = useSearchParams();
+  const currentSearchTerm = searchParams.get('search') || searchParams.get('q') || '';
   const { getSearchInputFromUrl, updateUrl, getActiveFilters, clearFilter, clearAllFilters } = useUrlState();
   
   // Initialize search with URL params
@@ -28,6 +32,7 @@ function ProductsPageContent() {
     setCollection,
     setPriceRange,
     setInStock,
+    setTerm,
     setFacetFilters,
     clearFilters,
     urlSearchInput,
@@ -43,7 +48,8 @@ function ProductsPageContent() {
   const handleClearFilter = (filter: { id: string; type: string }) => {
     switch (filter.type) {
       case 'search':
-        // Clear search term - this will be handled by URL state
+        // Clear search term - update both URL and search state
+        setTerm(undefined);
         clearFilter('search', 'search');
         break;
       case 'collection':
@@ -84,39 +90,10 @@ function ProductsPageContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-black text-white sticky top-0 z-50">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between py-3">
-            {/* Logo */}
-            <Link href="/" className="flex items-center">
-              <img src="/impactlogo.webp" alt="Impact Nutrition" className="h-8" />
-            </Link>
-            
-            {/* Search Bar */}
-            <div className="flex-1 max-w-md mx-8">
-              <SearchBar placeholder="Search products..." />
-            </div>
-            
-            {/* Header Actions */}
-            <div className="flex items-center gap-6 text-xs">
-              <a href="#" className="hover:text-gray-300">Help & Support</a>
-              <User className="w-5 h-5 cursor-pointer" />
-              <MiniCart />
-            </div>
-          </div>
-          
-          {/* Main Navigation */}
-          <nav className="border-t border-gray-800">
-            <ul className="flex items-center justify-center gap-8 py-3 text-xs font-medium">
-              <li><Link href="/products" className="text-white font-bold">SHOP BY PRODUCT</Link></li>
-              <li><Link href="/#goals-section" className="hover:text-gray-300">SHOP BY GOALS</Link></li>
-              <li><a href="#" className="hover:text-gray-300">BUNDLES</a></li>
-              <li><a href="#" className="hover:text-gray-300">ATHLETES</a></li>
-              <li><a href="#" className="text-red-500 hover:text-red-400">SPECIAL DEALS</a></li>
-            </ul>
-          </nav>
-        </div>
-      </header>
+      <Header 
+        showSearchDropdown={false} 
+        className="sticky top-0 z-50"
+      />
 
       {/* Page Header */}
       <div className="bg-white border-b">
