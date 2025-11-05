@@ -1,6 +1,47 @@
-# impact-vnext
+# Impact Nutrition E-commerce Platform 🏋️‍♂️
 
-Modern composable commerce stack: **Vendure** (Node/TS) + **Next.js** (App Router) + **Strapi** CMS.
+A modern, full-stack e-commerce solution for sports nutrition products, built with Next.js 16 and Strapi 5.
+
+![Next.js](https://img.shields.io/badge/Next.js-16.0.1-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
+![Tailwind](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC)
+![Strapi](https://img.shields.io/badge/Strapi-5.3-8E75FF)
+
+## ✨ Completed Features
+
+### 🛒 **Shopping Cart System** (Ready for Production)
+- **Smart Cart Dropdown**: Click-to-open with product preview and quick actions
+- **Persistent Storage**: Cart survives browser sessions with localStorage
+- **Smooth Animations**: Drawer slides, badges zoom, professional UX
+- **Full Cart Page**: Desktop experience with quantity management
+- **Real-time Updates**: Live totals, item counts, and inventory status
+- **Mobile Optimized**: Touch-friendly interface across all devices
+
+### 🏪 **Product Catalog** 
+- **Product Listing Page**: Advanced filtering, sorting, and search
+- **Product Detail Pages**: Variant selection, image galleries, reviews
+- **Smart Buttons**: "ADD TO CART" vs "CHOOSE OPTIONS" based on variants
+- **GraphQL Integration**: Real-time data from Vendure e-commerce platform
+- **SEO Optimized**: Dynamic meta tags, structured data, performance
+
+### 📝 **Content Management**
+- **Strapi CMS**: Headless content management with admin dashboard
+- **Article System**: Blog functionality with rich content editing
+- **Media Management**: Image uploads, optimization, and delivery
+- **TypeScript Integration**: Generated types for type-safe development
+
+## 🚀 Quick Start
+
+```bash
+git clone https://github.com/Doulami/impact-vnext.git
+cd impact-vnext
+npm install
+npm run dev
+```
+
+**That's it!** 🎉
+- **Web App**: http://localhost:3000 - Full e-commerce experience
+- **CMS Admin**: http://localhost:1337/admin - Content management
 
 ## Stack
 - **Backend**: Vendure (GraphQL Shop/Admin APIs, plugins)
@@ -78,8 +119,56 @@ impact-vnext/
 3. Check [Architecture Overview](docs/architecture/stack-overview.md) for data flows.
 4. Review [Storefront Page Map](docs/specs/storefront-page-map.md) for routes.
 
-## Documentation Index
+## 🛠 Available Scripts
 
-- **Architecture**: [Stack Overview](docs/architecture/stack-overview.md), [Milestones & Acceptance](docs/architecture/milestones-and-acceptance.md)
-- **Specs**: [StoreConfig](docs/specs/store-config.md), [Storefront Pages](docs/specs/storefront-page-map.md), [GPG Payments](docs/specs/payment-gpg.md), [Shipping Bridge](docs/specs/shipping-file-bridge.md), [Loyalty](docs/specs/loyalty.md), [Search](docs/specs/search.md), [Perf & PWA](docs/specs/perf-and-pwa.md), [Admin UI](docs/specs/admin-ui-elevation.md)
-- **Operations**: [Ops Runbook](docs/runbooks/ops.md), [QA Checklist](docs/runbooks/qa-checklist.md)
+### Development
+```bash
+npm run dev          # Start all services (Web + CMS)
+npm run dev:web      # Start Next.js frontend only  
+npm run dev:cms      # Start Strapi CMS only
+```
+
+### Production
+```bash
+npm run build        # Build all applications
+npm run start        # Start production servers
+npm run lint         # Lint all code
+```
+
+### Maintenance
+```bash
+npm run clean        # Clean build artifacts
+npm run install:all  # Reinstall all dependencies
+```
+
+## 📚 Documentation
+
+- **[📋 Installation Guide](./docs/INSTALLATION.md)** - Complete setup instructions for new developers
+- **[🛍 Web App Development](./apps/web/WARP.md)** - Frontend development guide and patterns
+- **[📝 CMS Development](./apps/cms/WARP.md)** - Backend content management guide
+
+## 🚨 Troubleshooting
+
+**Port conflicts:**
+```bash
+lsof -ti:3000 | xargs kill -9  # Kill Next.js
+lsof -ti:1337 | xargs kill -9  # Kill Strapi
+```
+
+**Build issues:**
+```bash
+npm run clean && npm install && npm run dev
+```
+
+## 🏆 Built With
+
+- **[Next.js](https://nextjs.org/)** - React framework for production
+- **[Strapi](https://strapi.io/)** - Open-source headless CMS  
+- **[TypeScript](https://www.typescriptlang.org/)** - Typed JavaScript
+- **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS
+- **[Apollo GraphQL](https://www.apollographql.com/)** - GraphQL client
+- **[Vendure](https://www.vendure.io/)** - E-commerce framework
+
+---
+
+**Ready to build amazing e-commerce experiences!** 🚀
