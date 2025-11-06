@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { SharedModule } from '@vendure/admin-ui/core';
 import { BundleListComponent } from './bundle-list.component';
+import { BundleDetailComponent } from './bundle-detail.component';
 
 @NgModule({
   imports: [
@@ -11,12 +12,17 @@ import { BundleListComponent } from './bundle-list.component';
         path: '',
         pathMatch: 'full',
         component: BundleListComponent,
-        data: {
-          breadcrumb: 'Bundles',
-        },
+        data: { breadcrumb: 'Bundles' },
+      },
+      {
+        path: ':id',
+        component: BundleDetailComponent,
+        data: { breadcrumb: 'Bundle Detail' },
       },
     ]),
   ],
-  declarations: [BundleListComponent],
+  declarations: [BundleListComponent, BundleDetailComponent],
+})
+export class BundleUiModule {}
 })
 export class BundleUiModule {}

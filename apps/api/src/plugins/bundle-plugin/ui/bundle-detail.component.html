@@ -1,0 +1,237 @@
+<vdr-page-block>
+    <vdr-action-bar>
+        <vdr-ab-left>
+            <vdr-page-title
+                [title]="isNew ? 'Create Bundle' : bundle?.name"
+                [subtitle]="isNew ? '' : bundle?.id">
+            </vdr-page-title>
+        </vdr-ab-left>
+        <vdr-ab-right>
+            <button class="btn btn-secondary" (click)="cancel()">
+                <clr-icon shape="times"></clr-icon>
+                Cancel
+            </button>
+            <button class="btn btn-primary" (click)="save()" [disabled]="bundleForm.invalid">
+                <clr-icon shape="check"></clr-icon>
+                {{ isNew ? 'Create' : 'Update' }}
+            </button>
+            <button *ngIf="!isNew" class="btn btn-danger" (click)="delete()">
+                <clr-icon shape="trash"></clr-icon>
+                Delete
+            </button>
+        </vdr-ab-right>
+    </vdr-action-bar>
+</vdr-page-block>
+
+<form [formGroup]="bundleForm" class="form">
+    <vdr-page-block>
+        <vdr-card [title]="'Bundle Details'">
+            <div class="clr-form-control">
+                <label class="clr-control-label required">Name</label>
+                <input
+                    type="text"
+                    formControlName="name"
+                    class="clr-input"
+                    placeholder="Enter bundle name"
+                />
+            </div>
+
+            <div class="clr-form-control">
+                <label class="clr-control-label">Slug</label>
+                <input
+                    type="text"
+                    formControlName="slug"
+                    class="clr-input"
+                    placeholder="bundle-slug (optional)"
+                />
+            </div>
+
+            <div class="clr-form-control">
+                <label class="clr-control-label">Description</label>
+                <textarea
+                    formControlName="description"
+                    class="clr-textarea"
+                    rows="3"
+                    placeholder="Enter bundle description"
+                ></textarea>
+            </div>
+
+            <div class="clr-form-control">
+                <label class="clr-control-label required">Price</label>
+                <input
+                    type="number"
+                    formControlName="price"
+                    class="clr-input"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                />
+            </div>
+
+            <div class="clr-form-control">
+                <label class="clr-control-label">Category</label>
+                <input
+                    type="text"
+                    formControlName="category"
+                    class="clr-input"
+                    placeholder="e.g. seasonal, gift-sets"
+                />
+            </div>
+
+            <div class="clr-form-control">
+                <label class="clr-control-label">
+                    <input
+                        type="checkbox"
+                        formControlName="enabled"
+                        class="clr-checkbox"
+                    />
+                    Enabled
+                </label>
+            </div>
+        </vdr-card>
+    </vdr-page-block>
+
+    <vdr-page-block>
+        <vdr-card [title]="'Bundle Items'">
+            <div class="bundle-items-header">
+                <button type="button" class="btn btn-sm btn-success" (click)="addBundleItem()">
+                    <clr-icon shape="plus"></clr-icon>
+                    Add Item
+                </button>
+                <p class="help-text">
+                    Add product variants to this bundle. Each bundle must have at least one item (max 10).
+                </p>
+            </div>
+
+            <div formArrayName="items" class="bundle-items-list">
+                <div
+                    *ngFor="let item of items.controls; let i = index"
+                    [formGroupName]="i"
+                    class="bundle-item"
+                >
+                    <div class="bundle-item-header">
+                        <h4>Item {{ i + 1 }}</h4>
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-danger-outline"
+                            (click)="removeBundleItem(i)"
+                        >
+                            <clr-icon shape="times"></clr-icon>
+                            Remove
+                        </button>
+                    </div>
+
+                    <div class="bundle-item-fields">
+                        <div class="clr-form-control variant-search">
+                            <label class="clr-control-label required">Product Variant</label>
+                            <input
+                                type="text"
+                                class="clr-input"
+                                placeholder="Search by name or SKU..."
+                                (input)="searchVariants($event.target.value, i)"
+                                [value]="item.get('productVariantName')?.value"
+                            />
+                            <div class="search-results" *ngIf="variantSearchResults.length > 0">
+                                <div
+                                    *ngFor="let variant of variantSearchResults"
+                                    class="search-result-item"
+                                    (click)="selectVariant(variant, i)"
+                                >
+                                    <strong>{{ variant.productVariantName }}</strong>
+                                    <span class="sku">{{ variant.sku }}</span>
+                                    <span class="price">{{ variant.price.value | currency }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="clr-form-control">
+                            <label class="clr-control-label required">Quantity</label>
+                            <input
+                                type="number"
+                                formControlName="quantity"
+                                class="clr-input"
+                                min="1"
+                                placeholder="1"
+                            />
+                        </div>
+
+                        <div class="clr-form-control">
+                            <label class="clr-control-label required">Unit Price</label>
+                            <input
+                                type="number"
+                                formControlName="unitPrice"
+                                class="clr-input"
+                                min="0"
+                                step="0.01"
+                                placeholder="0.00"
+                            />
+                        </div>
+
+                        <div class="clr-form-control">
+                            <label class="clr-control-label">Display Order</label>
+                            <input
+                                type="number"
+                                formControlName="displayOrder"
+                                class="clr-input"
+                                min="0"
+                                placeholder="0"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <div *ngIf="items.length === 0" class="no-items">
+                    <p>No items added yet. Click "Add Item" to start building your bundle.</p>
+                </div>
+            </div>
+        </vdr-card>
+    </vdr-page-block>
+
+    <vdr-page-block *ngIf="!isNew && analytics">
+        <vdr-card [title]="'Bundle Analytics'">
+            <div class="analytics-grid">
+                <div class="analytics-item">
+                    <div class="label">Total Components</div>
+                    <div class="value">{{ analytics.totalComponents }}</div>
+                </div>
+                <div class="analytics-item">
+                    <div class="label">Component Total</div>
+                    <div class="value">{{ analytics.componentTotal | currency }}</div>
+                </div>
+                <div class="analytics-item">
+                    <div class="label">Bundle Price</div>
+                    <div class="value">{{ analytics.bundlePrice | currency }}</div>
+                </div>
+                <div class="analytics-item">
+                    <div class="label">Total Savings</div>
+                    <div class="value savings">{{ analytics.totalSavings | currency }}</div>
+                </div>
+                <div class="analytics-item">
+                    <div class="label">Savings Percentage</div>
+                    <div class="value savings">{{ analytics.savingsPercentage | number:'1.2-2' }}%</div>
+                </div>
+            </div>
+
+            <div class="stock-validation" *ngIf="analytics.availabilityStatus">
+                <h4>Stock Availability</h4>
+                <div class="validation-status" [class.valid]="analytics.availabilityStatus.valid" [class.invalid]="!analytics.availabilityStatus.valid">
+                    <clr-icon [attr.shape]="analytics.availabilityStatus.valid ? 'check-circle' : 'exclamation-circle'"></clr-icon>
+                    <span *ngIf="analytics.availabilityStatus.valid">
+                        In Stock - Max {{ analytics.availabilityStatus.maxQuantityAvailable }} available
+                    </span>
+                    <span *ngIf="!analytics.availabilityStatus.valid">
+                        {{ analytics.availabilityStatus.message }}
+                    </span>
+                </div>
+                <div *ngIf="analytics.availabilityStatus.constrainingVariants.length > 0" class="constraining-variants">
+                    <strong>Constraining Variants:</strong>
+                    <ul>
+                        <li *ngFor="let variant of analytics.availabilityStatus.constrainingVariants">
+                            {{ variant.name }}
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </vdr-card>
+    </vdr-page-block>
+</form>
