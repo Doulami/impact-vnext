@@ -24,5 +24,3 @@ import { BundleDetailComponent } from './bundle-detail.component';
   declarations: [BundleListComponent, BundleDetailComponent],
 })
 export class BundleUiModule {}
-})
-export class BundleUiModule {}

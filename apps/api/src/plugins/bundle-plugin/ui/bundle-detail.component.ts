@@ -191,8 +191,8 @@ export class BundleDetailComponent implements OnInit {
 
         this.dataService
             .query(SEARCH_PRODUCT_VARIANTS, { term, take: 10 })
-            .single$.subscribe(({ search }) => {
-                this.variantSearchResults = search.items || [];
+            .single$.subscribe((data: any) => {
+                this.variantSearchResults = data.search?.items || [];
                 this.changeDetector.markForCheck();
             });
     }
@@ -209,7 +209,8 @@ export class BundleDetailComponent implements OnInit {
     }
 
     private loadBundle(id: string) {
-        this.dataService.query(GET_BUNDLE, { id }).single$.subscribe(({ bundle }) => {
+        this.dataService.query(GET_BUNDLE, { id }).single$.subscribe((data: any) => {
+            const bundle = data.bundle;
             if (!bundle) {
                 this.notificationService.error(_('Bundle not found'));
                 this.router.navigate(['/extensions/bundles']);
@@ -242,8 +243,8 @@ export class BundleDetailComponent implements OnInit {
     private loadAnalytics(bundleId: string) {
         this.dataService
             .query(GET_BUNDLE_ANALYTICS, { bundleId })
-            .single$.subscribe(({ bundleAnalytics }) => {
-                this.analytics = bundleAnalytics;
+            .single$.subscribe((data: any) => {
+                this.analytics = data.bundleAnalytics;
                 this.changeDetector.markForCheck();
             });
     }
@@ -280,14 +281,13 @@ export class BundleDetailComponent implements OnInit {
 
             this.dataService
                 .mutate(CREATE_BUNDLE, { input })
-                .subscribe({
-                    next: ({ createBundle }) => {
+                .subscribe((result: any) => {
+                    if (result.createBundle) {
                         this.notificationService.success(_('Bundle created successfully'));
-                        this.router.navigate(['/extensions/bundles', createBundle.id]);
-                    },
-                    error: err => {
-                        this.notificationService.error(_('Error creating bundle: ' + err.message));
-                    },
+                        this.router.navigate(['/extensions/bundles', result.createBundle.id]);
+                    }
+                }, (err: any) => {
+                    this.notificationService.error(_('Error creating bundle: ' + err.message));
                 });
         } else {
             const input = {
@@ -304,14 +304,11 @@ export class BundleDetailComponent implements OnInit {
 
             this.dataService
                 .mutate(UPDATE_BUNDLE, { input })
-                .subscribe({
-                    next: () => {
-                        this.notificationService.success(_('Bundle updated successfully'));
-                        this.loadBundle(this.bundle.id);
-                    },
-                    error: err => {
-                        this.notificationService.error(_('Error updating bundle: ' + err.message));
-                    },
+                .subscribe(() => {
+                    this.notificationService.success(_('Bundle updated successfully'));
+                    this.loadBundle(this.bundle.id);
+                }, (err: any) => {
+                    this.notificationService.error(_('Error updating bundle: ' + err.message));
                 });
         }
     }
@@ -323,20 +320,18 @@ export class BundleDetailComponent implements OnInit {
 
         this.dataService
             .mutate(DELETE_BUNDLE, { id: this.bundle.id })
-            .subscribe({
-                next: ({ deleteBundle }) => {
-                    if (deleteBundle.result === 'DELETED') {
-                        this.notificationService.success(_('Bundle deleted successfully'));
-                        this.router.navigate(['/extensions/bundles']);
-                    } else {
-                        this.notificationService.error(
-                            _('Error deleting bundle: ' + deleteBundle.message)
-                        );
-                    }
-                },
-                error: err => {
-                    this.notificationService.error(_('Error deleting bundle: ' + err.message));
-                },
+            .subscribe((result: any) => {
+                const deleteBundle = result.deleteBundle;
+                if (deleteBundle.result === 'DELETED') {
+                    this.notificationService.success(_('Bundle deleted successfully'));
+                    this.router.navigate(['/extensions/bundles']);
+                } else {
+                    this.notificationService.error(
+                        _('Error deleting bundle: ' + deleteBundle.message)
+                    );
+                }
+            }, (err: any) => {
+                this.notificationService.error(_('Error deleting bundle: ' + err.message));
             });
     }
 

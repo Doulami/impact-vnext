@@ -1,10 +1,7 @@
 <vdr-page-block>
     <vdr-action-bar>
         <vdr-ab-left>
-            <vdr-page-title
-                [title]="isNew ? 'Create Bundle' : bundle?.name"
-                [subtitle]="isNew ? '' : bundle?.id">
-            </vdr-page-title>
+            <vdr-page-title [title]="isNew ? 'Create Bundle' : bundle?.name"></vdr-page-title>
         </vdr-ab-left>
         <vdr-ab-right>
             <button class="btn btn-secondary" (click)="cancel()">
