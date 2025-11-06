@@ -69,22 +69,6 @@ const DELETE_BUNDLE = gql`
     }
 `;
 
-const SEARCH_PRODUCT_VARIANTS = gql`
-    query SearchProductVariants($term: String!, $take: Int) {
-        search(input: { term: $term, take: $take, groupByProduct: false }) {
-            items {
-                productVariantId
-                productVariantName
-                sku
-                price {
-                    ... on SinglePrice {
-                        value
-                    }
-                }
-            }
-        }
-    }
-`;
 
 const GET_BUNDLE_ANALYTICS = gql`
     query GetBundleAnalytics($bundleId: ID!) {
@@ -122,7 +106,6 @@ export class BundleDetailComponent implements OnInit {
     bundle: any;
     analytics: any;
     isNew = false;
-    variantSearchResults: any[] = [];
 
     constructor(
         private route: ActivatedRoute,
@@ -167,6 +150,7 @@ export class BundleDetailComponent implements OnInit {
             id: [item?.id || null],
             productVariantId: [item?.productVariant?.id || '', Validators.required],
             productVariantName: [item?.productVariant?.name || ''],
+            productVariantSku: [item?.productVariant?.sku || ''],
             quantity: [item?.quantity || 1, [Validators.required, Validators.min(1)]],
             unitPrice: [item?.unitPrice || 0, [Validators.required, Validators.min(0)]],
             displayOrder: [item?.displayOrder || 0],
@@ -183,28 +167,27 @@ export class BundleDetailComponent implements OnInit {
         this.changeDetector.markForCheck();
     }
 
-    searchVariants(term: string, index: number) {
-        if (!term || term.length < 2) {
-            this.variantSearchResults = [];
-            return;
-        }
-
-        this.dataService
-            .query(SEARCH_PRODUCT_VARIANTS, { term, take: 10 })
-            .single$.subscribe((data: any) => {
-                this.variantSearchResults = data.search?.items || [];
-                this.changeDetector.markForCheck();
-            });
-    }
-
-    selectVariant(variant: any, index: number) {
+    onProductVariantSelected(variant: any, index: number) {
         const itemGroup = this.items.at(index) as FormGroup;
+        const price = variant.price.__typename === 'SinglePrice' ? variant.price.value : 0;
+        
         itemGroup.patchValue({
             productVariantId: variant.productVariantId,
             productVariantName: variant.productVariantName,
-            unitPrice: variant.price.value,
+            productVariantSku: variant.sku,
+            unitPrice: price,
         });
-        this.variantSearchResults = [];
+        this.changeDetector.markForCheck();
+    }
+
+    clearVariant(index: number) {
+        const itemGroup = this.items.at(index) as FormGroup;
+        itemGroup.patchValue({
+            productVariantId: '',
+            productVariantName: '',
+            productVariantSku: '',
+            unitPrice: 0,
+        });
         this.changeDetector.markForCheck();
     }
 

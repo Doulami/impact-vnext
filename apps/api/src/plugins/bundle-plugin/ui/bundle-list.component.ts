@@ -6,6 +6,26 @@ import gql from 'graphql-tag';
 @Component({
   selector: 'bundle-list',
   standalone: false,
+  styles: [`
+    .bundle-meta {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+      font-size: 0.875rem;
+    }
+    .category-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      background-color: #e8f4f8;
+      color: #0066cc;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .text-muted {
+      color: #666;
+    }
+  `],
   template: `
     <vdr-page-block>
       <vdr-action-bar>
@@ -29,25 +49,43 @@ import gql from 'graphql-tag';
         [currentPage]="currentPage"
         (pageChange)="setPage($event)"
       >
-        <vdr-dt-column>Name</vdr-dt-column>
-        <vdr-dt-column>Price</vdr-dt-column>
-        <vdr-dt-column>Status</vdr-dt-column>
-        <vdr-dt-column>Items</vdr-dt-column>
-
-        <ng-template let-bundle="item">
-          <td class="left align-middle">
+        <vdr-dt-column [heading]="'ID'" [hiddenByDefault]="true">
+          <ng-template let-bundle="item">
+            {{ bundle.id }}
+          </ng-template>
+        </vdr-dt-column>
+        
+        <vdr-dt-column [heading]="'Name'" [expand]="true">
+          <ng-template let-bundle="item">
             <a [routerLink]="['./', bundle.id]" class="button-ghost">
-              {{ bundle.name }}
+              <strong>{{ bundle.name }}</strong>
             </a>
-          </td>
-          <td class="left align-middle">{{ bundle.price | currency }}</td>
-          <td class="left align-middle">
+            <div class="bundle-meta">
+              <span class="text-muted">{{ bundle.items?.length || 0 }} items</span>
+              <span *ngIf="bundle.category" class="category-badge">{{ bundle.category }}</span>
+            </div>
+          </ng-template>
+        </vdr-dt-column>
+
+        <vdr-dt-column [heading]="'Price'">
+          <ng-template let-bundle="item">
+            <strong>{{ bundle.price | currency }}</strong>
+          </ng-template>
+        </vdr-dt-column>
+
+        <vdr-dt-column [heading]="'Status'">
+          <ng-template let-bundle="item">
             <vdr-chip [colorType]="bundle.enabled ? 'success' : 'warning'">
               {{ bundle.enabled ? 'Enabled' : 'Disabled' }}
             </vdr-chip>
-          </td>
-          <td class="left align-middle">{{ bundle.items?.length || 0 }} items</td>
-        </ng-template>
+          </ng-template>
+        </vdr-dt-column>
+
+        <vdr-dt-column [heading]="'Updated'">
+          <ng-template let-bundle="item">
+            {{ bundle.updatedAt | date:'short' }}
+          </ng-template>
+        </vdr-dt-column>
       </vdr-data-table>
     </vdr-page-block>
   `,
@@ -78,6 +116,8 @@ export class BundleListComponent implements OnInit {
             name
             price
             enabled
+            category
+            updatedAt
             items {
               id
             }

@@ -119,25 +119,25 @@
                     </div>
 
                     <div class="bundle-item-fields">
-                        <div class="clr-form-control variant-search">
+                        <div class="clr-form-control">
                             <label class="clr-control-label required">Product Variant</label>
-                            <input
-                                type="text"
-                                class="clr-input"
-                                placeholder="Search by name or SKU..."
-                                (input)="searchVariants($event.target.value, i)"
-                                [value]="item.get('productVariantName')?.value"
-                            />
-                            <div class="search-results" *ngIf="variantSearchResults.length > 0">
-                                <div
-                                    *ngFor="let variant of variantSearchResults"
-                                    class="search-result-item"
-                                    (click)="selectVariant(variant, i)"
-                                >
-                                    <strong>{{ variant.productVariantName }}</strong>
-                                    <span class="sku">{{ variant.sku }}</span>
-                                    <span class="price">{{ variant.price.value | currency }}</span>
+                            <div *ngIf="!item.get('productVariantId')?.value" class="variant-selector-wrapper">
+                                <vdr-product-variant-selector
+                                    (productSelected)="onProductVariantSelected($event, i)">
+                                </vdr-product-variant-selector>
+                            </div>
+                            <div *ngIf="item.get('productVariantId')?.value" class="selected-variant">
+                                <div class="variant-info">
+                                    <strong>{{ item.get('productVariantName')?.value }}</strong>
+                                    <span class="sku-badge">SKU: {{ item.get('productVariantSku')?.value }}</span>
                                 </div>
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-link"
+                                    (click)="clearVariant(i)"
+                                >
+                                    Change
+                                </button>
                             </div>
                         </div>
 
