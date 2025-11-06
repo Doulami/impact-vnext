@@ -32,9 +32,6 @@ import { BundleAdminResolver } from './api/bundle-admin.resolver';
     // Register services
     providers: [BundleService, BundleOrderService],
     
-    // Dashboard extension
-    dashboard: './dashboard/index.tsx',
-    
     // Register GraphQL resolvers
     shopApiExtensions: {
         resolvers: [ShopApiBundleResolver],
@@ -296,3 +293,4 @@ export class BundlePlugin {}
 export * from './entities/bundle.entity';
 export * from './entities/bundle-item.entity';
 export * from './services/bundle.service';
+export * from './ui/bundle-ui-extension';

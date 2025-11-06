@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@elastic/elasticsearch": "^9.2.0",
+    "@pinelab/vendure-plugin-admin-ui-helpers": "^1.4.0",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vendure/admin-ui-plugin": "^3.5.0",

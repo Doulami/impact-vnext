@@ -15,7 +15,7 @@ import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
 import 'dotenv/config';
 import path from 'path';
 import { CustomerAdminVerificationPlugin } from './plugins/customer-admin-verification.plugin';
-import { BundlePlugin } from './plugins/bundle-plugin/bundle.plugin';
+import { BundlePlugin, bundleUiExtension } from './plugins/bundle-plugin/bundle.plugin';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
 const serverPort = +process.env.PORT || 3000;
@@ -107,6 +107,7 @@ export const config: VendureConfig = {
                         extensionPath: path.join(__dirname, '../ui-extensions'),
                         providers: ['providers.ts'],
                     },
+                    bundleUiExtension,
                 ],
                 devMode: IS_DEV,
             }),
