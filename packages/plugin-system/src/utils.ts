@@ -4,7 +4,7 @@
  * Helper functions for creating and testing plugins
  */
 
-import { Plugin, PluginHooks, PluginTestCase, TestResult, Cart, Discount } from './types';
+import { Plugin, PluginHooks, PluginUIComponents, PluginTestCase, TestResult, Cart, Discount } from './types';
 import { pluginRegistry } from './registry';
 
 /**
@@ -16,6 +16,7 @@ export function createPlugin(config: {
   description?: string;
   enabled?: boolean;
   hooks: PluginHooks;
+  ui?: PluginUIComponents;
   dependencies?: string[];
 }): Plugin {
   return {
@@ -24,6 +25,7 @@ export function createPlugin(config: {
     description: config.description || `Plugin: ${config.name}`,
     enabled: config.enabled !== false, // Default to true
     hooks: config.hooks,
+    ui: config.ui,
     dependencies: config.dependencies || []
   };
 }
@@ -31,7 +33,7 @@ export function createPlugin(config: {
 /**
  * Create a test suite for a plugin
  */
-export function createPluginTestSuite(plugin: Plugin, testCases: PluginTestCase[]): {
+export function createPluginTestSuite(_plugin: Plugin, testCases: PluginTestCase[]): {
   runTests: () => Promise<TestResult[]>;
   runSingleTest: (testCase: PluginTestCase) => Promise<TestResult>;
 } {

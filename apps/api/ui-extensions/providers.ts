@@ -1,6 +1,5 @@
 import { addActionBarItem } from '@vendure/admin-ui/core';
 
-
 export default [
   addActionBarItem({
     id: 'verify-customer-button',

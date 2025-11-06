@@ -32,6 +32,6 @@
     "@vendure/cli": "3.5.0",
     "concurrently": "9.2.1",
     "typescript": "5.8.2",
-    "vite": "^7.2.0"
+    "vite": "6.4.1"
   }
 }

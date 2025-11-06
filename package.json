@@ -31,8 +31,8 @@
     "rxjs": "^7.8.1"
   },
   "engines": {
-    "node": ">=18.17.0",
-    "npm": ">=9.0.0"
+    "node": "22.x",
+    "npm": ">=10.0.0"
   },
   "repository": {
     "type": "git",
@@ -48,5 +48,14 @@
     "monorepo"
   ],
   "author": "Impact Nutrition Team",
-  "license": "MIT"
+  "license": "MIT",
+  "volta": {
+    "node": "22.21.1",
+    "npm": "10.9.4"
+  },
+  "overrides": {
+    "@vendure/dashboard": "3.5.0",
+    "@vitejs/plugin-react-swc": "4.2.0",
+    "@swc/core": "1.15.0"
+  }
 }

@@ -14,8 +14,7 @@ import {
   User, 
   ValidationResult,
   FeatureFlags,
-  PluginContext,
-  EventName
+  PluginContext
 } from './types';
 import { eventManager } from './events';
 
@@ -113,6 +112,13 @@ export class PluginRegistry {
       emit: eventManager.emit.bind(eventManager),
       ...context
     };
+  }
+
+  /**
+   * Get current plugin context
+   */
+  getContext(): PluginContext | null {
+    return this.context;
   }
 
   // ========== Hook Execution Methods ==========

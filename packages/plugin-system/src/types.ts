@@ -4,7 +4,7 @@
  * Core types for the Impact Nutrition plugin architecture
  */
 
-import { ReactComponent } from 'react';
+import React from 'react';
 
 // ========== Core Data Types ==========
 
@@ -138,10 +138,10 @@ export interface PluginHooks {
 }
 
 export interface PluginUIComponents {
-  cartSummary?: ReactComponent;
-  productDetails?: ReactComponent;
-  checkoutExtras?: ReactComponent;
-  userProfile?: ReactComponent;
+  cartSummary?: React.ComponentType<any>;
+  productDetails?: React.ComponentType<any>;
+  checkoutExtras?: React.ComponentType<any>;
+  userProfile?: React.ComponentType<any>;
 }
 
 // ========== Event System Types ==========
