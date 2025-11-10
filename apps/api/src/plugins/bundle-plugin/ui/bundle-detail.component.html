@@ -227,7 +227,7 @@
                 </thead>
                 <tbody>
                     <tr *ngFor="let item of items.controls; let i = index" [formGroupName]="i">
-                        <td>
+                        <td style="position: relative;">
                             <input 
                                 type="text"
                                 class="form-control form-control-sm"
@@ -237,12 +237,14 @@
                                 (focus)="activeSearchIndex = i"
                                 (blur)="variantSearchResults = []; activeSearchIndex = null"
                             />
-                            <div class="dropdown-menu show" *ngIf="isSearchActive(i)">
+                            <div class="dropdown-menu show" *ngIf="isSearchActive(i)" 
+                                 style="position: absolute; z-index: 1000; max-height: 300px; overflow-y: auto; width: 400px;">
                                 <button 
                                     *ngFor="let variant of variantSearchResults"
                                     type="button"
                                     class="dropdown-item"
                                     (mousedown)="selectVariant(variant, i)"
+                                    style="display: block; width: 100%; text-align: left; padding: 0.5rem 1rem; border: none; background: white; cursor: pointer;"
                                 >
                                     <strong>{{ variant.productVariantName }}</strong>
                                     <span class="text-muted ml-2">{{ variant.sku }}</span>
