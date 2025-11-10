@@ -106,27 +106,19 @@ export class ShopApiBundleResolver {
     async addBundleToOrder(
         @Ctx() ctx: RequestContext,
         @Args() args: { bundleId: ID; quantity: number }
-    ): Promise<Order | ErrorResult> {
+    ): Promise<Order> {
         try {
             // PHASE 4: Validate bundle availability with A_final check
             const availability = await this.bundleService.getBundleAvailability(ctx, args.bundleId);
             
             // Check if bundle is available at all
             if (!availability.isAvailable) {
-                return {
-                    __typename: 'OrderModificationError',
-                    errorCode: 'BUNDLE_NOT_AVAILABLE',
-                    message: availability.reason || 'Bundle is not available'
-                } as ErrorResult;
+                throw new Error(availability.reason || 'Bundle is not available');
             }
             
             // Check if requested quantity exceeds A_final
             if (args.quantity > availability.maxQuantity) {
-                return {
-                    __typename: 'InsufficientStockError',
-                    errorCode: 'INSUFFICIENT_STOCK_ERROR',
-                    message: `Only ${availability.maxQuantity} bundles available. Requested: ${args.quantity}`
-                } as ErrorResult;
+                throw new Error(`Only ${availability.maxQuantity} bundles available. Requested: ${args.quantity}`);
             }
             
             // Get or create active order
@@ -149,19 +141,10 @@ export class ShopApiBundleResolver {
                     const errorMessage = result.availabilityError.insufficientItems
                         .map(item => `${item.productName}: need ${item.required}, have ${item.available}`)
                         .join(', ');
-                        
-                    return {
-                        __typename: 'InsufficientStockError',
-                        errorCode: 'INSUFFICIENT_STOCK_ERROR',
-                        message: `Insufficient stock: ${errorMessage}`
-                    } as ErrorResult;
+                    throw new Error(`Insufficient stock: ${errorMessage}`);
                 }
                 
-                return {
-                    __typename: 'OrderModificationError',
-                    errorCode: 'ORDER_MODIFICATION_ERROR',
-                    message: result.error || 'Failed to add bundle to order'
-                } as ErrorResult;
+                throw new Error(result.error || 'Failed to add bundle to order');
             }
 
             // Add header line and child lines to actual order
@@ -196,12 +179,7 @@ export class ShopApiBundleResolver {
                 `Error adding bundle to order: ${error instanceof Error ? error.message : String(error)}`,
                 ShopApiBundleResolver.loggerCtx
             );
-            
-            return {
-                __typename: 'OrderModificationError',
-                errorCode: 'ORDER_MODIFICATION_ERROR',
-                message: 'Failed to add bundle to order'
-            } as ErrorResult;
+            throw error;
         }
     }
 

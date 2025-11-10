@@ -7,7 +7,6 @@ import { toProductCardData } from '@/lib/types/product';
 import { SlidersHorizontal, Star, X, User, Package } from 'lucide-react';
 import Link from 'next/link';
 import { useCart } from '@/lib/hooks/useCart';
-import MiniCart from '@/components/MiniCart';
 import SearchBar from '@/components/SearchBar';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';

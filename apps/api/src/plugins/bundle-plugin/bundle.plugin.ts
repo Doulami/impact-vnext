@@ -512,15 +512,110 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
     // Add custom fields to OrderLine for bundle grouping and register promotion components
     configuration: config => {
         config.customFields.OrderLine = [
+            // Bundle identification fields
             {
-                name: 'bundleParent',
-                type: 'boolean',
-                defaultValue: false,
+                name: 'bundleKey',
+                type: 'string',
                 internal: true,
             },
             {
                 name: 'bundleId',
                 type: 'string',
+                internal: true,
+            },
+            {
+                name: 'bundleName',
+                type: 'string',
+                internal: true,
+            },
+            {
+                name: 'bundleVersion',
+                type: 'int',
+                internal: true,
+            },
+            {
+                name: 'discountType',
+                type: 'string',
+                internal: true,
+            },
+            // Bundle structure fields
+            {
+                name: 'isBundleHeader',
+                type: 'boolean',
+                defaultValue: false,
+                internal: true,
+            },
+            {
+                name: 'bundleComponentQty',
+                type: 'int',
+                internal: true,
+                nullable: true,
+            },
+            // Pricing fields
+            {
+                name: 'baseUnitPrice',
+                type: 'int',
+                internal: true,
+            },
+            {
+                name: 'effectiveUnitPrice',
+                type: 'int',
+                internal: true,
+            },
+            {
+                name: 'bundlePctApplied',
+                type: 'float',
+                internal: true,
+                nullable: true,
+            },
+            {
+                name: 'bundleAdjAmount',
+                type: 'int',
+                internal: true,
+                nullable: true,
+            },
+            {
+                name: 'bundleShare',
+                type: 'float',
+                internal: true,
+                nullable: true,
+            },
+            {
+                name: 'bundleTotalPreDiscount',
+                type: 'int',
+                internal: true,
+                nullable: true,
+            },
+            {
+                name: 'bundleTotalPrice',
+                type: 'int',
+                internal: true,
+                nullable: true,
+            },
+            {
+                name: 'bundleTotalDiscount',
+                type: 'int',
+                internal: true,
+                nullable: true,
+            },
+            // Component fields
+            {
+                name: 'componentWeight',
+                type: 'float',
+                internal: true,
+                nullable: true,
+            },
+            {
+                name: 'subtotalPreDiscount',
+                type: 'int',
+                internal: true,
+                nullable: true,
+            },
+            // Legacy fields for compatibility
+            {
+                name: 'bundleParent',
+                type: 'boolean',
+                defaultValue: false,
                 internal: true,
             },
             {
@@ -533,6 +628,7 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
                 name: 'bundleParentLineId',
                 type: 'string',
                 internal: true,
+                nullable: true,
             },
         ];
         

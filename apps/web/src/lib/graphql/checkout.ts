@@ -314,101 +314,25 @@ export const ADD_PAYMENT_TO_ORDER = gql`
   }
 `;
 
-// Bundle mutations for Bundle Plugin v2
+// Bundle Plugin v2 mutations
+// Bundles explode into header line (shell) + child lines (components) at checkout
 
-// Add bundle to order
 export const ADD_BUNDLE_TO_ORDER = gql`
   mutation AddBundleToOrder($bundleId: ID!, $quantity: Int!) {
     addBundleToOrder(bundleId: $bundleId, quantity: $quantity) {
-      ... on Order {
+      id
+      code
+      total
+      totalWithTax
+      lines {
         id
-        code
-        total
-        totalWithTax
-        lines {
+        quantity
+        linePrice
+        linePriceWithTax
+        productVariant {
           id
-          quantity
-          linePrice
-          linePriceWithTax
-          productVariant {
-            id
-            name
-          }
-          customFields {
-            bundleKey
-            bundleId
-            bundleName
-            isBundleHeader
-          }
+          name
         }
-      }
-      ... on OrderModificationError {
-        errorCode
-        message
-      }
-      ... on InsufficientStockError {
-        errorCode
-        message
-      }
-    }
-  }
-`;
-
-// Adjust bundle in order
-export const ADJUST_BUNDLE_IN_ORDER = gql`
-  mutation AdjustBundleInOrder($bundleKey: String!, $quantity: Int!) {
-    adjustBundleInOrder(bundleKey: $bundleKey, quantity: $quantity) {
-      ... on Order {
-        id
-        code
-        total
-        totalWithTax
-        lines {
-          id
-          quantity
-          linePrice
-          linePriceWithTax
-          customFields {
-            bundleKey
-            bundleId
-            bundleName
-            isBundleHeader
-          }
-        }
-      }
-      ... on OrderModificationError {
-        errorCode
-        message
-      }
-    }
-  }
-`;
-
-// Remove bundle from order
-export const REMOVE_BUNDLE_FROM_ORDER = gql`
-  mutation RemoveBundleFromOrder($bundleKey: String!) {
-    removeBundleFromOrder(bundleKey: $bundleKey) {
-      ... on Order {
-        id
-        code
-        total
-        totalWithTax
-        lines {
-          id
-          quantity
-          linePrice
-          linePriceWithTax
-          customFields {
-            bundleKey
-            bundleId
-            bundleName
-            isBundleHeader
-          }
-        }
-      }
-      ... on OrderModificationError {
-        errorCode
-        message
       }
     }
   }

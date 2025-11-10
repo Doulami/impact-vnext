@@ -1,12 +1,12 @@
 'use client';
 
-import { User, LogIn, LogOut, Settings, Package, ChevronDown } from 'lucide-react';
+import { User, LogIn, LogOut, Settings, Package, ChevronDown, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
-import MiniCart from '@/components/MiniCart';
 import SearchBar from '@/components/SearchBar';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useCart } from '@/lib/hooks/useCart';
 
 // User Menu Component
 function UserMenu() {
@@ -151,6 +151,7 @@ function HeaderContent({
 }: HeaderProps) {
   const searchParams = useSearchParams();
   const currentSearchTerm = searchParams.get('search') || searchParams.get('q') || '';
+  const { totalItems, openCart } = useCart();
 
   return (
     <>
@@ -182,7 +183,19 @@ function HeaderContent({
             <div className="flex items-center gap-6 text-xs">
               <a href="#" className="hover:text-gray-300">Help & Support</a>
               <UserMenu />
-              <MiniCart />
+              {/* Cart Button */}
+              <button
+                onClick={openCart}
+                className="relative hover:text-gray-300 transition-colors"
+                aria-label="Shopping cart"
+              >
+                <ShoppingBag className="w-5 h-5" />
+                {totalItems > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {totalItems}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -239,7 +252,7 @@ export default function Header(props: HeaderProps) {
               <div className="flex items-center gap-6 text-xs">
                 <a href="#" className="hover:text-gray-300">Help & Support</a>
                 <User className="w-5 h-5 cursor-pointer" />
-                <MiniCart />
+                <ShoppingBag className="w-5 h-5 cursor-pointer" />
               </div>
             </div>
           </div>
