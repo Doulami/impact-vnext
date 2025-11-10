@@ -239,16 +239,36 @@ This web app is part of a larger composable commerce stack:
     - **Order Structure**: Uses OrderLine customFields for bundle grouping and metadata
   - **Frontend Implementation**: Complete cart-to-checkout bundle experience
     - **Bundle Listing Page**: `/bundles` with unified design and filtering
-    - **Bundle Product Detail Page**: Enhanced PDP with component breakdown and savings
+    - **Bundle Product Detail Page (PDP)**: 
+      - Enhanced PDP displays computed `effectivePrice` (in cents) from Bundle entity
+      - Component breakdown UI with individual item prices and quantities
+      - Savings calculation showing total saved vs buying separately
+      - Proper price display using shell product's `customFields.bundlePrice` (synced from backend)
+      - Bundle items section with "What's Included" breakdown before Add to Cart
     - **Product Listing Integration**: Bundles appear alongside products with type filtering
+    - **Bundle Pricing**: 
+      - `useCombinedSearch` hook properly converts bundle prices (effectivePrice in cents)
+      - Product listing/search displays correct bundle prices
+      - Price consistency across all views (PDP, listing, related products)
     - **Bundle Cart System**: Single bundle items with expandable component details
     - **Bundle Indicators**: Blue "Bundle" badges with Package icons throughout
   - **Backend Implementation Status**:
     - ✅ **Bundle Entities**: `Bundle` and `BundleItem` with proper TypeORM relations
     - ✅ **Shop API Queries**: `bundle`, `bundles` GraphQL queries working
+    - ✅ **Price Computation**: `effectivePrice` (cents) and `totalSavings` computed properties
+    - ✅ **Shell Product Sync**: Bundle prices synced to shell product customFields
     - ⚠️ **Order Mutations**: `addBundleToOrder` needs exploded bundle implementation
     - ⚠️ **OrderLine CustomFields**: Need bundle metadata fields for grouping
     - ⚠️ **Promotion Integration**: Bundle-proof promotion system needed
+
+- **Related Products Component**: Smart collection-based product recommendations
+  - Automatically detects if product is in "featured" collection
+  - Shows featured products carousel for featured items
+  - Shows same-collection products for non-featured items
+  - Excludes current product and "featured" collection from related products
+  - Uses GraphQL query `GET_RELATED_PRODUCTS` with collection filtering
+  - Client-side filtering to exclude current product
+  - Consistent "Related Products" title regardless of source
 
 ### 🚧 In Progress
 - **Bundle Search Integration**: Complete backend bundle indexing in Elasticsearch
