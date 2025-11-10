@@ -3,7 +3,7 @@
 import { useQuery } from '@apollo/client/react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { SEARCH_PRODUCTS } from '@/lib/graphql/queries';
+import { GET_BUNDLES } from '@/lib/graphql/queries';
 import { useCart } from '@/lib/hooks/useCart';
 import Button from '@/components/Button';
 import { Package, Star, Users, Zap } from 'lucide-react';
@@ -120,39 +120,46 @@ function BundleCard({ bundleCard }: { bundleCard: BundleCard }) {
 }
 
 export default function BundlesPage() {
-  const { data, loading, error } = useQuery(SEARCH_PRODUCTS, {
+  // Query Bundle entities directly to get bundle metadata and shell product info
+  const { data, loading, error } = useQuery(GET_BUNDLES, {
     variables: {
-      input: {
-        groupByProduct: true,
-        take: 100, // Higher limit to include bundle products
-        term: '',
+      options: {
+        filter: { status: { eq: 'ACTIVE' } },
+        take: 100
       }
     },
     errorPolicy: 'all'
   });
 
-
-  // Filter search results to only bundle shell products (slug starts with 'bundle-')
-  const searchResults = (data as any)?.search?.items || [];
-  const bundleProducts = searchResults.filter((item: any) => 
-    item.slug?.startsWith('bundle-')
-  );
+  const bundles = (data as any)?.bundles?.items || [];
   
-  const bundleCards = bundleProducts.map((item: any) => ({
-    id: item.productId,
-    name: item.productName,
-    slug: item.slug,
-    image: item.productAsset?.preview || '/product-placeholder.svg',
-    price: item.priceWithTax?.value || item.price?.value || 0,
-    originalPrice: item.price?.value || 0,
-    savings: 0,
-    savingsPercentage: 0,
-    itemCount: 0,
-    inStock: item.inStock,
-    rating: 4.5,
-    reviews: 127,
-    description: item.description
-  }));
+  // Convert Bundle entities to card format
+  // Use shell product slug for SEO-friendly URLs
+  const bundleCards = bundles.map((bundle: any) => {
+    // Calculate component total and savings (unitPrice is in dollars, convert to cents)
+    const componentTotal = bundle.items?.reduce((sum: number, item: any) => 
+      sum + (item.unitPrice * 100 * item.quantity), 0
+    ) || 0;
+    const bundlePrice = bundle.effectivePrice || (bundle.price * 100); // effectivePrice is in cents
+    const savings = Math.max(0, componentTotal - bundlePrice);
+    const savingsPercentage = componentTotal > 0 ? Math.round((savings / componentTotal) * 100) : 0;
+    
+    return {
+      id: bundle.id,
+      name: bundle.name,
+      slug: bundle.slug, // Use shell product slug for proper SEO URLs
+      image: bundle.featuredAsset?.preview || bundle.assets?.[0]?.preview || '/product-placeholder.svg',
+      price: bundlePrice,
+      originalPrice: componentTotal,
+      savings: savings,
+      savingsPercentage: savingsPercentage,
+      itemCount: bundle.items?.length || 0,
+      inStock: bundle.enabled,
+      rating: 4.5,
+      reviews: 127,
+      description: bundle.description
+    };
+  });
 
   return (
     <div className="min-h-screen bg-[var(--muted)]">

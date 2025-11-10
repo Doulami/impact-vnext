@@ -81,7 +81,7 @@ function toBundleResult(bundle: Bundle): CombinedResult {
     data: bundle,
     id: bundle.id,
     name: bundle.name,
-    slug: bundle.slug || `bundle-${bundle.id}`,
+    slug: bundle.slug!, // Shell product slug (always exists)
     image: getMockImage(bundle.name),
     price: bundlePrice, // Already in cents
     originalPrice: componentTotal,

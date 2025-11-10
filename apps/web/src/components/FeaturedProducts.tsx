@@ -105,7 +105,7 @@ export function FeaturedProducts({ title = 'Your journey starts here' }: Feature
                 return (
                   <Link
                     key={`bundle-${bundle.id}`}
-                    href={`/products/${bundle.slug || `bundle-${bundle.id}`}`}
+                    href={`/products/${bundle.slug}`}
                     className="bg-white border border-gray-200 hover:shadow-lg transition-shadow flex-shrink-0 w-64 group relative"
                   >
                     <div className="aspect-square bg-gray-50 flex items-center justify-center p-4 relative">
@@ -148,7 +148,7 @@ export function FeaturedProducts({ title = 'Your journey starts here' }: Feature
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            window.location.href = `/products/${bundle.slug || `bundle-${bundle.id}`}`;
+                            window.location.href = `/products/${bundle.slug}`;
                           }}
                           className="w-full bg-[var(--brand-secondary)] text-white py-2.5 text-xs font-medium hover:bg-[var(--brand-secondary)]/90 transition-colors uppercase tracking-wide"
                         >

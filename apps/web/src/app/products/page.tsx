@@ -390,10 +390,9 @@ function ProductsPageContent() {
                     // Only animate items that are newly loaded
                     const isNewItem = index >= newItemsStartIndex;
                     const animationIndex = isNewItem ? index - newItemsStartIndex : 0;
-                    // Determine if this is a bundle based on slug or other identifier
-                    const isBundle = product.slug?.startsWith('bundle-') || 
-                      (searchInput.term && filteredResults.find(r => r.id === product.id)?.type === 'bundle');
-                    const productUrl = isBundle ? `/products/${product.slug}` : `/products/${product.slug}`;
+                    // Determine if this is a bundle from search results type
+                    const isBundle = searchInput.term && filteredResults.find(r => r.id === product.id)?.type === 'bundle';
+                    const productUrl = `/products/${product.slug}`;
                     
                     return (
                       <Link
