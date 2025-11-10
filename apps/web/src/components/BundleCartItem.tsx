@@ -68,14 +68,17 @@ export default function BundleCartItem({
           
           {/* Bundle Details */}
           <div className="space-y-1">
-            <p className={`text-gray-600 ${compact ? 'text-xs' : 'text-sm'}`}>
+            <p className="text-gray-600 text-sm">
               {item.bundleComponents.length} items included
             </p>
             
             {savings > 0 && (
-              <p className={`text-[var(--success)] font-medium ${compact ? 'text-xs' : 'text-sm'}`}>
-                Save ${(savings / 100).toFixed(2)}
-              </p>
+              <div className="flex items-center gap-1">
+                <span className="text-[var(--success)] font-semibold text-base">
+                  Save ${(savings / 100).toFixed(2)}
+                </span>
+                <span className="text-[var(--success)] text-xs">bundle discount</span>
+              </div>
             )}
             
             {!compact && showQuantityControls && (
@@ -107,11 +110,11 @@ export default function BundleCartItem({
         {/* Price and Actions */}
         <div className="text-right space-y-2">
           <div>
-            <div className={`font-bold ${compact ? 'text-sm' : 'text-lg'}`}>
+            <div className="font-bold text-lg">
               ${(item.price / 100).toFixed(2)}
             </div>
             {savings > 0 && (
-              <div className={`text-gray-500 line-through ${compact ? 'text-xs' : 'text-sm'}`}>
+              <div className="text-gray-400 line-through text-sm mt-1">
                 ${(item.originalPrice! / 100).toFixed(2)}
               </div>
             )}
@@ -135,26 +138,26 @@ export default function BundleCartItem({
         <div className="ml-6 pl-4 border-l-2 border-gray-200 space-y-2">
           <h4 className="text-sm font-medium text-gray-700 mb-3">Bundle Contents:</h4>
           {[...item.bundleComponents]
-            .sort((a, b) => a.displayOrder - b.displayOrder)
+            .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
             .map((component) => (
             <div key={component.id} className="flex items-center gap-3 py-2 text-sm">
               <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center flex-shrink-0">
                 <img
                   src="/product-placeholder.svg"
-                  alt={component.productVariant.name}
+                  alt={component.productVariant?.name || component.name || 'Component'}
                   className="w-6 h-6 object-contain"
                 />
               </div>
               <div className="flex-1">
                 <div className="font-medium text-gray-800">
-                  {component.productVariant.name}
+                  {component.productVariant?.name || component.name || 'Component'}
                 </div>
                 <div className="text-gray-600 text-xs">
-                  SKU: {component.productVariant.sku}
+                  SKU: {component.productVariant?.sku || 'N/A'}
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-medium">${component.unitPrice.toFixed(2)}</div>
+                <div className="font-medium">${(component.unitPrice || 0).toFixed(2)}</div>
                 <div className="text-xs text-gray-600">Qty: {component.quantity}</div>
               </div>
             </div>

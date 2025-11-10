@@ -2,7 +2,6 @@
 
 import { useEffect, Suspense, useState, useRef } from 'react';
 import { useSearch, useCollections, useFacets, usePriceRanges } from '@/lib/hooks/useSearch';
-import { useCombinedSearch } from '@/lib/hooks/useCombinedSearch';
 import { useUrlState } from '@/lib/hooks/useUrlState';
 import { toProductCardData } from '@/lib/types/product';
 import { SlidersHorizontal, Star, X, User, Package } from 'lucide-react';
@@ -13,14 +12,13 @@ import SearchBar from '@/components/SearchBar';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useSearchParams } from 'next/navigation';
+import { useApolloClient } from '@apollo/client/react';
+import { addBundleToCart } from '@/lib/helpers/bundleCart';
 
 function ProductsPageContent() {
   const searchParams = useSearchParams();
   const currentSearchTerm = searchParams.get('search') || searchParams.get('q') || '';
   const { getSearchInputFromUrl, updateUrl, getActiveFilters, clearFilter, clearAllFilters } = useUrlState();
-  
-  // Product type filter state
-  const [productType, setProductType] = useState<'all' | 'products' | 'bundles'>('all');
   
   // Initialize search with URL params
   const initialInput = getSearchInputFromUrl();
@@ -43,53 +41,21 @@ function ProductsPageContent() {
     urlSearchInput,
   } = useSearch(initialInput);
   
-  // Use combined search for bundles integration
-  const { results: combinedResults, loading: combinedLoading } = useCombinedSearch({
-    term: searchInput.term,
-    groupByProduct: true,
-    take: 20
-  });
-  
-  // Filter results based on product type selection
-  const filteredResults = productType === 'all' ? combinedResults : 
-    productType === 'bundles' ? combinedResults.filter(item => item.type === 'bundle') :
-    combinedResults.filter(item => item.type === 'product');
-  
   const { collections, loading: collectionsLoading } = useCollections();
   const facets = useFacets(facetValues);
   const priceRanges = usePriceRanges(products);
   
-  // Use combined results or regular products based on search term
-  let productCards: any[];
+  // Find bundle facet value IDs (look for facet with code 'bundle' or name containing 'bundle')
+  const bundleFacet = facets.find(f => 
+    f.code?.toLowerCase() === 'bundle' || 
+    f.name?.toLowerCase().includes('bundle')
+  );
+  const bundleFacetValueIds = bundleFacet?.values.map(v => v.id) || [];
   
-  if (searchInput.term && filteredResults.length > 0) {
-    // For combined search results, convert to ProductCard format directly
-    productCards = filteredResults.map(result => ({
-      id: result.id,
-      name: result.name,
-      slug: result.slug,
-      image: result.image,
-      priceWithTax: result.price, // Already in cents
-      inStock: result.inStock,
-      rating: result.rating,
-      reviews: result.reviews,
-      priceRange: null // Bundles don't have price ranges
-    }));
-  } else {
-    // For regular products, use existing toProductCardData function
-    productCards = products.map(toProductCardData);
-  }
-  let activeFilters = getActiveFilters();
-  
-  // Add product type filter to active filters
-  if (productType !== 'all') {
-    activeFilters = [...activeFilters, {
-      id: productType,
-      type: 'productType' as any, // Custom filter type not in URL state
-      label: productType === 'bundles' ? 'Bundles Only' : 'Products Only'
-    } as any];
-  }
+  const productCards = products.map(p => toProductCardData(p, bundleFacetValueIds));
+  const activeFilters = getActiveFilters();
   const { addItem, openCart } = useCart();
+  const apolloClient = useApolloClient();
 
   const handleClearFilter = (filter: { id: string; type: string }) => {
     switch (filter.type) {
@@ -106,9 +72,6 @@ function ProductsPageContent() {
         break;
       case 'inStock':
         setInStock(undefined);
-        break;
-      case 'productType':
-        setProductType('all');
         break;
       case 'facet':
         {
@@ -195,46 +158,6 @@ function ProductsPageContent() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="font-bold text-lg">Filters</h2>
                 <SlidersHorizontal className="w-5 h-5" />
-              </div>
-
-              {/* Product Type Filter */}
-              <div className="mb-6">
-                <h3 className="font-semibold mb-3">Product Type</h3>
-                <div className="space-y-2">
-                  <label className="flex items-center cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="productType"
-                      className="mr-2"
-                      checked={productType === 'all'}
-                      onChange={() => setProductType('all')}
-                    />
-                    <span className="text-sm">All Products</span>
-                  </label>
-                  <label className="flex items-center cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="productType"
-                      className="mr-2"
-                      checked={productType === 'products'}
-                      onChange={() => setProductType('products')}
-                    />
-                    <span className="text-sm">Individual Products</span>
-                  </label>
-                  <label className="flex items-center cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="productType"
-                      className="mr-2"
-                      checked={productType === 'bundles'}
-                      onChange={() => setProductType('bundles')}
-                    />
-                    <div className="flex items-center gap-1">
-                      <Package className="w-3 h-3" />
-                      <span className="text-sm">Bundles</span>
-                    </div>
-                  </label>
-                </div>
               </div>
 
               {/* Category Filter - using facets with counts */}
@@ -390,8 +313,6 @@ function ProductsPageContent() {
                     // Only animate items that are newly loaded
                     const isNewItem = index >= newItemsStartIndex;
                     const animationIndex = isNewItem ? index - newItemsStartIndex : 0;
-                    // Determine if this is a bundle from search results type
-                    const isBundle = searchInput.term && filteredResults.find(r => r.id === product.id)?.type === 'bundle';
                     const productUrl = `/products/${product.slug}`;
                     
                     return (
@@ -418,7 +339,7 @@ function ProductsPageContent() {
                           </div>
                         )}
                         {/* Bundle Badge */}
-                        {isBundle && (
+                        {product.isBundle && (
                           <div className="absolute top-2 left-2 bg-[var(--brand-primary)] text-white px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
                             <Package className="w-3 h-3" />
                             Bundle
@@ -471,14 +392,31 @@ function ProductsPageContent() {
                             <button
                               onClick={(e) => {
                                 e.preventDefault();
-                                // For products with variations, redirect to PDP instead of adding to cart
+                                // For products with variations, redirect to PDP
                                 if (product.priceRange) {
                                   window.location.href = `/products/${product.slug}`;
+                                } else if (product.isBundle) {
+                                  // Use unified bundle helper
+                                  addBundleToCart({
+                                    slug: product.slug,
+                                    productId: product.id,
+                                    productName: product.name,
+                                    image: product.image,
+                                    quantity: 1,
+                                    apolloClient
+                                  })
+                                    .then(cartItem => {
+                                      addItem(cartItem);
+                                      openCart();
+                                    })
+                                    .catch(err => {
+                                      console.error('[ProductsPage] Error adding bundle:', err);
+                                    });
                                 } else {
                                   // Add single variant product to cart
                                   addItem({
                                     id: product.id,
-                                    variantId: product.id, // Use product id as variant id for single variants
+                                    variantId: product.id,
                                     productName: product.name,
                                     price: product.priceWithTax,
                                     image: product.image,
@@ -490,7 +428,7 @@ function ProductsPageContent() {
                               }}
                               className="w-full bg-black text-white py-2 text-xs font-medium hover:bg-gray-800 transition-colors uppercase tracking-wide"
                             >
-                              {isBundle ? 'VIEW BUNDLE' : product.priceRange ? 'CHOOSE OPTIONS' : 'ADD TO CART'}
+                              {product.isBundle ? 'ADD BUNDLE' : product.priceRange ? 'CHOOSE OPTIONS' : 'ADD TO CART'}
                             </button>
                           ) : (
                             <button

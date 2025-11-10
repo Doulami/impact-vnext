@@ -71,12 +71,16 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
                 fixedPrice: Money
                 percentOff: Float
                 version: Int!
-                assets: [String!]!
-                price: Money!
-                enabled: Boolean! # Legacy compatibility
+                assets: [Asset!]!
+                featuredAsset: Asset
                 tags: [String!]
                 category: String
                 allowExternalPromos: Boolean!
+                validFrom: DateTime
+                validTo: DateTime
+                bundleCap: Int
+                shellProductId: String
+                shellProduct: Product
                 items: [BundleItem!]!
                 # Computed fields
                 isAvailable: Boolean!
@@ -248,16 +252,14 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
                 version: Int!
                 assets: [Asset!]!
                 featuredAsset: Asset
-                price: Money!
-                enabled: Boolean! # Legacy compatibility
                 tags: [String!]
                 category: String
                 allowExternalPromos: Boolean!
-                # Phase 3 fields
                 validFrom: DateTime
                 validTo: DateTime
                 bundleCap: Int
                 shellProductId: String
+                shellProduct: Product
                 items: [BundleItem!]!
                 # Computed fields
                 isAvailable: Boolean!

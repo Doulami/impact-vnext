@@ -13,6 +13,7 @@ import { useCart } from '@/lib/hooks/useCart';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Button from '@/components/Button';
+import type { Bundle, BundleItem } from '@/lib/types/product';
 
 interface ProductVariant {
   id: string;
@@ -57,42 +58,7 @@ interface Product {
   variants: ProductVariant[];
 }
 
-interface BundleItem {
-  id: string;
-  productVariant: {
-    id: string;
-    name: string;
-    sku: string;
-    price: number;
-    priceWithTax: number;
-  };
-  quantity: number;
-  unitPrice: number; // Price in dollars
-  displayOrder: number;
-}
-
-interface Bundle {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  price?: number; // Legacy field in dollars
-  effectivePrice: number; // Computed price in cents
-  totalSavings: number; // Computed savings in cents
-  status: string;
-  enabled: boolean;
-  items: BundleItem[];
-  assets?: Array<{
-    id: string;
-    preview: string;
-    source: string;
-  }>;
-  featuredAsset?: {
-    id: string;
-    preview: string;
-    source: string;
-  };
-}
+// Bundle types are now imported from @/lib/types/product
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -117,7 +83,7 @@ export default function ProductDetailPage() {
   const bundleId = product?.customFields?.bundleId;
 
   // If this is a bundle shell, fetch Bundle entity for component details
-  const { data: bundleData } = useQuery<{ bundle: Bundle }>(
+  const { data: bundleData, loading: bundleLoading, error: bundleError } = useQuery<{ bundle: Bundle }>(
     GET_BUNDLE,
     {
       variables: { id: bundleId },
@@ -147,26 +113,26 @@ export default function ProductDetailPage() {
   };
 
   const handleAddToCart = () => {
-    if (isBundle && product) {
-      // Bundle shell product - use shell data (synced from Bundle)
-      const bundlePrice = product.customFields?.bundlePrice || selectedVariant?.priceWithTax || 0;
-      const bundleComponents = product.customFields?.bundleComponents 
-        ? JSON.parse(product.customFields.bundleComponents)
-        : [];
+    if (isBundle && product && bundle) {
+      // Calculate component total for savings display
+      const componentTotal = bundle.items.reduce((sum, item) => sum + (item.productVariant?.priceWithTax || 0) * item.quantity, 0);
+      
+      // CRITICAL: Use shell product's first variant ID (same as unified helper)
+      const shellVariantId = product.variants[0]?.id || product.id;
       
       addItem({
         id: product.id,
-        variantId: selectedVariant?.id || `bundle-${product.id}`,
+        variantId: shellVariantId, // MUST match other pages
         productName: product.name,
-        variantName: undefined,
-        price: bundlePrice, // From shell customFields (synced from bundle.effectivePrice)
+        price: selectedVariant?.priceWithTax || 0,
+        originalPrice: componentTotal,
         image: product.featuredAsset?.preview || '/product-placeholder.svg',
         slug: product.slug,
-        inStock: (product.customFields?.bundleAvailability || 0) > 0, // A_final from sync
+        inStock: (product.customFields?.bundleAvailability || 0) > 0,
         quantity: quantity,
         isBundle: true,
         bundleId: bundleId,
-        bundleComponents: bundle?.items || bundleComponents // Prefer Bundle entity if loaded
+        bundleComponents: bundle.items // Use Bundle entity items directly
       });
     } else if (selectedVariant && product) {
       // Add regular product to cart
@@ -234,27 +200,25 @@ export default function ProductDetailPage() {
     );
   }
 
-  const currentItem = isBundle ? bundle : product;
+  const currentItem = product; // Always use shell product for consistent breadcrumbs/title/metadata
   const isInStock = isBundle 
     ? (product?.customFields?.bundleAvailability || 0) > 0 
     : selectedVariant?.stockLevel !== 'OUT_OF_STOCK';
   
-  // Bundle price logic:
-  // - effectivePrice from Bundle entity is in cents (computed from discount type)
-  // - bundlePrice in shell customFields is also in cents (synced from effectivePrice)
-  // - For regular products, priceWithTax is in cents
-  const price = isBundle 
-    ? (bundle?.effectivePrice || product?.customFields?.bundlePrice || 0)
-    : selectedVariant?.priceWithTax || 0;
+  // Price logic:
+  // - For bundles: use shell variant priceWithTax (Vendure applies tax to variant.price)
+  // - For regular products: use variant priceWithTax
+  // - Both are in cents and include tax calculated by Vendure
+  const price = selectedVariant?.priceWithTax || 0;
   
   // Calculate bundle savings (all in cents)
   const bundleSavings = isBundle && bundle
     ? bundle.totalSavings || 0
     : 0;
   
-  // Calculate component total for display (convert unitPrice from dollars to cents)
+  // Calculate component total for display (use priceWithTax from variants for consistency)
   const componentTotal = isBundle && bundle
-    ? bundle.items.reduce((sum, item) => sum + (item.unitPrice * 100 * item.quantity), 0)
+    ? bundle.items.reduce((sum, item) => sum + (item.productVariant.priceWithTax * item.quantity), 0)
     : 0;
 
   return (
@@ -406,8 +370,8 @@ export default function ProductDetailPage() {
                   {[...bundle.items]
                     .sort((a, b) => a.displayOrder - b.displayOrder)
                     .map((item) => {
-                      // unitPrice is in dollars, convert to cents for display
-                      const itemTotal = item.unitPrice * item.quantity * 100;
+                      // Use priceWithTax for consistency with regular products (already in cents)
+                      const itemTotal = item.productVariant.priceWithTax * item.quantity;
                       return (
                         <div key={item.id} className="flex items-center gap-4 p-3 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
                           <div className="w-14 h-14 bg-gray-50 rounded flex items-center justify-center flex-shrink-0">
@@ -513,13 +477,11 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Description */}
-            {((isBundle && bundle?.description) || (!isBundle && product?.description)) && (
+            {product?.description && (
               <div>
                 <h3 className="font-semibold mb-3">Description</h3>
                 <div className="text-gray-700 leading-relaxed">
-                  {isBundle ? bundle?.description : (
-                    <div dangerouslySetInnerHTML={{ __html: product?.description || '' }} />
-                  )}
+                  <div dangerouslySetInnerHTML={{ __html: product.description }} />
                 </div>
               </div>
             )}

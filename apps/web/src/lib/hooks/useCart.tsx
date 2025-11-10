@@ -5,7 +5,8 @@ import { createContext, useContext, useReducer, useEffect, ReactNode, useState }
 // Types
 export interface BundleComponent {
   id: string;
-  productVariant: {
+  name?: string; // Fallback if productVariant not available
+  productVariant?: {
     id: string;
     name: string;
     sku: string;
@@ -17,8 +18,8 @@ export interface BundleComponent {
     };
   };
   quantity: number;
-  unitPrice: number;
-  displayOrder: number;
+  unitPrice?: number;
+  displayOrder?: number;
 }
 
 export interface CartItem {
@@ -66,6 +67,8 @@ const initialState: CartState = {
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case 'ADD_ITEM': {
+      console.log('[CART REDUCER] ADD_ITEM payload:', action.payload);
+      console.log('[CART REDUCER] isBundle:', action.payload.isBundle, 'bundleComponents:', action.payload.bundleComponents?.length);
       const existingItemIndex = state.items.findIndex(
         item => item.variantId === action.payload.variantId
       );

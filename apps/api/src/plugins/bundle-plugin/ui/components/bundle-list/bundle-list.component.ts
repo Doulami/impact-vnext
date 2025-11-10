@@ -66,11 +66,10 @@ export class BundleListComponent extends BaseListComponent<Bundle, BundleFilterP
     ];
     
     readonly sorts = [
-        { name: 'name', label: 'Name' },
         { name: 'status', label: 'Status' },
         { name: 'createdAt', label: 'Created' },
         { name: 'updatedAt', label: 'Updated' },
-        { name: 'price', label: 'Price' }
+        { name: 'effectivePrice', label: 'Effective Price' }
     ];
 
     constructor(

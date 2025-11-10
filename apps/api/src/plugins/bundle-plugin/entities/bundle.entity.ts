@@ -127,18 +127,39 @@ export class Bundle extends VendureEntity implements HasCustomFields {
     // Computed Properties
 
     /**
-     * Get the effective bundle price based on discount type
-     * For fixed-price bundles, returns fixedPrice
-     * For percent bundles, calculates from component prices and percentage
+     * Get the effective bundle price based on discount type (PRE-TAX)
+     * For fixed-price bundles: admin enters tax-inclusive price, we convert to pre-tax
+     * For percent bundles: calculates from component PRE-TAX prices and percentage
      * Falls back to legacy price field for backwards compatibility
+     * NOTE: Returns pre-tax price in cents - tax is applied by Vendure at checkout
      */
     get effectivePrice(): number {
         if (this.discountType === BundleDiscountType.FIXED && this.fixedPrice !== null && this.fixedPrice !== undefined) {
+            // Admin enters tax-inclusive fixedPrice, convert to pre-tax using tax ratio from components
+            console.log('[Bundle effectivePrice] Calculating for bundle', this.id, 'fixedPrice:', this.fixedPrice, 'items count:', this.items?.length);
+            if (this.items?.length > 0) {
+                // Find first item with valid pricing to calculate tax ratio
+                for (const item of this.items) {
+                    console.log('[Bundle effectivePrice] Checking item:', item.id, 'variant:', item.productVariant?.id, 'price:', item.productVariant?.price, 'priceWithTax:', item.productVariant?.priceWithTax);
+                    if (item.productVariant?.price > 0 && item.productVariant?.priceWithTax > 0) {
+                        const taxRatio = item.productVariant.priceWithTax / item.productVariant.price;
+                        const preTaxPrice = Math.round(this.fixedPrice / taxRatio);
+                        console.log('[Bundle effectivePrice] Tax ratio:', taxRatio, 'Pre-tax price:', preTaxPrice);
+                        return preTaxPrice;
+                    }
+                }
+            }
+            console.log('[Bundle effectivePrice] Fallback: returning fixedPrice as-is');
+            // Fallback: if no items or can't determine tax, return as-is (assume admin entered pre-tax)
             return this.fixedPrice;
         }
         
         if (this.discountType === BundleDiscountType.PERCENT && this.percentOff !== null && this.percentOff !== undefined) {
-            const componentTotal = this.items?.reduce((sum, item) => sum + (item.unitPrice * 100 * item.quantity), 0) || 0;
+            // Calculate from PRE-TAX component prices, apply discount
+            const componentTotal = this.items?.reduce((sum, item) => {
+                const price = item.productVariant?.price || 0;
+                return sum + (price * item.quantity);
+            }, 0) || 0;
             return Math.round(componentTotal * (1 - this.percentOff / 100));
         }
         
@@ -147,10 +168,11 @@ export class Bundle extends VendureEntity implements HasCustomFields {
     }
 
     /**
-     * Calculate total savings compared to buying components separately
+     * Calculate total savings compared to buying components separately (PRE-TAX)
+     * NOTE: Uses pre-tax prices for consistency with effectivePrice calculation
      */
     get totalSavings(): number {
-        const componentTotal = this.items?.reduce((sum, item) => sum + (item.unitPrice * 100 * item.quantity), 0) || 0;
+        const componentTotal = this.items?.reduce((sum, item) => sum + (item.productVariant.price * item.quantity), 0) || 0;
         return Math.max(0, componentTotal - this.effectivePrice);
     }
 
@@ -207,7 +229,7 @@ export class Bundle extends VendureEntity implements HasCustomFields {
         
         // Business logic validation
         if (this.discountType === BundleDiscountType.FIXED && this.items?.length > 0) {
-            const componentTotal = this.items.reduce((sum, item) => sum + (item.unitPrice * 100 * item.quantity), 0);
+            const componentTotal = this.items.reduce((sum, item) => sum + (item.productVariant.price * item.quantity), 0);
             if (this.fixedPrice && this.fixedPrice >= componentTotal) {
                 errors.push('Fixed price must be less than component total to provide savings');
             }

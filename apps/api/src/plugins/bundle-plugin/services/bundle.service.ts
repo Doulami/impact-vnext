@@ -278,7 +278,7 @@ export class BundleService {
                 quantity: itemInput.quantity,
                 weight: itemInput.weight,
                 displayOrder: itemInput.displayOrder,
-                currentPrice: variant.priceWithTax, // Store current price in cents
+                currentPrice: variant.price, // Store PRE-TAX price in cents
                 variant: variant
             });
         }
@@ -372,26 +372,59 @@ export class BundleService {
      * Find a bundle by ID
      */
     async findOne(ctx: RequestContext, id: ID): Promise<Bundle | null> {
-        return this.connection.getRepository(ctx, Bundle).findOne({
+        const bundle = await this.connection.getRepository(ctx, Bundle).findOne({
             where: { id },
-            relations: ['items', 'items.productVariant'],
+            relations: ['items'],
         });
+        
+        if (!bundle) return null;
+        
+        // Load productVariants properly through ProductVariantService to get computed prices
+        if (bundle.items?.length > 0) {
+            for (const item of bundle.items) {
+                if (item.productVariantId) {
+                    const variant = await this.productVariantService.findOne(ctx, item.productVariantId);
+                    if (variant) {
+                        item.productVariant = variant;
+                    }
+                }
+            }
+        }
+        
+        return bundle;
     }
 
     /**
      * Find all bundles with pagination and filtering
      */
     async findAll(ctx: RequestContext, options: BundleListOptions): Promise<PaginatedList<Bundle>> {
-        return this.listQueryBuilder
+        const result = await this.listQueryBuilder
             .build(Bundle, options, {
-                relations: ['items', 'items.productVariant'],
+                relations: ['items'],
                 ctx,
             })
-            .getManyAndCount()
-            .then(([items, totalItems]) => ({
-                items,
-                totalItems,
-            }));
+            .getManyAndCount();
+        
+        const [bundles, totalItems] = result;
+        
+        // Load productVariants properly through ProductVariantService to get computed prices
+        for (const bundle of bundles) {
+            if (bundle.items?.length > 0) {
+                for (const item of bundle.items) {
+                    if (item.productVariantId) {
+                        const variant = await this.productVariantService.findOne(ctx, item.productVariantId);
+                        if (variant) {
+                            item.productVariant = variant;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return {
+            items: bundles,
+            totalItems,
+        };
     }
 
     /**
@@ -468,6 +501,7 @@ export class BundleService {
         }> = [];
 
         let componentMaxQuantity = Infinity;
+        console.log('[calculateComponentAvailability] Starting calc for bundle', bundle.id, 'items:', bundle.items.length);
 
         for (const item of bundle.items) {
             const variant = item.productVariant;
@@ -476,6 +510,7 @@ export class BundleService {
             const stockLevel = await this.getVariantStockLevel(ctx, variant.id);
             const onHand = stockLevel.stockOnHand;
             const allocated = stockLevel.stockAllocated || 0;
+            console.log('[calculateComponentAvailability] Item:', variant.id, variant.name, 'onHand:', onHand, 'allocated:', allocated, 'quantity needed:', item.quantity);
             
             // Calculate effective available based on backorder settings
             let effectiveAvailable: number;
@@ -493,7 +528,9 @@ export class BundleService {
 
             // Calculate max bundles possible with this component
             const maxForThisItem = Math.floor(effectiveAvailable / item.quantity);
+            console.log('[calculateComponentAvailability] effectiveAvailable:', effectiveAvailable, 'maxForThisItem:', maxForThisItem, 'componentMaxQuantity before:', componentMaxQuantity);
             componentMaxQuantity = Math.min(componentMaxQuantity, maxForThisItem);
+            console.log('[calculateComponentAvailability] componentMaxQuantity after:', componentMaxQuantity);
             
             // Track insufficient items for detailed error reporting
             if (effectiveAvailable < item.quantity) {
@@ -507,8 +544,10 @@ export class BundleService {
             }
         }
 
+        const finalMax = componentMaxQuantity === Infinity ? 999999 : componentMaxQuantity;
+        console.log('[calculateComponentAvailability] Final result - componentMaxQuantity:', componentMaxQuantity, 'returning:', finalMax);
         return {
-            maxQuantity: componentMaxQuantity === Infinity ? 0 : componentMaxQuantity,
+            maxQuantity: finalMax,
             insufficientItems
         };
     }
@@ -571,18 +610,25 @@ export class BundleService {
         stockAllocated?: number;
     }> {
         try {
-            // Use Vendure's ProductVariantService to get accurate stock levels
-            const variant = await this.productVariantService.findOne(ctx, variantId);
-            if (!variant) {
-                return { stockOnHand: 0, stockAllocated: 0 };
+            // Query StockLevel directly from database with proper relations
+            const stockLevels = await this.connection.getRepository(ctx, 'StockLevel').find({
+                where: { productVariantId: variantId },
+            });
+            
+            if (stockLevels && stockLevels.length > 0) {
+                const stockLevel = stockLevels[0];
+                return {
+                    stockOnHand: stockLevel.stockOnHand || 0,
+                    stockAllocated: stockLevel.stockAllocated || 0
+                };
             }
             
-            // Get stock levels from variant's stockLevels relation
-            if (variant.stockLevels && variant.stockLevels.length > 0) {
-                const stockLevel = variant.stockLevels[0]; // Usually one stock level per variant
+            // Fallback: try getting variant directly
+            const variant = await this.productVariantService.findOne(ctx, variantId);
+            if (variant) {
                 return {
-                    stockOnHand: stockLevel.stockOnHand,
-                    stockAllocated: stockLevel.stockAllocated || 0
+                    stockOnHand: (variant as any).stockOnHand || 0,
+                    stockAllocated: 0
                 };
             }
             
@@ -764,8 +810,34 @@ export class BundleService {
             const availability = await this.getBundleAvailability(ctx, bundle.id);
             const A_final = availability.maxQuantity;
             
-            // Calculate effective price
-            const effectivePrice = bundle.effectivePrice; // Use computed property from entity
+            // Calculate PRE-TAX effective price
+            let effectivePricePreTax = 0;
+            if (bundle.discountType === BundleDiscountType.FIXED && bundle.fixedPrice) {
+                // Admin enters tax-inclusive fixedPrice, convert to pre-tax
+                if (bundle.items?.length > 0) {
+                    for (const item of bundle.items) {
+                        if (item.productVariant?.price > 0 && item.productVariant?.priceWithTax > 0) {
+                            const taxRatio = item.productVariant.priceWithTax / item.productVariant.price;
+                            effectivePricePreTax = Math.round(bundle.fixedPrice / taxRatio);
+                            break;
+                        }
+                    }
+                }
+                // Fallback: use fixedPrice as-is
+                if (effectivePricePreTax === 0) {
+                    effectivePricePreTax = bundle.fixedPrice;
+                }
+            } else if (bundle.discountType === BundleDiscountType.PERCENT && bundle.percentOff) {
+                // Calculate from PRE-TAX component prices
+                const componentTotal = bundle.items?.reduce((sum, item) => {
+                    const price = item.productVariant?.price || 0;
+                    return sum + (price * item.quantity);
+                }, 0) || 0;
+                effectivePricePreTax = Math.round(componentTotal * (1 - bundle.percentOff / 100));
+            } else {
+                // Fallback to entity getter
+                effectivePricePreTax = bundle.effectivePrice;
+            }
             
             // Prepare asset updates for shell product
             const assetIds = bundle.assets?.map(a => a.id) || [];
@@ -778,7 +850,7 @@ export class BundleService {
                 featuredAssetId: featuredAssetId,
                 customFields: {
                     ...shellProduct.customFields,
-                    bundlePrice: effectivePrice,
+                    bundlePrice: effectivePricePreTax,
                     bundleAvailability: A_final,
                     bundleComponents: JSON.stringify(
                         bundle.items.map(item => ({
@@ -795,7 +867,7 @@ export class BundleService {
                 const shellVariant = shellProduct.variants[0];
                 await this.productVariantService.update(ctx, [{
                     id: shellVariant.id,
-                    price: effectivePrice,
+                    price: effectivePricePreTax,
                     translations: [{
                         languageCode: LanguageCode.en,
                         name: bundle.name
@@ -804,7 +876,7 @@ export class BundleService {
             }
             
             Logger.info(
-                `Synced bundle ${bundle.id} to shell product ${shellProduct.id}: price=${effectivePrice}, availability=${A_final}`,
+                `Synced bundle ${bundle.id} to shell product ${shellProduct.id}: price=${effectivePricePreTax} (pre-tax), availability=${A_final}`,
                 'BundleService'
             );
             

@@ -56,6 +56,8 @@ export const SEARCH_RESULT_FRAGMENT = gql`
         max
       }
     }
+    facetIds
+    facetValueIds
     inStock
   }
 `;
@@ -154,6 +156,16 @@ export const GET_FEATURED_PRODUCTS = gql`
             name
             slug
             description
+            facetValues {
+              id
+              name
+              code
+              facet {
+                id
+                name
+                code
+              }
+            }
             featuredAsset {
               id
               preview
@@ -188,6 +200,16 @@ export const GET_RELATED_PRODUCTS = gql`
             name
             slug
             description
+            facetValues {
+              id
+              name
+              code
+              facet {
+                id
+                name
+                code
+              }
+            }
             featuredAsset {
               id
               preview
@@ -247,20 +269,28 @@ export const BUNDLE_FRAGMENT = gql`
     name
     slug
     description
-    price
+    status
+    discountType
+    fixedPrice
+    percentOff
+    version
     effectivePrice
     totalSavings
-    status
-    enabled
-    assets {
-      id
-      preview
-      source
-    }
+    validFrom
+    validTo
     featuredAsset {
       id
       preview
-      source
+    }
+    assets {
+      id
+      preview
+    }
+    shellProductId
+    shellProduct {
+      id
+      name
+      slug
     }
     items {
       id

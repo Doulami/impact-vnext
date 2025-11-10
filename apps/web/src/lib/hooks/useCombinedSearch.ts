@@ -9,37 +9,9 @@ import type {
   SearchInput,
   SearchSortParameter,
   FacetValueResult,
-  PriceRangeInput
+  PriceRangeInput,
+  Bundle
 } from '../types/product';
-
-// Bundle types
-interface Bundle {
-  id: string;
-  name: string;
-  slug?: string;
-  description?: string;
-  price: number; // Legacy field in dollars
-  effectivePrice?: number; // Computed price in cents
-  totalSavings?: number; // Computed savings in cents
-  enabled: boolean;
-  items: Array<{
-    id: string;
-    productVariant: {
-      id: string;
-      name: string;
-      sku: string;
-      price: number;
-      product: {
-        id: string;
-        name: string;
-        slug: string;
-      };
-    };
-    quantity: number;
-    unitPrice: number;
-    displayOrder: number;
-  }>;
-}
 
 // Combined result type
 interface CombinedResult {
@@ -59,34 +31,27 @@ interface CombinedResult {
 
 // Convert bundle to unified result format
 function toBundleResult(bundle: Bundle): CombinedResult {
-  // Use effectivePrice (already in cents) if available, otherwise convert legacy price
-  const bundlePrice = bundle.effectivePrice ?? (bundle.price * 100);
+  // Use effectivePrice (already in cents)
+  const bundlePrice = bundle.effectivePrice;
   
   // Calculate component total (unitPrice is in dollars, convert to cents)
   const componentTotal = bundle.items.reduce((sum, item) => sum + (item.unitPrice * 100), 0);
   
   // Use totalSavings if available, otherwise calculate (all in cents)
   const savings = bundle.totalSavings ?? (componentTotal - bundlePrice);
-  
-  const getMockImage = (name: string) => {
-    if (name.toLowerCase().includes('performance')) return '/products/bundle-performance.jpg';
-    if (name.toLowerCase().includes('muscle')) return '/products/bundle-muscle.jpg';
-    if (name.toLowerCase().includes('lean')) return '/products/bundle-lean.jpg';
-    if (name.toLowerCase().includes('strength')) return '/products/bundle-strength.jpg';
-    return '/product-placeholder.svg';
-  };
+  const shellProduct = bundle.shellProduct;
 
   return {
     type: 'bundle',
     data: bundle,
     id: bundle.id,
-    name: bundle.name,
-    slug: bundle.slug!, // Shell product slug (always exists)
-    image: getMockImage(bundle.name),
+    name: shellProduct?.name || 'Bundle',
+    slug: shellProduct?.slug || `bundle-${bundle.id}`,
+    image: '/product-placeholder.svg', // Use placeholder until shell product images are implemented
     price: bundlePrice, // Already in cents
     originalPrice: componentTotal,
     savings: savings,
-    inStock: bundle.enabled,
+    inStock: bundle.status === 'ACTIVE',
     rating: 4.5,
     reviews: 127
   };
@@ -123,7 +88,7 @@ export function useCombinedSearch(initialInput?: Partial<SearchInput>) {
     variables: { 
       input: searchInput,
       bundleOptions: {
-        filter: { enabled: { eq: true } },
+        filter: { status: { eq: 'ACTIVE' } },
         take: 10,
         skip: 0
       }

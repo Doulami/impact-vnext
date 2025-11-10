@@ -119,9 +119,21 @@ export default function CartPage() {
 
                             {/* Price */}
                             <div className="col-span-2 text-center">
-                              <span className="font-semibold">
+                              <div className="font-semibold">
                                 ${(item.price / 100).toFixed(2)}
-                              </span>
+                              </div>
+                              {/* Bundle Components */}
+                              {item.isBundle && item.bundleComponents && item.bundleComponents.length > 0 && (
+                                <div className="text-left mt-2 text-xs text-gray-600">
+                        {item.bundleComponents
+                          .filter(component => component.productVariant?.name || component.name) // Only show components with real names
+                          .map((component) => (
+                            <div key={component.id} className="text-xs text-gray-600 py-0.5">
+                              • {component.productVariant?.name || component.name} (x{component.quantity})
+                            </div>
+                          ))}
+                                </div>
+                              )}
                             </div>
 
                             {/* Quantity */}

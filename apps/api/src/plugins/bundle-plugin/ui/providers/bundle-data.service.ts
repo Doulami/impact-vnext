@@ -123,17 +123,34 @@ const BUNDLE_FRAGMENT = `
         fixedPrice
         percentOff
         version
-        assets
-        price
-        enabled
         tags
         category
         allowExternalPromos
-        brokenReason
-        lastRecomputedAt
+        validFrom
+        validTo
+        bundleCap
         isAvailable
         effectivePrice
         totalSavings
+        shellProductId
+        shellProduct {
+            id
+            name
+            slug
+            description
+            assets {
+                id
+                name
+                preview
+                source
+            }
+            featuredAsset {
+                id
+                name
+                preview
+                source
+            }
+        }
         items {
             id
             createdAt
@@ -147,6 +164,7 @@ const BUNDLE_FRAGMENT = `
                 id
                 name
                 price
+                priceWithTax
                 enabled
                 stockOnHand
                 trackInventory

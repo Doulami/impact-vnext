@@ -1,10 +1,11 @@
 'use client';
 
-import { useQuery } from '@apollo/client/react';
-import { GET_RELATED_PRODUCTS } from '@/lib/graphql/queries';
-import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useQuery, useLazyQuery } from '@apollo/client/react';
+import { GET_RELATED_PRODUCTS, GET_PRODUCT_BY_SLUG } from '@/lib/graphql/queries';
+import { Star, ChevronLeft, ChevronRight, Package } from 'lucide-react';
 import Link from 'next/link';
 import { useRef } from 'react';
+import { useCart } from '@/lib/hooks/useCart';
 
 interface RelatedProductsProps {
   currentProductId: string;
@@ -13,6 +14,8 @@ interface RelatedProductsProps {
 
 export function RelatedProducts({ currentProductId, collections }: RelatedProductsProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { addItem, openCart } = useCart();
+  const [getProductBySlug] = useLazyQuery(GET_PRODUCT_BY_SLUG);
   
   // Determine which collection to query:
   // - If product is in "featured" collection, show featured products
@@ -68,18 +71,29 @@ export function RelatedProducts({ currentProductId, collections }: RelatedProduc
   const relatedProducts = variants
     .filter((v: any) => v.product.id !== currentProductId) // Exclude current product
     .slice(0, 8) // Limit to 8 products
-    .map((v: any) => ({
-      id: v.id,
-      productId: v.product.id,
-      name: v.product.name,
-      slug: v.product.slug,
-      description: v.product.description,
-      image: v.product.featuredAsset?.preview,
-      priceWithTax: v.priceWithTax,
-      inStock: v.stockLevel !== 'OUT_OF_STOCK',
-      rating: 4.5,
-      reviews: 0
-    }));
+    .map((v: any) => {
+      // Check if product has bundle facet (check the parent facet name/code)
+      const facetValues = v.product?.facetValues || [];
+      const isBundle = facetValues.some((fv: any) => {
+        const facetName = fv.facet?.name?.toLowerCase() || '';
+        const facetCode = fv.facet?.code?.toLowerCase() || '';
+        return facetName.includes('bundle') || facetCode === 'bundle';
+      });
+      
+      return {
+        id: v.id,
+        productId: v.product.id,
+        name: v.product.name,
+        slug: v.product.slug,
+        description: v.product.description,
+        image: v.product.featuredAsset?.preview,
+        priceWithTax: v.priceWithTax,
+        inStock: v.stockLevel !== 'OUT_OF_STOCK',
+        rating: 4.5,
+        reviews: 0,
+        isBundle
+      };
+    });
 
   const scrollLeft = () => {
     if (scrollRef.current) {
@@ -162,6 +176,13 @@ export function RelatedProducts({ currentProductId, collections }: RelatedProduc
                   🏋️
                 </div>
               )}
+              {/* Bundle Badge */}
+              {product.isBundle && (
+                <div className="absolute top-2 left-2 bg-[var(--brand-primary)] text-white px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
+                  <Package className="w-3 h-3" />
+                  Bundle
+                </div>
+              )}
               {!product.inStock && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                   <span className="bg-white px-3 py-1 text-xs font-bold rounded">
@@ -199,13 +220,52 @@ export function RelatedProducts({ currentProductId, collections }: RelatedProduc
                 
                 {product.inStock && (
                   <button
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.preventDefault();
-                      alert('Quick add to cart functionality coming soon!');
+                      e.stopPropagation();
+                      
+                      if (product.isBundle) {
+                        // Fetch bundle details before adding to cart
+                        try {
+                          const { data } = await getProductBySlug({ variables: { slug: product.slug } });
+                          const productData = (data as any)?.product;
+                          const bundleComponents = productData?.customFields?.bundleComponents 
+                            ? JSON.parse(productData.customFields.bundleComponents)
+                            : [];
+                          
+                          addItem({
+                            id: product.id,
+                            variantId: product.id,
+                            productName: product.name,
+                            price: product.priceWithTax,
+                            image: product.image,
+                            slug: product.slug,
+                            inStock: product.inStock,
+                            isBundle: true,
+                            bundleId: productData?.customFields?.bundleId,
+                            bundleComponents: bundleComponents
+                          });
+                          openCart();
+                        } catch (err) {
+                          console.error('Error fetching bundle data:', err);
+                        }
+                      } else {
+                        // Add regular product to cart
+                        addItem({
+                          id: product.id,
+                          variantId: product.id,
+                          productName: product.name,
+                          price: product.priceWithTax,
+                          image: product.image,
+                          slug: product.slug,
+                          inStock: product.inStock,
+                        });
+                        openCart();
+                      }
                     }}
                     className="bg-black text-white px-3 py-1 text-xs font-medium hover:bg-gray-800 transition-colors"
                   >
-                    Quick Add
+                    {product.isBundle ? 'Add Bundle' : 'Quick Add'}
                   </button>
                 )}
               </div>

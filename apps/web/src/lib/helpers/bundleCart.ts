@@ -1,0 +1,75 @@
+/**
+ * Unified bundle add-to-cart helper
+ * Ensures consistent cart item structure across all pages (PDP, Featured, Bundles, etc.)
+ */
+
+import { ApolloClient } from '@apollo/client';
+import { GET_PRODUCT_BY_SLUG, GET_BUNDLE } from '../graphql/queries';
+
+export interface AddBundleToCartParams {
+  slug: string;
+  productId: string;
+  productName: string;
+  image?: string;
+  quantity?: number;
+  apolloClient: any;
+}
+
+export async function addBundleToCart(params: AddBundleToCartParams) {
+  const { slug, productId, productName, image, quantity = 1, apolloClient } = params;
+  
+  try {
+    // 1. Fetch shell product to get bundleId
+    const { data: productData } = await apolloClient.query({
+      query: GET_PRODUCT_BY_SLUG,
+      variables: { slug }
+    });
+    
+    const product = productData?.product;
+    const bundleId = product?.customFields?.bundleId;
+    const shellVariant = product?.variants?.[0];
+    const shellVariantId = shellVariant?.id || productId;
+    const priceWithTax = shellVariant?.priceWithTax || 0; // Get price WITH tax from shell variant
+    
+    if (!bundleId) {
+      throw new Error('Bundle ID not found');
+    }
+    
+    // 2. Fetch Bundle entity for component details
+    const { data: bundleData } = await apolloClient.query({
+      query: GET_BUNDLE,
+      variables: { id: bundleId }
+    });
+    
+    const bundle = bundleData?.bundle;
+    
+    if (!bundle) {
+      throw new Error('Bundle not found');
+    }
+    
+    // 3. Calculate component total for savings
+    const componentTotal = bundle.items.reduce(
+      (sum: number, item: any) => sum + (item.productVariant?.priceWithTax || 0) * item.quantity,
+      0
+    );
+    
+    // 4. Return standardized cart item
+    return {
+      id: productId,
+      variantId: shellVariantId, // CRITICAL: Use shell product's first variant ID
+      productName: productName,
+      price: priceWithTax, // CRITICAL: Use priceWithTax from shell variant
+      originalPrice: componentTotal,
+      image: image || '/product-placeholder.svg',
+      slug: slug,
+      inStock: (product?.customFields?.bundleAvailability || 0) > 0,
+      quantity: quantity,
+      isBundle: true,
+      bundleId: bundleId,
+      bundleComponents: bundle.items
+    };
+  } catch (error) {
+    console.error('[addBundleToCart] Error:', error);
+    throw error;
+  }
+}

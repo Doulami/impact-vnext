@@ -18,6 +18,8 @@ export interface SearchResult {
   };
   price: SinglePrice | PriceRange;
   priceWithTax: SinglePrice | PriceRange;
+  facetIds: string[];
+  facetValueIds: string[];
   inStock: boolean;
 }
 
@@ -119,6 +121,7 @@ export interface ProductCard {
   inStock: boolean;
   rating?: number;
   reviews?: number;
+  isBundle?: boolean;
 }
 
 export interface Filter {
@@ -130,7 +133,7 @@ export interface Filter {
 }
 
 // Helper functions
-export function toProductCardData(searchResult: SearchResult): ProductCard {
+export function toProductCardData(searchResult: SearchResult, bundleFacetValueIds: string[] = []): ProductCard {
   const getPrice = (price: SinglePrice | PriceRange): number => {
     if ('value' in price) {
       return price.value;
@@ -146,6 +149,10 @@ export function toProductCardData(searchResult: SearchResult): ProductCard {
     return undefined;
   };
   
+  // Check if product has any bundle facet value
+  const isBundle = bundleFacetValueIds.length > 0 && 
+    searchResult.facetValueIds?.some(id => bundleFacetValueIds.includes(id));
+  
   return {
     id: searchResult.productId,
     name: searchResult.productName,
@@ -156,6 +163,7 @@ export function toProductCardData(searchResult: SearchResult): ProductCard {
     inStock: searchResult.inStock,
     rating: 4.5, // Mock rating
     reviews: 0,  // Mock reviews count
+    isBundle,
   };
 }
 
@@ -172,4 +180,45 @@ export function productToCardData(product: Product): ProductCard {
     rating: 4.5,
     reviews: 0,
   };
+}
+
+// Bundle Types
+export interface BundleItem {
+  id: string;
+  productVariant: {
+    id: string;
+    name: string;
+    sku: string;
+    price: number;
+    priceWithTax: number;
+    product: {
+      id: string;
+      name: string;
+      slug: string;
+    };
+  };
+  quantity: number;
+  unitPrice: number; // Price in dollars
+  displayOrder: number;
+}
+
+export interface Bundle {
+  id: string;
+  name: string;
+  slug?: string;
+  description?: string;
+  status: string;
+  discountType: string;
+  fixedPrice?: number; // Price in cents for fixed-price bundles
+  percentOff?: number; // Percentage off (0-100) for percent bundles
+  version: number;
+  effectivePrice: number; // Computed price in cents
+  totalSavings: number; // Computed savings in cents
+  shellProductId?: string;
+  shellProduct?: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  items: BundleItem[];
 }

@@ -40,10 +40,10 @@ import gql from 'graphql-tag';
               {{ bundle.name }}
             </a>
           </td>
-          <td class="left align-middle">{{ bundle.price | currency }}</td>
+          <td class="left align-middle">{{ bundle.effectivePrice | currency }}</td>
           <td class="left align-middle">
-            <vdr-chip [colorType]="bundle.enabled ? 'success' : 'warning'">
-              {{ bundle.enabled ? 'Enabled' : 'Disabled' }}
+            <vdr-chip [colorType]="bundle.status === 'ACTIVE' ? 'success' : 'warning'">
+              {{ bundle.status }}
             </vdr-chip>
           </td>
           <td class="left align-middle">{{ bundle.items?.length || 0 }} items</td>
@@ -76,8 +76,8 @@ export class BundleListComponent implements OnInit {
           items {
             id
             name
-            price
-            enabled
+            status
+            effectivePrice
             items {
               id
             }

@@ -11,21 +11,26 @@ export interface Bundle {
     id: string;
     createdAt: string;
     updatedAt: string;
-    name: string;
-    slug?: string;
-    description?: string;
     status: BundleStatus;
     discountType: BundleDiscountType;
     fixedPrice?: number;
     percentOff?: number;
     version: number;
-    assets: string[];
-    price: number;
-    enabled: boolean; // Legacy compatibility
     tags?: string[];
     category?: string;
     allowExternalPromos: boolean;
     items: BundleItem[];
+    
+    // Shell product reference
+    shellProductId?: string;
+    shellProduct?: {
+        id: string;
+        name: string;
+        slug: string;
+        description?: string;
+        assets: Asset[];
+        featuredAsset?: Asset;
+    };
     
     // Phase 4.1 audit fields
     brokenReason?: string;
@@ -53,6 +58,7 @@ export interface ProductVariant {
     id: string;
     name: string;
     price: number;
+    priceWithTax: number;
     enabled: boolean;
     stockOnHand: number;
     trackInventory: boolean;
@@ -98,15 +104,12 @@ export interface BundleSortParameter {
     id?: SortOrder;
     createdAt?: SortOrder;
     updatedAt?: SortOrder;
-    name?: SortOrder;
-    price?: SortOrder;
+    effectivePrice?: SortOrder;
     status?: SortOrder;
 }
 
 export interface BundleFilterParameter {
-    enabled?: BooleanOperators;
     status?: StringOperators;
-    name?: StringOperators;
     category?: StringOperators;
     discountType?: StringOperators;
 }

@@ -29,8 +29,11 @@ interface Bundle {
     name: string;
     slug?: string;
     description?: string;
-    price: number;
-    enabled: boolean;
+    status: string;
+    discountType: string;
+    fixedPrice?: number;
+    percentOff?: number;
+    effectivePrice: number;
     category?: string;
     items: BundleItem[];
 }
@@ -53,8 +56,11 @@ const BUNDLES_QUERY = `
                 name
                 slug
                 description
-                price
-                enabled
+                status
+                discountType
+                fixedPrice
+                percentOff
+                effectivePrice
                 category
                 items {
                     id
@@ -75,7 +81,8 @@ const CREATE_BUNDLE_MUTATION = `
         createBundle(input: $input) {
             id
             name
-            price
+            status
+            effectivePrice
         }
     }
 `;
@@ -85,7 +92,8 @@ const UPDATE_BUNDLE_MUTATION = `
         updateBundle(input: $input) {
             id
             name
-            price
+            status
+            effectivePrice
         }
     }
 `;
@@ -110,9 +118,10 @@ export function BundlesPage() {
         name: '',
         slug: '',
         description: '',
-        price: 0,
+        discountType: 'FIXED',
+        fixedPrice: 0,
+        percentOff: 0,
         category: '',
-        enabled: true,
         items: [] as Array<{ productVariantId: string; quantity: number; unitPrice: number }>,
     });
 
@@ -140,9 +149,10 @@ export function BundlesPage() {
             name: '',
             slug: '',
             description: '',
-            price: 0,
+            discountType: 'FIXED',
+            fixedPrice: 0,
+            percentOff: 0,
             category: '',
-            enabled: true,
             items: [],
         });
         setDialogOpen(true);
@@ -154,9 +164,10 @@ export function BundlesPage() {
             name: bundle.name,
             slug: bundle.slug || '',
             description: bundle.description || '',
-            price: bundle.price,
+            discountType: bundle.discountType,
+            fixedPrice: bundle.fixedPrice || 0,
+            percentOff: bundle.percentOff || 0,
             category: bundle.category || '',
-            enabled: bundle.enabled,
             items: bundle.items.map(item => ({
                 productVariantId: item.productVariant.id,
                 quantity: item.quantity,
@@ -262,12 +273,12 @@ export function BundlesPage() {
                                 {bundles.map((bundle) => (
                                     <TableRow key={bundle.id}>
                                         <TableCell>{bundle.name}</TableCell>
-                                        <TableCell>${(bundle.price / 100).toFixed(2)}</TableCell>
+                                        <TableCell>${(bundle.effectivePrice / 100).toFixed(2)}</TableCell>
                                         <TableCell>{bundle.items.length} items</TableCell>
                                         <TableCell>
                                             <Chip
-                                                label={bundle.enabled ? 'Enabled' : 'Disabled'}
-                                                color={bundle.enabled ? 'success' : 'default'}
+                                                label={bundle.status}
+                                                color={bundle.status === 'ACTIVE' ? 'success' : 'default'}
                                                 size="small"
                                             />
                                         </TableCell>
@@ -321,12 +332,11 @@ export function BundlesPage() {
                         </Grid>
                         <Grid item xs={6}>
                             <TextField
-                                label="Price (in cents)"
+                                label="Fixed Price (in cents)"
                                 fullWidth
-                                required
                                 type="number"
-                                value={formData.price}
-                                onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
+                                value={formData.fixedPrice}
+                                onChange={(e) => setFormData({ ...formData, fixedPrice: parseInt(e.target.value) })}
                             />
                         </Grid>
                         <Grid item xs={12}>
@@ -348,15 +358,18 @@ export function BundlesPage() {
                             />
                         </Grid>
                         <Grid item xs={6}>
-                            <FormControlLabel
-                                control={
-                                    <Checkbox
-                                        checked={formData.enabled}
-                                        onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
-                                    />
-                                }
-                                label="Enabled"
-                            />
+                            <TextField
+                                label="Discount Type"
+                                fullWidth
+                                required
+                                select
+                                SelectProps={{ native: true }}
+                                value={formData.discountType}
+                                onChange={(e) => setFormData({ ...formData, discountType: e.target.value })}
+                            >
+                                <option value="FIXED">Fixed Price</option>
+                                <option value="PERCENTAGE">Percentage Off</option>
+                            </TextField>
                         </Grid>
 
                         <Grid item xs={12}>

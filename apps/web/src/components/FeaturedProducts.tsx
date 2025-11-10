@@ -1,11 +1,12 @@
 'use client';
 
-import { useQuery } from '@apollo/client/react';
-import { GET_FEATURED_PRODUCTS, GET_BUNDLES } from '@/lib/graphql/queries';
+import { useQuery, useApolloClient } from '@apollo/client/react';
+import { GET_FEATURED_PRODUCTS } from '@/lib/graphql/queries';
 import { toProductCardData, type SearchResult } from '@/lib/types/product';
 import { Star, ChevronLeft, ChevronRight, Package } from 'lucide-react';
 import Link from 'next/link';
 import { useCart } from '@/lib/hooks/useCart';
+import { addBundleToCart } from '@/lib/helpers/bundleCart';
 
 interface FeaturedProductsProps {
   title?: string;
@@ -13,36 +14,54 @@ interface FeaturedProductsProps {
 
 export function FeaturedProducts({ title = 'Your journey starts here' }: FeaturedProductsProps = {}) {
   const { addItem, openCart } = useCart();
+  const apolloClient = useApolloClient();
   
   const { data: productsData, loading: productsLoading, error: productsError } = useQuery(GET_FEATURED_PRODUCTS);
 
-  const { data: bundlesData, loading: bundlesLoading } = useQuery(GET_BUNDLES, {
-    variables: {
-      options: {
-        filter: { status: { eq: 'ACTIVE' } },
-        take: 3
-      }
-    },
-    errorPolicy: 'all'
-  });
-
   // Convert collection variants to card data - use variant ID to avoid duplicates
   const variants = (productsData as any)?.collection?.productVariants?.items || [];
-  const productCards = variants.map((v: any) => ({
-    id: v.id, // Use variant ID, not product ID
-    productId: v.product.id,
-    name: v.product.name,
-    slug: v.product.slug,
-    description: v.product.description,
-    image: v.product.featuredAsset?.preview,
-    priceWithTax: v.priceWithTax,
-    inStock: true,
-    rating: 4.5,
-    reviews: 0
-  }));
-  const bundles = (bundlesData as any)?.bundles?.items || [];
-  
-  const loading = productsLoading || bundlesLoading;
+  const productCards = variants.map((v: any) => {
+    // Check if product has bundle facet (check the parent facet name/code)
+    const facetValues = v.product?.facetValues || [];
+    
+    console.log('[FeaturedProducts] Checking product:', v.product.name);
+    console.log('[FeaturedProducts] Raw facetValues:', facetValues);
+    
+    const isBundle = facetValues.some((fv: any) => {
+      const facetName = fv.facet?.name?.toLowerCase() || '';
+      const facetCode = fv.facet?.code?.toLowerCase() || '';
+      const matches = facetName.includes('bundle') || facetCode === 'bundle';
+      
+      console.log('[FeaturedProducts] Checking facetValue:', {
+        valueName: fv.name,
+        valueCode: fv.code,
+        facetName: fv.facet?.name,
+        facetCode: fv.facet?.code,
+        facetNameLower: facetName,
+        facetCodeLower: facetCode,
+        matchesBundle: matches
+      });
+      
+      return matches;
+    });
+    
+    console.log('[FeaturedProducts] Final isBundle:', isBundle, 'for product:', v.product.name);
+    
+    return {
+      id: v.id, // Use variant ID, not product ID
+      productId: v.product.id,
+      name: v.product.name,
+      slug: v.product.slug,
+      description: v.product.description,
+      image: v.product.featuredAsset?.preview,
+      priceWithTax: v.priceWithTax,
+      inStock: true,
+      rating: 4.5,
+      reviews: 0,
+      isBundle
+    };
+  });
+  const loading = productsLoading;
   const error = productsError;
 
   if (loading) {
@@ -91,83 +110,13 @@ export function FeaturedProducts({ title = 'Your journey starts here' }: Feature
 
           <div id="products-carousel" className="relative">
             <div className="flex gap-6 overflow-x-auto pb-4">
-              {/* Bundle Cards */}
-              {bundles.map((bundle: any) => {
-                const componentTotal = bundle.items?.reduce((sum: number, item: any) => sum + item.unitPrice, 0) || 0;
-                const savings = componentTotal - bundle.price;
-                const getMockImage = (name: string) => {
-                  if (name.toLowerCase().includes('performance')) return '/products/bundle-performance.jpg';
-                  if (name.toLowerCase().includes('muscle')) return '/products/bundle-muscle.jpg';
-                  if (name.toLowerCase().includes('lean')) return '/products/bundle-lean.jpg';
-                  if (name.toLowerCase().includes('strength')) return '/products/bundle-strength.jpg';
-                  return '/products/bundle-default.jpg';
-                };
-                return (
-                  <Link
-                    key={`bundle-${bundle.id}`}
-                    href={`/products/${bundle.slug}`}
-                    className="bg-white border border-gray-200 hover:shadow-lg transition-shadow flex-shrink-0 w-64 group relative"
-                  >
-                    <div className="aspect-square bg-gray-50 flex items-center justify-center p-4 relative">
-                      <img
-                        src={getMockImage(bundle.name)}
-                        alt={bundle.name}
-                        className="w-full h-full object-contain"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/product-placeholder.svg';
-                        }}
-                      />
-                      {/* Bundle Badge */}
-                      <div className="absolute top-2 left-2 bg-[var(--brand-primary)] text-white px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
-                        <Package className="w-3 h-3" />
-                        Bundle
-                      </div>
-                      {/* Savings Badge */}
-                      {savings > 0 && (
-                        <div className="absolute top-2 right-2 bg-[var(--danger)] text-white px-2 py-1 rounded text-xs font-bold">
-                          Save ${savings.toFixed(0)}
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-sm mb-1 group-hover:text-[var(--brand-primary)] transition-colors">{bundle.name}</h3>
-                      <p className="text-xs text-gray-600 mb-2">{bundle.items?.length || 0} Products • Bundle</p>
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="flex items-center">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <Star key={i} className="w-3 h-3 text-yellow-400 fill-current" />
-                          ))}
-                        </div>
-                        <span className="text-xs text-gray-500">(127)</span>
-                      </div>
-                      <div className="space-y-3">
-                        <div className="text-center">
-                          <div className="text-lg font-bold">${bundle.price.toFixed(2)}</div>
-                        </div>
-                        <button 
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            window.location.href = `/products/${bundle.slug}`;
-                          }}
-                          className="w-full bg-[var(--brand-secondary)] text-white py-2.5 text-xs font-medium hover:bg-[var(--brand-secondary)]/90 transition-colors uppercase tracking-wide"
-                        >
-                          VIEW BUNDLE
-                        </button>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-              
-              {/* Product Cards */}
               {productCards.map((product: any) => (
                 <Link
                   key={product.id}
                   href={`/products/${product.slug}`}
                   className="bg-white border border-gray-200 hover:shadow-lg transition-shadow flex-shrink-0 w-64 group"
                 >
-                <div className="aspect-square bg-gray-50 flex items-center justify-center p-4">
+                <div className="aspect-square bg-gray-50 flex items-center justify-center p-4 relative">
                   {product.image ? (
                     <img
                       src={product.image}
@@ -176,6 +125,13 @@ export function FeaturedProducts({ title = 'Your journey starts here' }: Feature
                     />
                   ) : (
                     <div className="text-6xl">🏋️</div>
+                  )}
+                  {/* Bundle Badge */}
+                  {product.isBundle && (
+                    <div className="absolute top-2 left-2 bg-[var(--brand-primary)] text-white px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
+                      <Package className="w-3 h-3" />
+                      Bundle
+                    </div>
                   )}
                 </div>
                 <div className="p-4">
@@ -217,9 +173,26 @@ export function FeaturedProducts({ title = 'Your journey starts here' }: Feature
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        // For products with variations, redirect to PDP instead of adding to cart
+                        // For products with variations, redirect to PDP
                         if (product.priceRange) {
                           window.location.href = `/products/${product.slug}`;
+                        } else if (product.isBundle) {
+                          // Use unified bundle helper
+                          addBundleToCart({
+                            slug: product.slug,
+                            productId: product.productId,
+                            productName: product.name,
+                            image: product.image,
+                            quantity: 1,
+                            apolloClient
+                          })
+                            .then(cartItem => {
+                              addItem(cartItem);
+                              openCart();
+                            })
+                            .catch(err => {
+                              console.error('[FeaturedProducts] Error adding bundle:', err);
+                            });
                         } else {
                           // Add single variant product to cart
                           addItem({
@@ -236,7 +209,7 @@ export function FeaturedProducts({ title = 'Your journey starts here' }: Feature
                       }}
                       className="w-full bg-black text-white py-2.5 text-xs font-medium hover:bg-gray-800 transition-colors uppercase tracking-wide"
                     >
-                      {product.priceRange ? 'CHOOSE OPTIONS' : 'ADD TO CART'}
+                      {product.isBundle ? 'ADD BUNDLE' : product.priceRange ? 'CHOOSE OPTIONS' : 'ADD TO CART'}
                     </button>
                   </div>
                 </div>

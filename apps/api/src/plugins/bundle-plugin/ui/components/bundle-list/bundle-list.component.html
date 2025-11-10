@@ -94,11 +94,11 @@
     >
         <ng-template let-bundle="item">
             <a class="button-ghost" [routerLink]="['./', bundle.id]">
-                <span class="bundle-name">{{ bundle.name }}</span>
+                <span class="bundle-name">{{ bundle.shellProduct?.name || 'Bundle #' + bundle.id }}</span>
             </a>
             <div class="bundle-meta">
                 <span *ngIf="bundle.category" class="category-badge">{{ bundle.category }}</span>
-                <span *ngIf="bundle.slug" class="text-muted small">{{ bundle.slug }}</span>
+                <span *ngIf="bundle.shellProduct?.slug" class="text-muted small">{{ bundle.shellProduct.slug }}</span>
             </div>
         </ng-template>
     </vdr-dt2-column>
@@ -134,7 +134,7 @@
             <div class="components-info">
                 <span class="component-count">{{ bundle.items?.length || 0 }} items</span>
                 <div class="component-total">
-                    Total: {{ bundle.price | localeCurrency }}
+                    Price: {{ bundle.effectivePrice | localeCurrency }}
                 </div>
             </div>
         </ng-template>
@@ -149,8 +149,8 @@
         <ng-template let-bundle="item">
             <div class="savings-info">
                 <span class="savings-amount">{{ bundle.totalSavings | localeCurrency }}</span>
-                <div class="savings-percent text-muted small">
-                    {{ ((bundle.totalSavings / (bundle.price + bundle.totalSavings)) * 100) | number:'1.1-1' }}%
+                <div class="savings-percent text-muted small" *ngIf="bundle.totalSavings && bundle.effectivePrice">
+                    {{ ((bundle.totalSavings / (bundle.effectivePrice + bundle.totalSavings)) * 100) | number:'1.1-1' }}%
                 </div>
             </div>
         </ng-template>

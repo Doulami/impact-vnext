@@ -90,80 +90,96 @@ export default function CartDrawer() {
                 <div className="flex-1 overflow-y-auto p-4">
                   <div className="space-y-4">
                     {items.map((item) => (
-                      <div key={item.variantId} className="border rounded-lg">
-                        {item.isBundle ? (
-                          <div className="p-3">
-                            <BundleCartItem
-                              item={item}
-                              onUpdateQuantity={updateQuantity}
-                              onRemove={(variantId) => setItemToRemove(variantId)}
-                              showQuantityControls={true}
-                              compact={false}
-                            />
+                      <div key={item.variantId} className="border rounded-lg p-3">
+                        <div className="flex gap-3">
+                          {/* Product Image */}
+                          <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0 overflow-hidden relative">
+                            {item.image ? (
+                              <img 
+                                src={item.image} 
+                                alt={item.productName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-2xl">
+                                {item.isBundle ? '📦' : '🏋️'}
+                              </div>
+                            )}
                           </div>
-                        ) : (
-                          <div className="flex gap-3 p-3">
-                            {/* Product Image */}
-                            <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0 overflow-hidden">
-                              {item.image ? (
-                                <img 
-                                  src={item.image} 
-                                  alt={item.productName}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-2xl">
-                                  🏋️
-                                </div>
-                              )}
-                            </div>
 
-                            {/* Product Info */}
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-sm line-clamp-2 mb-1">
-                                {item.productName}
-                              </h4>
-                              {item.variantName && (
-                                <p className="text-xs text-gray-500 mb-1">
-                                  {item.variantName}
-                                </p>
-                              )}
+                          {/* Product Info */}
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-sm line-clamp-2 mb-1">
+                              {item.productName}
+                            </h4>
+                            
+                            {/* Variant name or bundle item count */}
+                            {item.isBundle && item.bundleComponents ? (
+                              <p className="text-xs text-gray-500 mb-1">
+                                {item.bundleComponents.length} items included
+                              </p>
+                            ) : item.variantName ? (
+                              <p className="text-xs text-gray-500 mb-1">
+                                {item.variantName}
+                              </p>
+                            ) : null}
+                            
+                            {/* Price and Quantity in same row */}
+                            <div className="flex items-center gap-3 mb-2">
                               <p className="font-bold text-sm">
                                 ${(item.price / 100).toFixed(2)}
                               </p>
+                              <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
+                            </div>
 
-                              {/* Quantity Controls */}
-                              <div className="flex items-center justify-between mt-2">
-                                <div className="flex items-center border rounded">
-                                  <button
-                                    onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
-                                    className="p-1 hover:bg-gray-100 transition-colors"
-                                    disabled={item.quantity <= 1}
-                                  >
-                                    <Minus className="w-3 h-3" />
-                                  </button>
-                                  <span className="px-3 py-1 text-sm min-w-[40px] text-center">
-                                    {item.quantity}
-                                  </span>
-                                  <button
-                                    onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                                    className="p-1 hover:bg-gray-100 transition-colors"
-                                  >
-                                    <Plus className="w-3 h-3" />
-                                  </button>
-                                </div>
+                            {/* Bundle Components List */}
+                            {item.isBundle && item.bundleComponents && item.bundleComponents.length > 0 && (
+                              <div className="mb-2 pl-2 border-l-2 border-gray-200">
+                                {item.bundleComponents
+                                  .filter(component => component.productVariant?.name || component.name) // Only show components with real names
+                                  .map((component) => {
+                                    const name = component.productVariant?.name || component.name || 'Component';
+                                    const quantity = component.quantity || 1;
+                                    return (
+                                      <div key={component.id} className="text-xs text-gray-600 py-0.5">
+                                        • {name} (x{quantity})
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            )}
 
+                            {/* Quantity Controls */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center border rounded">
                                 <button
-                                  onClick={() => setItemToRemove(item.variantId)}
-                                  className="text-red-500 hover:text-red-700 transition-colors p-1"
-                                  title="Remove item"
+                                  onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
+                                  className="p-1 hover:bg-gray-100 transition-colors"
+                                  disabled={item.quantity <= 1}
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  <Minus className="w-3 h-3" />
+                                </button>
+                                <span className="px-3 py-1 text-sm min-w-[40px] text-center">
+                                  {item.quantity}
+                                </span>
+                                <button
+                                  onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+                                  className="p-1 hover:bg-gray-100 transition-colors"
+                                >
+                                  <Plus className="w-3 h-3" />
                                 </button>
                               </div>
+
+                              <button
+                                onClick={() => setItemToRemove(item.variantId)}
+                                className="text-red-500 hover:text-red-700 transition-colors p-1"
+                                title="Remove item"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             </div>
                           </div>
-                        )}
+                        </div>
                       </div>
                     ))}
                   </div>

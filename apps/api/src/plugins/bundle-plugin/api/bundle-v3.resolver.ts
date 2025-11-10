@@ -3,6 +3,8 @@ import {
     Query,
     Mutation,
     Args,
+    ResolveField,
+    Parent,
 } from '@nestjs/graphql';
 import {
     Ctx,
@@ -15,6 +17,7 @@ import {
     OrderService,
     ActiveOrderService,
     ProductVariantService,
+    ProductService,
     Logger,
 } from '@vendure/core';
 import { BundleService } from '../services/bundle.service';
@@ -37,6 +40,7 @@ export class ShopApiBundleResolver {
         private orderService: OrderService,
         private activeOrderService: ActiveOrderService,
         private productVariantService: ProductVariantService,
+        private productService: ProductService,
     ) {}
 
     @Query()
@@ -58,6 +62,27 @@ export class ShopApiBundleResolver {
             }
         };
         return this.bundleService.findAll(ctx, queryOptions);
+    }
+
+    @ResolveField()
+    async shellProduct(
+        @Ctx() ctx: RequestContext,
+        @Parent() bundle: Bundle
+    ) {
+        if (!bundle.shellProductId) {
+            return null;
+        }
+        
+        try {
+            const product = await this.productService.findOne(ctx, bundle.shellProductId);
+            return product;
+        } catch (error) {
+            Logger.warn(
+                `Failed to resolve shell product ${bundle.shellProductId} for bundle ${bundle.id}: ${error instanceof Error ? error.message : String(error)}`,
+                ShopApiBundleResolver.loggerCtx
+            );
+            return null;
+        }
     }
     
     @Query()
@@ -368,13 +393,35 @@ export class ShopApiBundleResolver {
  * Admin API Bundle Resolver for Vendure v3
  * Note: The admin operations use the existing resolver from bundle-admin.resolver.ts
  */
-@Resolver()
+@Resolver('Bundle')
 export class AdminApiBundleResolver {
     constructor(
         private bundleService: BundleService,
         private bundleLifecycleService: BundleLifecycleService,
-        private bundleSafetyService: BundleSafetyService
+        private bundleSafetyService: BundleSafetyService,
+        private productService: ProductService
     ) {}
+
+    @ResolveField()
+    async shellProduct(
+        @Ctx() ctx: RequestContext,
+        @Parent() bundle: Bundle
+    ) {
+        if (!bundle.shellProductId) {
+            return null;
+        }
+        
+        try {
+            const product = await this.productService.findOne(ctx, bundle.shellProductId);
+            return product;
+        } catch (error) {
+            Logger.warn(
+                `Failed to resolve shell product ${bundle.shellProductId} for bundle ${bundle.id}: ${error instanceof Error ? error.message : String(error)}`,
+                'AdminApiBundleResolver'
+            );
+            return null;
+        }
+    }
 
     @Query()
     @Allow(Permission.ReadOrder)
