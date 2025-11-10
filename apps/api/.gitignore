@@ -1,5 +1,11 @@
 node_modules
+/node_modules
 dist
+/dist
+build
+/build
+.next
+/.next
 admin-ui
 static/assets
 static/email/test-emails
