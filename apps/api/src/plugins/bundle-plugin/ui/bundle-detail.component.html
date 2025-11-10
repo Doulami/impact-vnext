@@ -233,7 +233,7 @@
                                 class="form-control form-control-sm"
                                 placeholder="Search variant..."
                                 [value]="item.get('productVariantName')?.value"
-                                (input)="searchVariants($event.target.value, i)"
+                                (input)="searchVariants(($any($event).target).value, i)"
                                 (focus)="activeSearchIndex = i"
                                 (blur)="variantSearchResults = []; activeSearchIndex = null"
                             />
