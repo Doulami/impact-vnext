@@ -1,0 +1,15 @@
+<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="400" fill="#f3f4f6"/>
+  <ellipse cx="200" cy="250" rx="85" ry="130" fill="#1f2937"/>
+  <ellipse cx="200" cy="140" rx="80" ry="25" fill="#1f2937"/>
+  <rect x="130" y="200" width="50" height="80" fill="#2563eb"/>
+  <text x="200" y="240" text-anchor="middle" font-family="Arial" font-size="22" font-weight="bold" fill="#2563eb">
+    ISOTONIC
+  </text>
+  <text x="200" y="270" text-anchor="middle" font-family="Arial" font-size="14" fill="#fbbf24">
+    ENDURANCE
+  </text>
+  <text x="200" y="360" text-anchor="middle" font-family="Arial" font-size="12" fill="#6b7280">
+    Replace with actual image
+  </text>
+</svg>
