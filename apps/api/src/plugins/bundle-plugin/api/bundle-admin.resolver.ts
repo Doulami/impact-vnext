@@ -1,0 +1,200 @@
+import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { Transaction, Allow, Permission, RequestContext, ID, Logger, Ctx } from '@vendure/core';
+import { BundleService } from '../services/bundle.service';
+import { Bundle } from '../entities/bundle.entity';
+
+/**
+ * Bundle Admin API Resolver (Clean Version)
+ * 
+ * Provides admin-only GraphQL operations for Bundle management
+ * Focused on core CRUD operations without GraphQL schema conflicts
+ */
+@Resolver()
+export class BundleAdminResolver {
+    private static readonly loggerCtx = 'BundleAdminResolver';
+
+    constructor(private bundleService: BundleService) {}
+
+    @Query()
+    @Allow(Permission.ReadCatalog)
+    async bundles(
+        @Ctx() ctx: RequestContext,
+        @Args() args: { options?: any }
+    ): Promise<{ items: Bundle[]; totalItems: number }> {
+        return this.bundleService.findAll(ctx, args.options || {});
+    }
+
+    @Query()
+    @Allow(Permission.ReadCatalog)
+    async bundle(@Ctx() ctx: RequestContext, @Args() args: { id: ID }): Promise<Bundle | null> {
+        return this.bundleService.findOne(ctx, args.id);
+    }
+
+    /**
+     * Create a new bundle
+     * Validates component variants and creates bundle with items
+     */
+    @Mutation()
+    @Transaction()
+    @Allow(Permission.CreateCatalog)
+    async createBundle(
+        @Ctx() ctx: RequestContext,
+        @Args() args: { input: any }
+    ): Promise<Bundle> {
+        try {
+            // Validate bundle data according to documentation rules
+            this.validateBundleInput(args.input);
+            
+            return await this.bundleService.create(ctx, args.input);
+        } catch (error) {
+            throw new Error(
+                error instanceof Error 
+                    ? error.message 
+                    : 'Failed to create bundle'
+            );
+        }
+    }
+
+    /**
+     * Update an existing bundle
+     * Handles bundle property updates and component modifications
+     */
+    @Mutation()
+    @Transaction()
+    @Allow(Permission.UpdateCatalog)
+    async updateBundle(
+        @Ctx() ctx: RequestContext,
+        @Args() args: { input: any }
+    ): Promise<Bundle> {
+        try {
+            // Validate bundle data if items are being updated
+            if (args.input.items) {
+                this.validateBundleItems(args.input.items);
+            }
+
+            return await this.bundleService.update(ctx, args.input);
+        } catch (error) {
+            throw new Error(
+                error instanceof Error 
+                    ? error.message 
+                    : 'Failed to update bundle'
+            );
+        }
+    }
+
+    /**
+     * Delete a bundle
+     * Removes bundle and all associated bundle items
+     */
+    @Mutation()
+    @Transaction()
+    @Allow(Permission.DeleteCatalog)
+    async deleteBundle(
+        @Ctx() ctx: RequestContext,
+        @Args() args: { id: ID }
+    ): Promise<{ result: string; message?: string }> {
+        try {
+            const result = await this.bundleService.delete(ctx, args.id);
+            
+            return result;
+        } catch (error) {
+            return {
+                result: 'NOT_DELETED' as any,
+                message: error instanceof Error ? error.message : 'Failed to delete bundle',
+            };
+        }
+    }
+
+    /**
+     * Private validation methods following documentation specifications
+     */
+    private validateBundleInput(input: any): void {
+        // Component uniqueness validation
+        const variantIds = input.items.map((item: any) => item.productVariantId);
+        const uniqueVariantIds = new Set(variantIds);
+        if (variantIds.length !== uniqueVariantIds.size) {
+            throw new Error('Duplicate variants in bundle - each component must be unique');
+        }
+
+        // Bundle size validation
+        if (input.items.length === 0) {
+            throw new Error('Bundle must contain at least one component');
+        }
+
+        if (input.items.length > 10) { // maxBundleSize from documentation
+            throw new Error('Bundle cannot contain more than 10 components');
+        }
+
+        // Price consistency validation
+        if (!input.price || input.price <= 0) {
+            throw new Error('Bundle price must be positive');
+        }
+
+        // Validate component quantities
+        for (const item of input.items) {
+            if (item.quantity <= 0) {
+                throw new Error('Component quantities must be positive');
+            }
+            if (!item.unitPrice || item.unitPrice < 0) {
+                throw new Error('Component unit prices cannot be negative');
+            }
+        }
+
+        // Name validation
+        if (!input.name || input.name.trim().length === 0) {
+            throw new Error('Bundle name is required');
+        }
+
+        if (input.name.length > 255) {
+            throw new Error('Bundle name cannot exceed 255 characters');
+        }
+
+        // Slug validation (if provided)
+        if (input.slug) {
+            const slugRegex = /^[a-z0-9-]+$/;
+            if (!slugRegex.test(input.slug)) {
+                throw new Error('Bundle slug must contain only lowercase letters, numbers, and hyphens');
+            }
+        }
+    }
+
+    private validateBundleItems(items: any[]): void {
+        // Component uniqueness validation
+        const variantIds = items.map(item => item.productVariantId);
+        const uniqueVariantIds = new Set(variantIds);
+        if (variantIds.length !== uniqueVariantIds.size) {
+            throw new Error('Duplicate variants in bundle - each component must be unique');
+        }
+
+        // Bundle size validation
+        if (items.length === 0) {
+            throw new Error('Bundle must contain at least one component');
+        }
+
+        if (items.length > 10) {
+            throw new Error('Bundle cannot contain more than 10 components');
+        }
+
+        // Validate component quantities and prices
+        for (const item of items) {
+            if (item.quantity <= 0) {
+                throw new Error('Component quantities must be positive');
+            }
+            if (!item.unitPrice || item.unitPrice < 0) {
+                throw new Error('Component unit prices cannot be negative');
+            }
+        }
+    }
+}
+
+/**
+ * Additional Admin API resolver for bundle-related operations
+ * Placeholder for future extensions
+ */
+@Resolver()
+export class AdminApiBundleResolver {
+    constructor(private bundleService: BundleService) {}
+
+    // Methods will be added here once GraphQL schema conflicts are resolved
+    // These will include bundle analytics, stock validation, and opportunity detection
+}

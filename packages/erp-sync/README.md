@@ -1,0 +1,1 @@
+# erp-sync\n\n**Purpose**: ERP/CRM sync adapter (future feature).\n\n**Status**: Placeholder (future; not in M1–M8)\n\n## Overview\n\nBidirectional sync with ERP/CRM systems:\n- Order data export\n- Inventory sync\n- Customer data integration\n\n## Planned for Phase 2\n\n## See Also\n\n- README.md – Project overview\n"

@@ -1,0 +1,292 @@
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import {
+    Allow,
+    Ctx,
+    ID,
+    Permission,
+    RequestContext,
+    Transaction,
+} from '@vendure/core';
+import { BundleService, CreateBundleInput, UpdateBundleInput } from '../services/bundle.service';
+import { Bundle } from '../entities/bundle.entity';
+
+/**
+ * Admin API Bundle Resolver
+ * 
+ * Handles admin-facing GraphQL operations for bundle management:
+ * - Bundle CRUD operations
+ * - Bundle listing with pagination and filtering
+ * - Bundle analytics and metrics
+ */
+@Resolver('Bundle')
+export class BundleAdminResolver {
+    constructor(private bundleService: BundleService) {}
+
+    @Query()
+    @Allow(Permission.ReadCatalog)
+    async bundles(
+        @Ctx() ctx: RequestContext,
+        @Args() args: { options?: any }
+    ): Promise<{ items: Bundle[]; totalItems: number }> {
+        return this.bundleService.findAll(ctx, args.options || {});
+    }
+
+    @Query()
+    @Allow(Permission.ReadCatalog)
+    async bundle(@Ctx() ctx: RequestContext, @Args() args: { id: ID }): Promise<Bundle | null> {
+        return this.bundleService.findOne(ctx, args.id);
+    }
+
+    /**
+     * Create a new bundle
+     * Validates component variants and creates bundle with items
+     */
+    @Mutation()
+    @Transaction()
+    @Allow(Permission.CreateCatalog)
+    async createBundle(
+        @Ctx() ctx: RequestContext,
+        @Args() args: { input: CreateBundleInput }
+    ): Promise<Bundle> {
+        try {
+            // Validate bundle data according to documentation rules
+            this.validateBundleInput(args.input);
+            
+            return await this.bundleService.create(ctx, args.input);
+        } catch (error) {
+            throw new Error(
+                error instanceof Error 
+                    ? error.message 
+                    : 'Failed to create bundle'
+            );
+        }
+    }
+
+    /**
+     * Update an existing bundle
+     * Handles bundle property updates and component modifications
+     */
+    @Mutation()
+    @Transaction()
+    @Allow(Permission.UpdateCatalog)
+    async updateBundle(
+        @Ctx() ctx: RequestContext,
+        @Args() args: { input: UpdateBundleInput }
+    ): Promise<Bundle> {
+        try {
+            // Validate bundle data if items are being updated
+            if (args.input.items) {
+                this.validateBundleItems(args.input.items);
+            }
+
+            return await this.bundleService.update(ctx, args.input);
+        } catch (error) {
+            throw new Error(
+                error instanceof Error 
+                    ? error.message 
+                    : 'Failed to update bundle'
+            );
+        }
+    }
+
+    /**
+     * Delete a bundle
+     * Removes bundle and all associated bundle items
+     */
+    @Mutation()
+    @Transaction()
+    @Allow(Permission.DeleteCatalog)
+    async deleteBundle(
+        @Ctx() ctx: RequestContext,
+        @Args() args: { id: ID }
+    ): Promise<{ result: string; message?: string }> {
+        try {
+            const result = await this.bundleService.delete(ctx, args.id);
+            
+            return result;
+        } catch (error) {
+            return {
+                result: 'NOT_DELETED' as any,
+                message: error instanceof Error ? error.message : 'Failed to delete bundle',
+            };
+        }
+    }
+
+    /**
+     * Validate bundle stock for admin preview
+     * Temporarily disabled due to GraphQL schema conflicts
+     */
+    /*
+    @Query()
+    @Allow(Permission.ReadCatalog)
+    async validateBundleStock(
+        @Ctx() ctx: RequestContext,
+        @Args() args: { bundleId: ID; quantity: number }
+    ) {
+        return this.bundleService.validateBundleStock(ctx, args.bundleId, args.quantity);
+    }
+
+    /**
+     * Get bundle analytics data
+     */
+    @Query()
+    @Allow(Permission.ReadCatalog)
+    async bundleAnalytics(
+        @Ctx() ctx: RequestContext,
+        @Args() args: { bundleId: ID }
+    ) {
+        const bundle = await this.bundleService.findOne(ctx, args.bundleId);
+        if (!bundle) {
+            throw new Error(`Bundle with id ${args.bundleId} not found`);
+        }
+
+        // Calculate bundle metrics as per documentation specification
+        const componentTotal = bundle.items.reduce((sum, item) => sum + item.unitPrice, 0);
+        const savings = componentTotal - (bundle.price || 0);
+        const savingsPercentage = componentTotal > 0 ? (savings / componentTotal) * 100 : 0;
+
+        // Calculate weight/volume from component variants
+        const totalWeight = bundle.items.reduce((sum, item) => {
+            // In real implementation, would get weight from ProductVariant
+            // Weight calculation would require custom fields setup
+            return sum + 0; // Placeholder for weight calculation
+        }, 0);
+
+        return {
+            bundleId: bundle.id,
+            totalComponents: bundle.items.length,
+            componentTotal,
+            bundlePrice: bundle.price,
+            totalSavings: savings,
+            savingsPercentage: Math.round(savingsPercentage * 100) / 100,
+            totalWeight,
+            enabled: bundle.enabled,
+            // Stock availability for sample quantity
+            availabilityStatus: await this.bundleService.validateBundleStock(ctx, args.bundleId, 1),
+        };
+    }
+    */
+
+    /**
+     * Private validation methods following documentation specifications
+     */
+    private validateBundleInput(input: CreateBundleInput): void {
+        // Component uniqueness validation
+        const variantIds = input.items.map(item => item.productVariantId);
+        const uniqueVariantIds = new Set(variantIds);
+        if (variantIds.length !== uniqueVariantIds.size) {
+            throw new Error('Duplicate variants in bundle - each component must be unique');
+        }
+
+        // Bundle size validation
+        if (input.items.length === 0) {
+            throw new Error('Bundle must contain at least one component');
+        }
+
+        if (input.items.length > 10) { // maxBundleSize from documentation
+            throw new Error('Bundle cannot contain more than 10 components');
+        }
+
+        // Price consistency validation
+        if (!input.price || input.price <= 0) {
+            throw new Error('Bundle price must be positive');
+        }
+
+        // Validate component quantities
+        for (const item of input.items) {
+            if (item.quantity <= 0) {
+                throw new Error('Component quantities must be positive');
+            }
+            if (!item.unitPrice || item.unitPrice < 0) {
+                throw new Error('Component unit prices cannot be negative');
+            }
+        }
+
+        // Name validation
+        if (!input.name || input.name.trim().length === 0) {
+            throw new Error('Bundle name is required');
+        }
+
+        if (input.name.length > 255) {
+            throw new Error('Bundle name cannot exceed 255 characters');
+        }
+
+        // Slug validation (if provided)
+        if (input.slug) {
+            const slugRegex = /^[a-z0-9-]+$/;
+            if (!slugRegex.test(input.slug)) {
+                throw new Error('Bundle slug must contain only lowercase letters, numbers, and hyphens');
+            }
+        }
+    }
+
+    private validateBundleItems(items: any[]): void {
+        // Component uniqueness validation
+        const variantIds = items.map(item => item.productVariantId);
+        const uniqueVariantIds = new Set(variantIds);
+        if (variantIds.length !== uniqueVariantIds.size) {
+            throw new Error('Duplicate variants in bundle - each component must be unique');
+        }
+
+        // Bundle size validation
+        if (items.length === 0) {
+            throw new Error('Bundle must contain at least one component');
+        }
+
+        if (items.length > 10) {
+            throw new Error('Bundle cannot contain more than 10 components');
+        }
+
+        // Validate component quantities and prices
+        for (const item of items) {
+            if (item.quantity <= 0) {
+                throw new Error('Component quantities must be positive');
+            }
+            if (!item.unitPrice || item.unitPrice < 0) {
+                throw new Error('Component unit prices cannot be negative');
+            }
+        }
+    }
+}
+
+/**
+ * Additional Admin API resolver for bundle-related operations
+ */
+@Resolver()
+export class AdminApiBundleResolver {
+    constructor(private bundleService: BundleService) {}
+
+    /**
+     * Detect bundle opportunities in any order
+     * Used by admin to analyze orders for bundle potential
+     * Temporarily disabled due to GraphQL schema conflicts
+     */
+    /*
+    @Query()
+    @Allow(Permission.ReadOrder)
+    async detectBundleOpportunitiesInOrder(
+        @Ctx() ctx: RequestContext,
+        @Args() args: { orderId: ID }
+    ) {
+        // This would typically get order lines from OrderService
+        // For now, return empty array - would need order integration
+        return [];
+    }
+
+    /**
+     * Get bundle usage statistics across all orders
+     */
+    @Query()
+    @Allow(Permission.ReadOrder)
+    async getBundleUsageStats(@Ctx() ctx: RequestContext) {
+        // This would analyze historical order data
+        // Implementation would require order analysis across all orders
+        return {
+            totalBundlesSold: 0,
+            topPerformingBundles: [],
+            averageSavingsPerBundle: 0,
+            bundleConversionRate: 0,
+        };
+    }
+    */
+}

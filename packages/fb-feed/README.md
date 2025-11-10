@@ -1,0 +1,1 @@
+# fb-feed\n\n**Purpose**: Facebook catalog feed exporter (future feature).\n\n**Status**: Placeholder (future; not in M1–M8)\n\n## Overview\n\nAutomatic export of product catalog to Facebook Catalog for:- Facebook Shop\n- Instagram Product Tags\n- Dynamic Ads\n\n## Planned for Phase 2\n\n## See Also\n\n- README.md – Project overview\n"

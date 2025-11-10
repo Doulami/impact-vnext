@@ -1,0 +1,39 @@
+{
+  "name": "@impact/bundle-plugin",
+  "version": "1.0.0",
+  "description": "Exploded bundles plugin for Impact Nutrition e-commerce",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "keywords": [
+    "ecommerce",
+    "bundles",
+    "impact-nutrition",
+    "plugin"
+  ],
+  "author": "Impact Nutrition Team",
+  "license": "MIT",
+  "dependencies": {
+    "@impact/plugin-system": "file:../plugin-system",
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "jest": "^29.0.0",
+    "@types/jest": "^29.0.0",
+    "eslint": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}

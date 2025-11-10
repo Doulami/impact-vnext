@@ -1,0 +1,269 @@
+@import "tailwindcss";
+
+/* Sports Nutrition Brand Theme - Admin Editable via Strapi */
+:root {
+  /* Primary brand colors - editable via Strapi StoreConfig */
+  --brand-primary: #2c75ff;    /* Main brand blue */
+  --brand-secondary: #222222;   /* Dark charcoal */
+  --brand-accent: #00d4ff;      /* Sports accent blue */
+  
+  /* Sports nutrition category colors */
+  --color-energy: #ff6b35;      /* Energy orange */
+  --color-protein: #4ecdc4;     /* Protein teal */
+  --color-recovery: #96ceb4;    /* Recovery green */
+  --color-focus: #feca57;       /* Focus yellow */
+  
+  /* Semantic colors */
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --muted: #f8f9fa;
+  --border: #e9ecef;
+  --success: #28a745;
+  --warning: #ffc107;
+  --danger: #dc3545;
+  --info: var(--brand-accent);
+}
+
+@theme inline {
+  /* Brand colors (admin-editable) */
+  --color-primary: var(--brand-primary);
+  --color-secondary: var(--brand-secondary);
+  --color-accent: var(--brand-accent);
+  
+  /* Category colors */
+  --color-energy: var(--color-energy);
+  --color-protein: var(--color-protein);
+  --color-recovery: var(--color-recovery);
+  --color-focus: var(--color-focus);
+  
+  /* Semantic colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  
+  /* Typography */
+  --font-sans: system-ui, -apple-system, sans-serif;
+  --font-heading: system-ui, -apple-system, sans-serif;
+  
+  /* Product category specific colors */
+  --color-category-protein: #4ecdc4;
+  --color-category-pre-workout: #ff6b35;
+  --color-category-post-workout: #96ceb4;
+  --color-category-vitamins: #feca57;
+  --color-category-accessories: #6c5ce7;
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --muted: #1a1a1a;
+    --border: #333333;
+  }
+}
+
+/* Base styling */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Sports-specific utility classes */
+.gradient-energy {
+  background: linear-gradient(135deg, var(--color-energy), #ff8c42);
+}
+
+.gradient-protein {
+  background: linear-gradient(135deg, var(--color-protein), #6ee4db);
+}
+
+.gradient-primary {
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
+}
+
+/* Custom animations for sports theme */
+@keyframes pulse-energy {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 53, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(255, 107, 53, 0); }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-pulse-energy {
+  animation: pulse-energy 2s infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out forwards;
+}
+
+/* Smooth product loading animation */
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(15px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s ease-out forwards;
+  opacity: 0; /* Start invisible */
+}
+
+/* Scrollbar utilities */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Line clamp utility */
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+/* Cart animation keyframes */
+@keyframes slide-in-from-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0%);
+  }
+}
+
+@keyframes slide-in-from-top {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0px);
+  }
+}
+
+@keyframes zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fade-in-backdrop {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Cart animation utilities */
+.animate-slide-in-from-right {
+  animation: slide-in-from-right 0.3s ease-out;
+}
+
+.animate-slide-in-from-top {
+  animation: slide-in-from-top 0.2s ease-out;
+}
+
+.animate-zoom-in {
+  animation: zoom-in 0.2s ease-out;
+}
+
+.animate-fade-in-backdrop {
+  animation: fade-in-backdrop 0.2s ease-out;
+}
+
+/* Navigation bar gradient wave animation */
+@keyframes gradient-wave {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.nav-gradient-wave {
+  --nav-dark: #0d3d80;
+  --nav-medium: #1a5acc;
+  --nav-primary: var(--brand-primary);
+  --nav-light: #5a9aff;
+  
+  background: linear-gradient(
+    90deg,
+    var(--nav-dark) 0%,
+    var(--nav-medium) 20%,
+    var(--nav-primary) 40%,
+    var(--nav-light) 50%,
+    var(--nav-primary) 60%,
+    var(--nav-medium) 80%,
+    var(--nav-dark) 100%
+  );
+  background-size: 300% 100%;
+  animation: gradient-wave 6s ease infinite;
+}
+
+/* Navigation text styles */
+.nav-text {
+  color: white !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.nav-text:hover {
+  color: rgb(229, 229, 229) !important;
+}
+
+/* Ensure nav gradient text stays white */
+#main-navigation .nav-text {
+  color: white !important;
+}
+
+#main-navigation .nav-text:hover {
+  color: rgb(229, 229, 229) !important;
+}

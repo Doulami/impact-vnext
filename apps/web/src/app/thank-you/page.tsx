@@ -1,0 +1,258 @@
+'use client';
+
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { useQuery } from '@apollo/client/react';
+import { GET_ORDER_FOR_CHECKOUT } from '@/lib/graphql/checkout';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import Button from '@/components/Button';
+import { CheckCircle, Package, Truck, Mail, Phone } from 'lucide-react';
+
+function ThankYouContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const orderCode = searchParams.get('order');
+  const { customer } = useAuth();
+
+  const { data, loading, error } = useQuery(GET_ORDER_FOR_CHECKOUT, {
+    variables: { code: orderCode || '' },
+    skip: !orderCode
+  });
+
+  useEffect(() => {
+    // Google Analytics / Facebook Pixel tracking can be added here
+    if (orderCode && data) {
+      // Example: gtag('event', 'purchase', { transaction_id: orderCode, value: total, currency: 'USD' });
+      console.log('Order completed:', orderCode);
+    }
+  }, [orderCode, data]);
+
+  if (!orderCode) {
+    router.push('/');
+    return null;
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--brand-primary)]"></div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !(data as any)?.orderByCode) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="max-w-md w-full text-center p-8">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Order Not Found</h1>
+            <p className="text-gray-600 mb-6">We couldn't find your order. Please check your email for confirmation.</p>
+            <Button
+              as="link"
+              href="/"
+              variant="primary"
+            >
+              Back to Home
+            </Button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  const order = (data as any).orderByCode;
+  const totalAmount = (order.totalWithTax / 100).toFixed(2);
+
+  return (
+    <div className="min-h-screen bg-white">
+      <Header />
+      
+      <div className="bg-gray-50 min-h-screen py-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Success Header */}
+          <div className="bg-white rounded-lg shadow-sm p-8 text-center mb-6">
+            <div className="w-16 h-16 bg-[color-mix(in_srgb,var(--success)_20%,white)] rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-10 h-10" style={{ color: 'var(--success)' }} />
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Thank You for Your Order!</h1>
+            <p className="text-gray-600 mb-4">Your order has been received and is being processed.</p>
+            <div className="bg-gray-100 rounded-lg p-4 inline-block">
+              <p className="text-sm text-gray-600">Order Number</p>
+              <p className="text-2xl font-bold text-gray-900">{order.code}</p>
+            </div>
+          </div>
+
+          {/* Order Details */}
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Order Details</h2>
+            
+            {/* Order Items */}
+            <div className="space-y-4 mb-6">
+              {order.lines.map((line: any) => (
+                <div key={line.id} className="flex gap-4 pb-4 border-b last:border-b-0">
+                  <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0 overflow-hidden">
+                    {line.featuredAsset?.preview ? (
+                      <img 
+                        src={line.featuredAsset.preview} 
+                        alt={line.productVariant.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-2xl">
+                        🏋️
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium text-gray-900">{line.productVariant.name}</h3>
+                    <p className="text-sm text-gray-600">Quantity: {line.quantity}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-gray-900">${(line.linePriceWithTax / 100).toFixed(2)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Order Total */}
+            <div className="border-t pt-4">
+              <div className="flex justify-between text-lg font-bold">
+                <span>Total:</span>
+                <span>${totalAmount}</span>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                Payment Method: Cash on Delivery
+              </p>
+            </div>
+          </div>
+
+          {/* Shipping & Contact Info */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Shipping Address */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center mb-4">
+                <Truck className="w-5 h-5 text-gray-600 mr-2" />
+                <h3 className="font-bold text-gray-900">Shipping Address</h3>
+              </div>
+              <div className="text-sm text-gray-600 space-y-1">
+                <p className="font-medium text-gray-900">{order.shippingAddress.fullName}</p>
+                <p>{order.shippingAddress.streetLine1}</p>
+                {order.shippingAddress.streetLine2 && <p>{order.shippingAddress.streetLine2}</p>}
+                <p>{order.shippingAddress.city}, {order.shippingAddress.province} {order.shippingAddress.postalCode}</p>
+                <p>{order.shippingAddress.country}</p>
+                {order.shippingAddress.phoneNumber && (
+                  <p className="flex items-center mt-2">
+                    <Phone className="w-4 h-4 mr-1" />
+                    {order.shippingAddress.phoneNumber}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Customer Info */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center mb-4">
+                <Mail className="w-5 h-5 text-gray-600 mr-2" />
+                <h3 className="font-bold text-gray-900">Confirmation Sent To</h3>
+              </div>
+              <div className="text-sm text-gray-600 space-y-1">
+                <p className="font-medium text-gray-900">
+                  {order.customer.firstName} {order.customer.lastName}
+                </p>
+                <p>{order.customer.emailAddress}</p>
+              </div>
+              <div className="mt-4 p-3 bg-[color-mix(in_srgb,var(--brand-primary)_10%,white)] rounded-lg">
+                <p className="text-xs" style={{ color: 'var(--brand-primary)' }}>
+                  📧 A confirmation email has been sent with your order details and tracking information.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* What's Next */}
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <h3 className="font-bold text-gray-900 mb-4">What Happens Next?</h3>
+            <div className="space-y-3">
+              <div className="flex items-start">
+                <div className="w-8 h-8 bg-[var(--brand-primary)] text-white rounded-full flex items-center justify-center flex-shrink-0 mr-3">
+                  1
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">Order Processing</p>
+                  <p className="text-sm text-gray-600">We'll prepare your order for shipment within 1-2 business days.</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <div className="w-8 h-8 bg-[var(--brand-primary)] text-white rounded-full flex items-center justify-center flex-shrink-0 mr-3">
+                  2
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">Shipment & Tracking</p>
+                  <p className="text-sm text-gray-600">You'll receive tracking information via email once your order ships.</p>
+                </div>
+              </div>
+              <div className="flex items-start">
+                <div className="w-8 h-8 bg-[var(--brand-primary)] text-white rounded-full flex items-center justify-center flex-shrink-0 mr-3">
+                  3
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">Delivery & Payment</p>
+                  <p className="text-sm text-gray-600">Pay ${totalAmount} in cash when your order arrives at your doorstep.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              as="link"
+              href="/account/orders"
+              variant="primary"
+              size="lg"
+            >
+              <span className="flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                View All Orders
+              </span>
+            </Button>
+            <Button
+              as="link"
+              href="/products"
+              variant="secondary"
+              size="lg"
+            >
+              Continue Shopping
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <Footer />
+    </div>
+  );
+}
+
+export default function ThankYouPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--brand-primary)]"></div>
+        </div>
+        <Footer />
+      </div>
+    }>
+      <ThankYouContent />
+    </Suspense>
+  );
+}
