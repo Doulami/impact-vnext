@@ -83,14 +83,32 @@ export class ShopApiBundleResolver {
         @Args() args: { bundleId: ID; quantity: number }
     ): Promise<Order | ErrorResult> {
         try {
-            // Get current order
-            const activeOrder = await this.activeOrderService.getActiveOrder(ctx, {});
-            if (!activeOrder) {
+            // PHASE 4: Validate bundle availability with A_final check
+            const availability = await this.bundleService.getBundleAvailability(ctx, args.bundleId);
+            
+            // Check if bundle is available at all
+            if (!availability.isAvailable) {
                 return {
                     __typename: 'OrderModificationError',
-                    errorCode: 'ORDER_MODIFICATION_ERROR',
-                    message: 'No active order found'
+                    errorCode: 'BUNDLE_NOT_AVAILABLE',
+                    message: availability.reason || 'Bundle is not available'
                 } as ErrorResult;
+            }
+            
+            // Check if requested quantity exceeds A_final
+            if (args.quantity > availability.maxQuantity) {
+                return {
+                    __typename: 'InsufficientStockError',
+                    errorCode: 'INSUFFICIENT_STOCK_ERROR',
+                    message: `Only ${availability.maxQuantity} bundles available. Requested: ${args.quantity}`
+                } as ErrorResult;
+            }
+            
+            // Get or create active order
+            let activeOrder = await this.activeOrderService.getActiveOrder(ctx, {});
+            if (!activeOrder) {
+                // Create a new order if none exists
+                activeOrder = await this.orderService.create(ctx, ctx.activeUserId);
             }
 
             // Use BundleService Phase 2.3 implementation
@@ -179,6 +197,37 @@ export class ShopApiBundleResolver {
                     errorCode: 'ORDER_MODIFICATION_ERROR',
                     message: 'No active order found'
                 } as ErrorResult;
+            }
+            
+            // PHASE 4: Find bundleId from existing order lines
+            const existingBundleLine = activeOrder.lines.find(
+                line => (line as any).customFields?.bundleKey === args.bundleKey
+            );
+            
+            if (existingBundleLine && (existingBundleLine as any).customFields?.bundleId) {
+                const bundleId = (existingBundleLine as any).customFields.bundleId;
+                
+                // Revalidate availability with A_final check
+                const availability = await this.bundleService.getBundleAvailability(ctx, bundleId);
+                
+                // If quantity > 0, validate availability
+                if (args.quantity > 0) {
+                    if (!availability.isAvailable) {
+                        return {
+                            __typename: 'OrderModificationError',
+                            errorCode: 'BUNDLE_NOT_AVAILABLE',
+                            message: availability.reason || 'Bundle is no longer available'
+                        } as ErrorResult;
+                    }
+                    
+                    if (args.quantity > availability.maxQuantity) {
+                        return {
+                            __typename: 'InsufficientStockError',
+                            errorCode: 'INSUFFICIENT_STOCK_ERROR',
+                            message: `Only ${availability.maxQuantity} bundles available. Requested: ${args.quantity}`
+                        } as ErrorResult;
+                    }
+                }
             }
 
             // Use BundleService Phase 2.3 implementation

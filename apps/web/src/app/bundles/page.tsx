@@ -3,39 +3,12 @@
 import { useQuery } from '@apollo/client/react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { GET_BUNDLES } from '@/lib/graphql/queries';
+import { SEARCH_PRODUCTS } from '@/lib/graphql/queries';
 import { useCart } from '@/lib/hooks/useCart';
 import Button from '@/components/Button';
 import { Package, Star, Users, Zap } from 'lucide-react';
 import Link from 'next/link';
 
-interface Bundle {
-  id: string;
-  name: string;
-  slug?: string;
-  description?: string;
-  price: number;
-  enabled: boolean;
-  items: Array<{
-    id: string;
-    productVariant: {
-      id: string;
-      name: string;
-      sku: string;
-      price: number;
-      product: {
-        id: string;
-        name: string;
-        slug: string;
-      };
-    };
-    quantity: number;
-    unitPrice: number;
-    displayOrder: number;
-  }>;
-}
-
-// Unified bundle card type following product card pattern
 interface BundleCard {
   id: string;
   name: string;
@@ -50,38 +23,6 @@ interface BundleCard {
   rating: number;
   reviews: number;
   description?: string;
-}
-
-// Helper function to convert Bundle to BundleCard (following product pattern)
-function toBundleCardData(bundle: Bundle): BundleCard {
-  const componentTotal = bundle.items.reduce((sum, item) => sum + item.unitPrice, 0);
-  const savings = componentTotal - bundle.price;
-  const savingsPercentage = componentTotal > 0 ? Math.round((savings / componentTotal) * 100) : 0;
-  
-  // Mock image based on bundle name
-  const getMockImage = (name: string) => {
-    if (name.toLowerCase().includes('performance')) return '/products/bundle-performance.jpg';
-    if (name.toLowerCase().includes('muscle')) return '/products/bundle-muscle.jpg';
-    if (name.toLowerCase().includes('lean')) return '/products/bundle-lean.jpg';
-    if (name.toLowerCase().includes('strength')) return '/products/bundle-strength.jpg';
-    return '/products/bundle-default.jpg';
-  };
-  
-  return {
-    id: bundle.id,
-    name: bundle.name,
-    slug: bundle.slug || `bundle-${bundle.id}`,
-    image: getMockImage(bundle.name),
-    price: bundle.price,
-    originalPrice: componentTotal,
-    savings,
-    savingsPercentage,
-    itemCount: bundle.items.length,
-    inStock: true, // Bundles are typically always available
-    rating: 4.5, // Mock rating
-    reviews: 127, // Mock reviews
-    description: bundle.description
-  };
 }
 
 function BundleCard({ bundleCard }: { bundleCard: BundleCard }) {
@@ -179,166 +120,39 @@ function BundleCard({ bundleCard }: { bundleCard: BundleCard }) {
 }
 
 export default function BundlesPage() {
-  const { data, loading, error } = useQuery(GET_BUNDLES, {
+  const { data, loading, error } = useQuery(SEARCH_PRODUCTS, {
     variables: {
-      options: {
-        filter: { enabled: { eq: true } },
-        take: 20
+      input: {
+        groupByProduct: true,
+        take: 100, // Higher limit to include bundle products
+        term: '',
       }
     },
     errorPolicy: 'all'
   });
 
-  // Mock bundles for when backend isn't ready
-  const mockBundles: Bundle[] = [
-    {
-      id: 'mock-performance-stack',
-      name: 'Performance Stack',
-      description: 'Complete pre and post-workout nutrition for peak performance',
-      price: 89.97,
-      enabled: true,
-      items: [
-        {
-          id: 'item-1',
-          productVariant: {
-            id: 'whey-protein-2kg',
-            name: 'Whey Protein 2kg Vanilla',
-            sku: 'WP-2KG-VAN',
-            price: 39.99,
-            product: { id: 'whey-protein', name: 'Whey Protein Isolate', slug: 'whey-protein' }
-          },
-          quantity: 1,
-          unitPrice: 39.99,
-          displayOrder: 1
-        },
-        {
-          id: 'item-2',
-          productVariant: {
-            id: 'creatine-300g',
-            name: 'Creatine Monohydrate 300g',
-            sku: 'CREA-300G',
-            price: 29.99,
-            product: { id: 'creatine', name: 'Creatine Monohydrate', slug: 'creatine' }
-          },
-          quantity: 1,
-          unitPrice: 29.99,
-          displayOrder: 2
-        },
-        {
-          id: 'item-3',
-          productVariant: {
-            id: 'bcaa-400g',
-            name: 'BCAA Complex 400g Fruit Punch',
-            sku: 'BCAA-400G-FP',
-            price: 24.99,
-            product: { id: 'bcaa', name: 'BCAA Complex', slug: 'bcaa' }
-          },
-          quantity: 1,
-          unitPrice: 24.99,
-          displayOrder: 3
-        }
-      ]
-    },
-    {
-      id: 'mock-lean-muscle',
-      name: 'Lean Muscle Builder',
-      description: 'Optimized stack for lean muscle growth and recovery',
-      price: 79.97,
-      enabled: true,
-      items: [
-        {
-          id: 'item-4',
-          productVariant: {
-            id: 'whey-concentrate-2kg',
-            name: 'Whey Protein Concentrate 2kg Chocolate',
-            sku: 'WPC-2KG-CHOC',
-            price: 34.99,
-            product: { id: 'whey-concentrate', name: 'Whey Protein Concentrate', slug: 'whey-concentrate' }
-          },
-          quantity: 1,
-          unitPrice: 34.99,
-          displayOrder: 1
-        },
-        {
-          id: 'item-5',
-          productVariant: {
-            id: 'glutamine-500g',
-            name: 'L-Glutamine 500g Unflavored',
-            sku: 'GLUT-500G',
-            price: 24.99,
-            product: { id: 'glutamine', name: 'L-Glutamine', slug: 'glutamine' }
-          },
-          quantity: 1,
-          unitPrice: 24.99,
-          displayOrder: 2
-        },
-        {
-          id: 'item-6',
-          productVariant: {
-            id: 'multivitamin-90caps',
-            name: 'Sports Multivitamin 90 Capsules',
-            sku: 'MULTI-90CAPS',
-            price: 19.99,
-            product: { id: 'multivitamin', name: 'Sports Multivitamin', slug: 'multivitamin' }
-          },
-          quantity: 1,
-          unitPrice: 19.99,
-          displayOrder: 3
-        }
-      ]
-    },
-    {
-      id: 'mock-strength-power',
-      name: 'Strength & Power Stack',
-      description: 'Maximum strength and explosive power for serious athletes',
-      price: 109.97,
-      enabled: true,
-      items: [
-        {
-          id: 'item-7',
-          productVariant: {
-            id: 'casein-2kg',
-            name: 'Micellar Casein 2kg Vanilla',
-            sku: 'CAS-2KG-VAN',
-            price: 49.99,
-            product: { id: 'casein', name: 'Micellar Casein', slug: 'casein' }
-          },
-          quantity: 1,
-          unitPrice: 49.99,
-          displayOrder: 1
-        },
-        {
-          id: 'item-8',
-          productVariant: {
-            id: 'pre-workout-300g',
-            name: 'Pre-Workout 300g Berry Blast',
-            sku: 'PWO-300G-BB',
-            price: 34.99,
-            product: { id: 'pre-workout', name: 'Pre-Workout', slug: 'pre-workout' }
-          },
-          quantity: 1,
-          unitPrice: 34.99,
-          displayOrder: 2
-        },
-        {
-          id: 'item-9',
-          productVariant: {
-            id: 'hmb-120caps',
-            name: 'HMB 120 Capsules',
-            sku: 'HMB-120CAPS',
-            price: 24.99,
-            product: { id: 'hmb', name: 'HMB', slug: 'hmb' }
-          },
-          quantity: 1,
-          unitPrice: 24.99,
-          displayOrder: 3
-        }
-      ]
-    }
-  ];
 
-  const bundles = (data as any)?.bundles?.items?.filter((bundle: Bundle) => bundle.enabled) || mockBundles;
-  const bundleCards = bundles.map(toBundleCardData);
+  // Filter search results to only bundle shell products (slug starts with 'bundle-')
+  const searchResults = (data as any)?.search?.items || [];
+  const bundleProducts = searchResults.filter((item: any) => 
+    item.slug?.startsWith('bundle-')
+  );
+  
+  const bundleCards = bundleProducts.map((item: any) => ({
+    id: item.productId,
+    name: item.productName,
+    slug: item.slug,
+    image: item.productAsset?.preview || '/product-placeholder.svg',
+    price: item.priceWithTax?.value || item.price?.value || 0,
+    originalPrice: item.price?.value || 0,
+    savings: 0,
+    savingsPercentage: 0,
+    itemCount: 0,
+    inStock: item.inStock,
+    rating: 4.5,
+    reviews: 127,
+    description: item.description
+  }));
 
   return (
     <div className="min-h-screen bg-[var(--muted)]">
@@ -390,12 +204,12 @@ export default function BundlesPage() {
         )}
 
         {/* Error State */}
-        {error && !bundleCards.length && (
-          <div className="bg-[var(--warning)]/10 border border-[var(--warning)]/20 rounded-lg p-6 text-center">
-            <p className="text-[var(--warning)] mb-2">
-              Unable to load bundles from the server. Showing sample bundles instead.
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <p className="text-red-600 mb-2">
+              Unable to load bundles from the server.
             </p>
-            <p className="text-[var(--warning)]/70 text-sm">
+            <p className="text-red-500 text-sm">
               {error.message}
             </p>
           </div>

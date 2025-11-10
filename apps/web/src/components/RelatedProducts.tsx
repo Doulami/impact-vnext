@@ -1,32 +1,85 @@
 'use client';
 
 import { useQuery } from '@apollo/client/react';
-import { GET_FEATURED_PRODUCTS } from '@/lib/graphql/queries';
-import { toProductCardData, type SearchResult } from '@/lib/types/product';
+import { GET_RELATED_PRODUCTS } from '@/lib/graphql/queries';
 import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useRef } from 'react';
 
 interface RelatedProductsProps {
   currentProductId: string;
-  categoryId?: string;
+  collections?: Array<{ id: string; name: string; slug: string }>;
 }
 
-export function RelatedProducts({ currentProductId, categoryId }: RelatedProductsProps) {
+export function RelatedProducts({ currentProductId, collections }: RelatedProductsProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   
-  // For now, use featured products as related products
-  // In a real app, you'd query by category or use recommendation algorithms
+  // Determine which collection to query:
+  // - If product is in "featured" collection, show featured products
+  // - Otherwise, show products from the first non-featured collection
+  const isFeatured = collections?.some(c => c.slug === 'featured');
+  const collectionSlug = isFeatured 
+    ? 'featured'
+    : collections?.find(c => c.slug !== 'featured')?.slug;
+  
+  console.log('[RelatedProducts] Props:', { currentProductId, collections, isFeatured, collectionSlug });
+  
+  // Query products from the determined collection
   const { data, loading, error } = useQuery<{
-    search: {
-      items: SearchResult[];
+    collection: {
+      id: string;
+      name: string;
+      productVariants: {
+        items: Array<{
+          id: string;
+          name: string;
+          sku: string;
+          price: number;
+          priceWithTax: number;
+          stockLevel: string;
+          featuredAsset?: {
+            id: string;
+            preview: string;
+          };
+          product: {
+            id: string;
+            name: string;
+            slug: string;
+            description: string;
+            featuredAsset?: {
+              id: string;
+              preview: string;
+            };
+          };
+        }>;
+      };
     };
-  }>(GET_FEATURED_PRODUCTS);
+  }>(GET_RELATED_PRODUCTS, {
+    variables: {
+      collectionSlug: collectionSlug || 'all-products'
+    },
+    skip: !collectionSlug // Don't query if no collection provided
+  });
 
-  const relatedProducts = (data?.search.items || [])
-    .filter(product => product.productId !== currentProductId) // Exclude current product
+  console.log('[RelatedProducts] Query result:', { data, loading, error, skip: !collectionSlug });
+  
+  // Convert collection variants to product cards, excluding current product
+  const variants = (data?.collection?.productVariants?.items || []);
+  const relatedProducts = variants
+    .filter((v: any) => v.product.id !== currentProductId) // Exclude current product
     .slice(0, 8) // Limit to 8 products
-    .map(toProductCardData);
+    .map((v: any) => ({
+      id: v.id,
+      productId: v.product.id,
+      name: v.product.name,
+      slug: v.product.slug,
+      description: v.product.description,
+      image: v.product.featuredAsset?.preview,
+      priceWithTax: v.priceWithTax,
+      inStock: v.stockLevel !== 'OUT_OF_STOCK',
+      rating: 4.5,
+      reviews: 0
+    }));
 
   const scrollLeft = () => {
     if (scrollRef.current) {
@@ -57,7 +110,10 @@ export function RelatedProducts({ currentProductId, categoryId }: RelatedProduct
     );
   }
 
+  console.log('[RelatedProducts] Filtered products:', relatedProducts.length);
+  
   if (error || relatedProducts.length === 0) {
+    console.log('[RelatedProducts] Returning null:', { error: error?.message, productsLength: relatedProducts.length });
     return null;
   }
 
@@ -137,20 +193,9 @@ export function RelatedProducts({ currentProductId, categoryId }: RelatedProduct
               </div>
               
               <div className="flex items-center justify-between">
-                <div className="flex flex-col">
-                  {product.priceRange ? (
-                    <>
-                      <span className="font-bold text-sm">
-                        ${(product.priceRange.min / 100).toFixed(2)} - ${(product.priceRange.max / 100).toFixed(2)}
-                      </span>
-                      <span className="text-xs text-gray-500">Price range</span>
-                    </>
-                  ) : (
-                    <span className="font-bold text-sm">
-                      ${(product.priceWithTax / 100).toFixed(2)}
-                    </span>
-                  )}
-                </div>
+                <span className="font-bold text-sm">
+                  ${(product.priceWithTax / 100).toFixed(2)}
+                </span>
                 
                 {product.inStock && (
                   <button

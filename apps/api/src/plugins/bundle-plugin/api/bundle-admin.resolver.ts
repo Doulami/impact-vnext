@@ -107,6 +107,7 @@ export class BundleAdminResolver {
 
     /**
      * Private validation methods following documentation specifications
+     * Updated for Bundle v2 schema with discountType, fixedPrice, percentOff
      */
     private validateBundleInput(input: any): void {
         // Component uniqueness validation
@@ -125,9 +126,24 @@ export class BundleAdminResolver {
             throw new Error('Bundle cannot contain more than 10 components');
         }
 
-        // Price consistency validation
-        if (!input.price || input.price <= 0) {
-            throw new Error('Bundle price must be positive');
+        // Bundle v2 discount validation
+        if (!input.discountType) {
+            throw new Error('Discount type is required (fixed or percent)');
+        }
+
+        if (input.discountType === 'fixed') {
+            if (!input.fixedPrice || input.fixedPrice <= 0) {
+                throw new Error('Fixed price must be positive (in cents)');
+            }
+        } else if (input.discountType === 'percent') {
+            if (input.percentOff === undefined || input.percentOff === null) {
+                throw new Error('Percentage off is required for percent discount type');
+            }
+            if (input.percentOff < 0 || input.percentOff > 100) {
+                throw new Error('Percentage off must be between 0 and 100');
+            }
+        } else {
+            throw new Error('Discount type must be either "fixed" or "percent"');
         }
 
         // Validate component quantities
@@ -135,7 +151,8 @@ export class BundleAdminResolver {
             if (item.quantity <= 0) {
                 throw new Error('Component quantities must be positive');
             }
-            if (!item.unitPrice || item.unitPrice < 0) {
+            // unitPrice is optional - service will fetch current price from variant
+            if (item.unitPrice !== undefined && item.unitPrice < 0) {
                 throw new Error('Component unit prices cannot be negative');
             }
         }
@@ -180,7 +197,8 @@ export class BundleAdminResolver {
             if (item.quantity <= 0) {
                 throw new Error('Component quantities must be positive');
             }
-            if (!item.unitPrice || item.unitPrice < 0) {
+            // unitPrice is optional - service will fetch current price from variant
+            if (item.unitPrice !== undefined && item.unitPrice < 0) {
                 throw new Error('Component unit prices cannot be negative');
             }
         }

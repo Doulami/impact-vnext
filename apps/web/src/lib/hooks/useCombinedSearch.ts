@@ -18,7 +18,9 @@ interface Bundle {
   name: string;
   slug?: string;
   description?: string;
-  price: number;
+  price: number; // Legacy field in dollars
+  effectivePrice?: number; // Computed price in cents
+  totalSavings?: number; // Computed savings in cents
   enabled: boolean;
   items: Array<{
     id: string;
@@ -57,8 +59,14 @@ interface CombinedResult {
 
 // Convert bundle to unified result format
 function toBundleResult(bundle: Bundle): CombinedResult {
-  const componentTotal = bundle.items.reduce((sum, item) => sum + item.unitPrice, 0);
-  const savings = componentTotal - bundle.price;
+  // Use effectivePrice (already in cents) if available, otherwise convert legacy price
+  const bundlePrice = bundle.effectivePrice ?? (bundle.price * 100);
+  
+  // Calculate component total (unitPrice is in dollars, convert to cents)
+  const componentTotal = bundle.items.reduce((sum, item) => sum + (item.unitPrice * 100), 0);
+  
+  // Use totalSavings if available, otherwise calculate (all in cents)
+  const savings = bundle.totalSavings ?? (componentTotal - bundlePrice);
   
   const getMockImage = (name: string) => {
     if (name.toLowerCase().includes('performance')) return '/products/bundle-performance.jpg';
@@ -75,9 +83,9 @@ function toBundleResult(bundle: Bundle): CombinedResult {
     name: bundle.name,
     slug: bundle.slug || `bundle-${bundle.id}`,
     image: getMockImage(bundle.name),
-    price: bundle.price * 100, // Convert to cents for consistency
-    originalPrice: componentTotal * 100,
-    savings: savings * 100,
+    price: bundlePrice, // Already in cents
+    originalPrice: componentTotal,
+    savings: savings,
     inStock: bundle.enabled,
     rating: 4.5,
     reviews: 127

@@ -37,33 +37,61 @@ interface Product {
     preview: string;
     source: string;
   };
+  assets?: Array<{
+    id: string;
+    preview: string;
+    source: string;
+  }>;
+  collections?: Array<{
+    id: string;
+    name: string;
+    slug: string;
+  }>;
+  customFields?: {
+    isBundle?: boolean;
+    bundleId?: string;
+    bundlePrice?: number;
+    bundleAvailability?: number;
+    bundleComponents?: string;
+  };
   variants: ProductVariant[];
+}
+
+interface BundleItem {
+  id: string;
+  productVariant: {
+    id: string;
+    name: string;
+    sku: string;
+    price: number;
+    priceWithTax: number;
+  };
+  quantity: number;
+  unitPrice: number; // Price in dollars
+  displayOrder: number;
 }
 
 interface Bundle {
   id: string;
   name: string;
-  slug?: string;
+  slug: string;
   description?: string;
-  price: number;
+  price?: number; // Legacy field in dollars
+  effectivePrice: number; // Computed price in cents
+  totalSavings: number; // Computed savings in cents
+  status: string;
   enabled: boolean;
-  items: Array<{
+  items: BundleItem[];
+  assets?: Array<{
     id: string;
-    productVariant: {
-      id: string;
-      name: string;
-      sku: string;
-      price: number;
-      product: {
-        id: string;
-        name: string;
-        slug: string;
-      };
-    };
-    quantity: number;
-    unitPrice: number;
-    displayOrder: number;
+    preview: string;
+    source: string;
   }>;
+  featuredAsset?: {
+    id: string;
+    preview: string;
+    source: string;
+  };
 }
 
 export default function ProductDetailPage() {
@@ -75,31 +103,31 @@ export default function ProductDetailPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const { addItem, openCart } = useCart();
 
-  // Determine if this is a bundle or regular product based on slug
-  const isBundle = slug?.startsWith('bundle-');
-
-  // Query for regular products
+  // Query for product (shell product for both regular products and bundles)
   const { data: productData, loading: productLoading, error: productError } = useQuery<{ product: Product }>(
     GET_PRODUCT_BY_SLUG,
     {
       variables: { slug },
-      skip: !slug || isBundle,
+      skip: !slug,
     }
   );
 
-  // Query for bundles
-  const { data: bundleData, loading: bundleLoading, error: bundleError } = useQuery<{ bundle: Bundle }>(
+  const product = productData?.product;
+  const isBundle = product?.customFields?.isBundle === true;
+  const bundleId = product?.customFields?.bundleId;
+
+  // If this is a bundle shell, fetch Bundle entity for component details
+  const { data: bundleData } = useQuery<{ bundle: Bundle }>(
     GET_BUNDLE,
     {
-      variables: { id: slug?.replace('bundle-', '') },
-      skip: !slug || !isBundle,
+      variables: { id: bundleId },
+      skip: !isBundle || !bundleId,
     }
   );
 
-  const loading = isBundle ? bundleLoading : productLoading;
-  const error = isBundle ? bundleError : productError;
-  const product = productData?.product;
   const bundle = bundleData?.bundle;
+  const loading = productLoading;
+  const error = productError;
   const selectedVariant = product?.variants.find(v => v.id === selectedVariantId) || product?.variants[0];
 
   // Set default variant when product loads
@@ -107,46 +135,38 @@ export default function ProductDetailPage() {
     setSelectedVariantId(product.variants[0].id);
   }
 
-  // Helper function for bundle mock images
-  const getMockBundleImage = (name: string) => {
-    if (name.toLowerCase().includes('performance')) return '/products/bundle-performance.jpg';
-    if (name.toLowerCase().includes('muscle')) return '/products/bundle-muscle.jpg';
-    if (name.toLowerCase().includes('lean')) return '/products/bundle-lean.jpg';
-    if (name.toLowerCase().includes('strength')) return '/products/bundle-strength.jpg';
-    return '/product-placeholder.svg';
-  };
-
-  const images = isBundle && bundle
-    ? [getMockBundleImage(bundle.name)]
-    : [
-        product?.featuredAsset?.preview,
-        ...(product?.variants.map(v => v.featuredAsset?.preview).filter(Boolean) || [])
-      ].filter(Boolean) as string[];
+  // Get images from product (works for both regular products and bundle shells)
+  const images = [
+    product?.featuredAsset?.preview,
+    ...(product?.assets?.map(a => a.preview) || []),
+    ...(product?.variants.map(v => v.featuredAsset?.preview).filter(Boolean) || [])
+  ].filter(Boolean) as string[];
 
   const handleQuantityChange = (delta: number) => {
     setQuantity(Math.max(1, quantity + delta));
   };
 
   const handleAddToCart = () => {
-    if (isBundle && bundle) {
-      // Add bundle as single item with components metadata
-      const originalPrice = bundle.items.reduce((sum, item) => sum + item.unitPrice, 0);
-      const bundleSavings = originalPrice - bundle.price;
+    if (isBundle && product) {
+      // Bundle shell product - use shell data (synced from Bundle)
+      const bundlePrice = product.customFields?.bundlePrice || selectedVariant?.priceWithTax || 0;
+      const bundleComponents = product.customFields?.bundleComponents 
+        ? JSON.parse(product.customFields.bundleComponents)
+        : [];
       
       addItem({
-        id: bundle.id,
-        variantId: `bundle-${bundle.id}`,
-        productName: bundle.name,
+        id: product.id,
+        variantId: selectedVariant?.id || `bundle-${product.id}`,
+        productName: product.name,
         variantName: undefined,
-        price: bundle.price * 100, // Convert to cents
-        originalPrice: originalPrice * 100, // For displaying savings
-        image: getMockBundleImage(bundle.name),
-        slug: `bundle-${bundle.slug || bundle.id}`,
-        inStock: true,
+        price: bundlePrice, // From shell customFields (synced from bundle.effectivePrice)
+        image: product.featuredAsset?.preview || '/product-placeholder.svg',
+        slug: product.slug,
+        inStock: (product.customFields?.bundleAvailability || 0) > 0, // A_final from sync
         quantity: quantity,
         isBundle: true,
-        bundleId: bundle.id,
-        bundleComponents: bundle.items
+        bundleId: bundleId,
+        bundleComponents: bundle?.items || bundleComponents // Prefer Bundle entity if loaded
       });
     } else if (selectedVariant && product) {
       // Add regular product to cart
@@ -215,14 +235,26 @@ export default function ProductDetailPage() {
   }
 
   const currentItem = isBundle ? bundle : product;
-  const isInStock = isBundle ? true : selectedVariant?.stockLevel !== 'OUT_OF_STOCK';
+  const isInStock = isBundle 
+    ? (product?.customFields?.bundleAvailability || 0) > 0 
+    : selectedVariant?.stockLevel !== 'OUT_OF_STOCK';
+  
+  // Bundle price logic:
+  // - effectivePrice from Bundle entity is in cents (computed from discount type)
+  // - bundlePrice in shell customFields is also in cents (synced from effectivePrice)
+  // - For regular products, priceWithTax is in cents
   const price = isBundle 
-    ? (bundle?.price || 0) * 100 // Convert to cents for consistency
+    ? (bundle?.effectivePrice || product?.customFields?.bundlePrice || 0)
     : selectedVariant?.priceWithTax || 0;
   
-  // Calculate bundle savings
+  // Calculate bundle savings (all in cents)
   const bundleSavings = isBundle && bundle
-    ? bundle.items.reduce((sum, item) => sum + item.unitPrice, 0) - bundle.price
+    ? bundle.totalSavings || 0
+    : 0;
+  
+  // Calculate component total for display (convert unitPrice from dollars to cents)
+  const componentTotal = isBundle && bundle
+    ? bundle.items.reduce((sum, item) => sum + (item.unitPrice * 100 * item.quantity), 0)
     : 0;
 
   return (
@@ -317,10 +349,17 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Price */}
-            <div className="text-3xl font-bold">
-              ${(price / 100).toFixed(2)}
-              {selectedVariant?.sku && (
-                <span className="text-sm text-gray-600 ml-2">SKU: {selectedVariant.sku}</span>
+            <div>
+              <div className="text-3xl font-bold">
+                ${(price / 100).toFixed(2)}
+              </div>
+              {isBundle && componentTotal > price && (
+                <div className="text-lg text-gray-500 line-through mt-1">
+                  ${(componentTotal / 100).toFixed(2)}
+                </div>
+              )}
+              {!isBundle && selectedVariant?.sku && (
+                <span className="text-sm text-gray-600 mt-2 block">SKU: {selectedVariant.sku}</span>
               )}
             </div>
             
@@ -329,10 +368,10 @@ export default function ProductDetailPage() {
               <div className="bg-[var(--success)]/10 border border-[var(--success)]/20 rounded-lg p-4">
                 <div className="flex items-center gap-2 text-[var(--success)] font-semibold">
                   <Package className="w-5 h-5" />
-                  Bundle Savings: ${bundleSavings.toFixed(2)}
+                  Bundle Savings: ${(bundleSavings / 100).toFixed(2)}
                 </div>
                 <p className="text-sm text-[var(--success)]/70 mt-1">
-                  Save {Math.round((bundleSavings / (bundleSavings + (bundle?.price || 0))) * 100)}% compared to buying separately
+                  Save {componentTotal > 0 ? Math.round((bundleSavings / componentTotal) * 100) : 0}% compared to buying separately
                 </p>
               </div>
             )}
@@ -360,44 +399,44 @@ export default function ProductDetailPage() {
             )}
             
             {/* Bundle Components - Show before Add to Cart */}
-            {isBundle && bundle?.items && (
-              <div>
-                <h3 className="font-semibold mb-3">What's Included</h3>
+            {isBundle && bundle?.items && bundle.items.length > 0 && (
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-semibold mb-4">What's Included in This Bundle</h3>
                 <div className="space-y-3">
                   {[...bundle.items]
                     .sort((a, b) => a.displayOrder - b.displayOrder)
-                    .map((item) => (
-                    <div key={item.id} className="flex items-center gap-4 p-3 border border-gray-200 rounded-lg">
-                      <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center flex-shrink-0">
-                        <img
-                          src="/product-placeholder.svg"
-                          alt={item.productVariant.name}
-                          className="w-8 h-8 object-contain"
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-sm">{item.productVariant.name}</h4>
-                        <p className="text-xs text-gray-600">SKU: {item.productVariant.sku}</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm font-semibold">${item.unitPrice.toFixed(2)}</div>
-                        <div className="text-xs text-gray-600">Qty: {item.quantity}</div>
-                      </div>
-                    </div>
-                  ))}
+                    .map((item) => {
+                      // unitPrice is in dollars, convert to cents for display
+                      const itemTotal = item.unitPrice * item.quantity * 100;
+                      return (
+                        <div key={item.id} className="flex items-center gap-4 p-3 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+                          <div className="w-14 h-14 bg-gray-50 rounded flex items-center justify-center flex-shrink-0">
+                            <Package className="w-8 h-8 text-gray-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-sm">{item.productVariant.name}</h4>
+                            <p className="text-xs text-gray-500 mt-0.5">SKU: {item.productVariant.sku}</p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <div className="text-sm font-medium">${(itemTotal / 100).toFixed(2)}</div>
+                            <div className="text-xs text-gray-500">Qty: {item.quantity}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
                 </div>
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="flex justify-between items-center text-sm">
-                    <span>Individual Total:</span>
-                    <span className="font-semibold">${bundle.items.reduce((sum, item) => sum + item.unitPrice, 0).toFixed(2)}</span>
+                <div className="mt-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
+                  <div className="flex justify-between items-center text-sm mb-2">
+                    <span className="text-gray-700">Individual Total:</span>
+                    <span className="font-semibold text-gray-900">${(componentTotal / 100).toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between items-center text-sm text-[var(--success)]">
-                    <span>Bundle Price:</span>
-                    <span className="font-bold">${bundle.price.toFixed(2)}</span>
+                  <div className="flex justify-between items-center text-base mb-2">
+                    <span className="text-gray-900 font-medium">Bundle Price:</span>
+                    <span className="font-bold text-gray-900">${(price / 100).toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between items-center text-sm font-bold text-[var(--success)] border-t pt-2 mt-2">
+                  <div className="flex justify-between items-center text-base font-bold text-[var(--success)] border-t border-gray-300 pt-3 mt-2">
                     <span>You Save:</span>
-                    <span>${bundleSavings.toFixed(2)}</span>
+                    <span className="text-xl">${(bundleSavings / 100).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -496,10 +535,13 @@ export default function ProductDetailPage() {
           />
         </div>
 
-        {/* Related Products - Only for regular products */}
-        {!isBundle && (
+        {/* Related Products - automatically shows featured or collection-based products */}
+        {!isBundle && product && (
           <div className="mt-16">
-            <RelatedProducts currentProductId={product?.id || ''} />
+            <RelatedProducts 
+              currentProductId={product.id}
+              collections={product.collections}
+            />
           </div>
         )}
       </div>

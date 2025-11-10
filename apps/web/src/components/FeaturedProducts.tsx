@@ -7,26 +7,39 @@ import { Star, ChevronLeft, ChevronRight, Package } from 'lucide-react';
 import Link from 'next/link';
 import { useCart } from '@/lib/hooks/useCart';
 
-export function FeaturedProducts() {
+interface FeaturedProductsProps {
+  title?: string;
+}
+
+export function FeaturedProducts({ title = 'Your journey starts here' }: FeaturedProductsProps = {}) {
   const { addItem, openCart } = useCart();
   
-  const { data: productsData, loading: productsLoading, error: productsError } = useQuery<{
-    search: {
-      items: SearchResult[];
-    };
-  }>(GET_FEATURED_PRODUCTS);
+  const { data: productsData, loading: productsLoading, error: productsError } = useQuery(GET_FEATURED_PRODUCTS);
 
   const { data: bundlesData, loading: bundlesLoading } = useQuery(GET_BUNDLES, {
     variables: {
       options: {
-        filter: { enabled: { eq: true } },
+        filter: { status: { eq: 'ACTIVE' } },
         take: 3
       }
     },
     errorPolicy: 'all'
   });
 
-  const productCards = (productsData?.search.items || []).map(toProductCardData);
+  // Convert collection variants to card data - use variant ID to avoid duplicates
+  const variants = (productsData as any)?.collection?.productVariants?.items || [];
+  const productCards = variants.map((v: any) => ({
+    id: v.id, // Use variant ID, not product ID
+    productId: v.product.id,
+    name: v.product.name,
+    slug: v.product.slug,
+    description: v.product.description,
+    image: v.product.featuredAsset?.preview,
+    priceWithTax: v.priceWithTax,
+    inStock: true,
+    rating: 4.5,
+    reviews: 0
+  }));
   const bundles = (bundlesData as any)?.bundles?.items || [];
   
   const loading = productsLoading || bundlesLoading;
@@ -37,7 +50,7 @@ export function FeaturedProducts() {
       <section id="journey-section" className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <h2 id="journey-title" className="text-3xl font-bold text-center mb-12">
-            Your journey starts here
+            {title}
           </h2>
           <div className="flex gap-6 overflow-x-auto pb-4">
             {[...Array(5)].map((_, i) => (
@@ -58,7 +71,7 @@ export function FeaturedProducts() {
       <section id="journey-section" className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <h2 id="journey-title" className="text-3xl font-bold text-center mb-12">
-            Your journey starts here
+            {title}
           </h2>
           <div className="text-center text-gray-500">
             <p>Unable to load featured products</p>
@@ -73,7 +86,7 @@ export function FeaturedProducts() {
     <section id="journey-section" className="py-16 bg-white">
       <div className="container mx-auto px-4">
         <h2 id="journey-title" className="text-3xl font-bold text-center mb-12">
-          Your journey starts here
+          {title}
         </h2>
 
           <div id="products-carousel" className="relative">
@@ -148,7 +161,7 @@ export function FeaturedProducts() {
               })}
               
               {/* Product Cards */}
-              {productCards.map((product) => (
+              {productCards.map((product: any) => (
                 <Link
                   key={product.id}
                   href={`/products/${product.slug}`}

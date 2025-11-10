@@ -1,6 +1,6 @@
 import { DeepPartial, ID } from '@vendure/common/lib/shared-types';
-import { HasCustomFields, VendureEntity } from '@vendure/core';
-import { Column, Entity, OneToMany } from 'typeorm';
+import { HasCustomFields, VendureEntity, Asset } from '@vendure/core';
+import { Column, Entity, OneToMany, ManyToMany, JoinTable, ManyToOne } from 'typeorm';
 import { BundleItem } from './bundle-item.entity';
 
 /**
@@ -67,8 +67,16 @@ export class Bundle extends VendureEntity implements HasCustomFields {
     @Column('int', { default: 1 })
     version: number; // Incremented on publish to ACTIVE
 
-    @Column('simple-json', { default: () => "'[]'" })
-    assets: string[]; // Image URLs
+    @ManyToMany(() => Asset, { eager: true })
+    @JoinTable({
+        name: 'bundle_assets',
+        joinColumn: { name: 'bundle_id', referencedColumnName: 'id' },
+        inverseJoinColumn: { name: 'asset_id', referencedColumnName: 'id' }
+    })
+    assets: Asset[];
+
+    @ManyToOne(() => Asset, { nullable: true, eager: true })
+    featuredAsset?: Asset; // Primary bundle image (syncs to shell product)
 
     @Column('simple-json', { nullable: true })
     tags?: string[]; // For categorization (performance, muscle-gain, etc.)
@@ -76,8 +84,22 @@ export class Bundle extends VendureEntity implements HasCustomFields {
     @Column({ nullable: true })
     category?: string; // Bundle category
 
+    // Scheduling & Gating (Phase 1)
+    @Column('timestamp', { nullable: true })
+    validFrom?: Date; // Bundle becomes available at this date
+
+    @Column('timestamp', { nullable: true })
+    validTo?: Date; // Bundle ends at this date
+
+    @Column('int', { nullable: true })
+    bundleCap?: number; // Optional marketing cap (A_shell)
+
     @Column({ default: false })
     allowExternalPromos: boolean; // Per-bundle external promotion policy
+
+    // Shell product linkage (optional but recommended for SEO/PLP)
+    @Column({ nullable: true })
+    shellProductId?: string; // ID of the Product shell used for PDP/PLP/SEO
 
     // Backwards compatibility fields (deprecated but kept for existing code)
     @Column({ default: true })
@@ -189,6 +211,16 @@ export class Bundle extends VendureEntity implements HasCustomFields {
             if (this.fixedPrice && this.fixedPrice >= componentTotal) {
                 errors.push('Fixed price must be less than component total to provide savings');
             }
+        }
+        
+        // Date validation
+        if (this.validFrom && this.validTo && this.validFrom >= this.validTo) {
+            errors.push('validFrom must be before validTo');
+        }
+        
+        // Bundle cap validation
+        if (this.bundleCap !== null && this.bundleCap !== undefined && this.bundleCap < 0) {
+            errors.push('bundleCap must be non-negative');
         }
         
         return errors;
@@ -319,6 +351,44 @@ export class Bundle extends VendureEntity implements HasCustomFields {
      */
     get isAvailable(): boolean {
         return this.status === BundleStatus.ACTIVE;
+    }
+    
+    /**
+     * Check if bundle is currently within its valid date range
+     */
+    isWithinSchedule(): boolean {
+        const now = new Date();
+        
+        if (this.validFrom && now < this.validFrom) {
+            return false;
+        }
+        
+        if (this.validTo && now > this.validTo) {
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Get availability message for UI display
+     */
+    getAvailabilityMessage(): string {
+        if (this.status !== BundleStatus.ACTIVE) {
+            return this.statusDescription;
+        }
+        
+        const now = new Date();
+        
+        if (this.validFrom && now < this.validFrom) {
+            return `Available starting ${this.validFrom.toLocaleDateString()}`;
+        }
+        
+        if (this.validTo && now > this.validTo) {
+            return `This bundle ended on ${this.validTo.toLocaleDateString()}`;
+        }
+        
+        return 'Available';
     }
     
     /**

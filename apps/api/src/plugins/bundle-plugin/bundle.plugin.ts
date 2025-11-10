@@ -246,12 +246,18 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
                 fixedPrice: Money
                 percentOff: Float
                 version: Int!
-                assets: [String!]!
+                assets: [Asset!]!
+                featuredAsset: Asset
                 price: Money!
                 enabled: Boolean! # Legacy compatibility
                 tags: [String!]
                 category: String
                 allowExternalPromos: Boolean!
+                # Phase 3 fields
+                validFrom: DateTime
+                validTo: DateTime
+                bundleCap: Int
+                shellProductId: String
                 items: [BundleItem!]!
                 # Computed fields
                 isAvailable: Boolean!
@@ -352,10 +358,14 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
                 discountType: String!
                 fixedPrice: Money
                 percentOff: Float
-                assets: [String!]!
+                assets: [ID!]
                 tags: [String!]
                 category: String
                 allowExternalPromos: Boolean
+                # Phase 3 fields
+                validFrom: DateTime
+                validTo: DateTime
+                bundleCap: Int
                 items: [CreateBundleItemInput!]!
                 # Legacy compatibility
                 price: Money
@@ -370,10 +380,14 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
                 discountType: String
                 fixedPrice: Money
                 percentOff: Float
-                assets: [String!]
+                assets: [ID!]
                 tags: [String!]
                 category: String
                 allowExternalPromos: Boolean
+                # Phase 3 fields
+                validFrom: DateTime
+                validTo: DateTime
+                bundleCap: Int
                 items: [UpdateBundleItemInput!]
                 # Legacy compatibility
                 price: Money

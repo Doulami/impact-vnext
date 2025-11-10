@@ -86,7 +86,7 @@ export const SEARCH_PRODUCTS = gql`
   }
 `;
 
-// Get single product by slug (keep existing for PDP)
+// Get single product by slug (supports both products and bundle shells)
 export const GET_PRODUCT_BY_SLUG = gql`
   query GetProductBySlug($slug: String!) {
     product(slug: $slug) {
@@ -98,6 +98,23 @@ export const GET_PRODUCT_BY_SLUG = gql`
         id
         preview
         source
+      }
+      assets {
+        id
+        preview
+        source
+      }
+      collections {
+        id
+        name
+        slug
+      }
+      customFields {
+        isBundle
+        bundleId
+        bundlePrice
+        bundleAvailability
+        bundleComponents
       }
       variants {
         id
@@ -115,13 +132,68 @@ export const GET_PRODUCT_BY_SLUG = gql`
   }
 `;
 
-// Get featured products using search
+// Get featured products from Featured collection
 export const GET_FEATURED_PRODUCTS = gql`
-  ${SEARCH_RESULT_FRAGMENT}
   query GetFeaturedProducts {
-    search(input: { groupByProduct: true, take: 8 }) {
-      items {
-        ...SearchResultFields
+    collection(slug: "featured") {
+      id
+      name
+      productVariants(options: { take: 20 }) {
+        items {
+          id
+          name
+          sku
+          price
+          priceWithTax
+          featuredAsset {
+            id
+            preview
+          }
+          product {
+            id
+            name
+            slug
+            description
+            featuredAsset {
+              id
+              preview
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+// Get related products from same collection
+export const GET_RELATED_PRODUCTS = gql`
+  query GetRelatedProducts($collectionSlug: String!) {
+    collection(slug: $collectionSlug) {
+      id
+      name
+      productVariants(options: { take: 12 }) {
+        items {
+          id
+          name
+          sku
+          price
+          priceWithTax
+          stockLevel
+          featuredAsset {
+            id
+            preview
+          }
+          product {
+            id
+            name
+            slug
+            description
+            featuredAsset {
+              id
+              preview
+            }
+          }
+        }
       }
     }
   }
@@ -176,7 +248,20 @@ export const BUNDLE_FRAGMENT = gql`
     slug
     description
     price
+    effectivePrice
+    totalSavings
+    status
     enabled
+    assets {
+      id
+      preview
+      source
+    }
+    featuredAsset {
+      id
+      preview
+      source
+    }
     items {
       id
       productVariant {

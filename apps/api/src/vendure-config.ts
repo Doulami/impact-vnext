@@ -17,6 +17,7 @@ import 'dotenv/config';
 import path from 'path';
 import { CustomerAdminVerificationPlugin } from './plugins/customer-admin-verification.plugin';
 import { BundlePlugin, bundleUiExtension } from './plugins/bundle-plugin/bundle.plugin';
+import { FeaturedCollectionPlugin } from './plugins/featured-collection.plugin';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
 const serverPort = +process.env.PORT || 3000;
@@ -73,7 +74,11 @@ export const config: VendureConfig = {
         Product: [
             // Bundle shell product fields
             { name: 'isBundle', type: 'boolean', nullable: true, defaultValue: false, label: [{ languageCode: LanguageCode.en, value: 'Is Bundle' }], description: [{ languageCode: LanguageCode.en, value: 'Marks this product as a bundle shell for SEO/PLP' }] },
-            { name: 'bundleId', type: 'string', nullable: true, label: [{ languageCode: LanguageCode.en, value: 'Bundle ID' }], description: [{ languageCode: LanguageCode.en, value: 'References the Bundle entity ID' }] }
+            { name: 'bundleId', type: 'string', nullable: true, label: [{ languageCode: LanguageCode.en, value: 'Bundle ID' }], description: [{ languageCode: LanguageCode.en, value: 'References the Bundle entity ID' }] },
+            // Phase 5: Shell sync fields
+            { name: 'bundlePrice', type: 'int', nullable: true, label: [{ languageCode: LanguageCode.en, value: 'Bundle Price' }], description: [{ languageCode: LanguageCode.en, value: 'Computed bundle price (cents, synced from Bundle)' }] },
+            { name: 'bundleAvailability', type: 'int', nullable: true, label: [{ languageCode: LanguageCode.en, value: 'Bundle Availability' }], description: [{ languageCode: LanguageCode.en, value: 'A_final availability (synced from Bundle)' }] },
+            { name: 'bundleComponents', type: 'string', nullable: true, label: [{ languageCode: LanguageCode.en, value: 'Bundle Components' }], description: [{ languageCode: LanguageCode.en, value: 'JSON: [{variantId, qty}]' }] }
         ],
         OrderLine: [
             // Bundle metadata fields for exploded bundles
@@ -146,5 +151,7 @@ export const config: VendureConfig = {
         CustomerAdminVerificationPlugin,
         // Bundle Plugin for product bundles
         BundlePlugin,
+        // Auto-create Featured collection
+        FeaturedCollectionPlugin,
     ],
 };

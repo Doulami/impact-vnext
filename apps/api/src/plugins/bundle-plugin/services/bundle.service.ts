@@ -7,11 +7,15 @@ import {
     ID,
     StockMovementService,
     ProductVariantService,
+    ProductService,
     OrderService,
     OrderLine,
     Logger,
     Product,
+    Asset,
+    LanguageCode,
 } from '@vendure/core';
+import { GlobalFlag } from '@vendure/common/lib/generated-types';
 import { Bundle, BundleStatus, BundleDiscountType } from '../entities/bundle.entity';
 import { BundleItem } from '../entities/bundle-item.entity';
 
@@ -105,6 +109,7 @@ export class BundleService {
         private listQueryBuilder: ListQueryBuilder,
         private stockMovementService: StockMovementService,
         private productVariantService: ProductVariantService,
+        private productService: ProductService,
         private orderService: OrderService,
     ) {}
 
@@ -128,6 +133,15 @@ export class BundleService {
         // Validate and fetch component variants
         const validatedItems = await this.validateAndEnrichItems(ctx, input.items);
         
+        // Fetch asset entities if provided
+        let assetEntities: Asset[] = [];
+        let featuredAsset: Asset | undefined;
+        
+        if (input.assets && input.assets.length > 0) {
+            assetEntities = await this.connection.getRepository(ctx, Asset).findByIds(input.assets);
+            featuredAsset = assetEntities[0]; // First asset as featured
+        }
+        
         // Create bundle entity
         const bundle = new Bundle({
             name: input.name,
@@ -138,7 +152,8 @@ export class BundleService {
             fixedPrice: input.fixedPrice,
             percentOff: input.percentOff,
             version: 1,
-            assets: input.assets || [],
+            assets: assetEntities,
+            featuredAsset: featuredAsset,
             tags: input.tags,
             category: input.category,
             allowExternalPromos: input.allowExternalPromos || false,
@@ -148,17 +163,8 @@ export class BundleService {
             customFields: {}
         });
         
-        // Validate bundle configuration
-        const validationErrors = bundle.validate();
-        if (validationErrors.length > 0) {
-            throw new Error(`Bundle validation failed: ${validationErrors.join(', ')}`);
-        }
-
-        const savedBundle = await this.connection.getRepository(ctx, Bundle).save(bundle);
-
-        // Create bundle items with enriched data
+        // Create temporary bundle items for validation (before saving to DB)
         const bundleItems = validatedItems.map((itemData, index) => new BundleItem({
-            bundleId: savedBundle.id,
             productVariantId: itemData.productVariantId,
             quantity: itemData.quantity,
             weight: itemData.weight,
@@ -168,14 +174,82 @@ export class BundleService {
             unitPrice: itemData.currentPrice / 100, // Convert cents to dollars
             customFields: {}
         }));
+        
+        // Assign items to bundle for validation
+        bundle.items = bundleItems;
+        
+        // Validate bundle configuration (with items)
+        const validationErrors = bundle.validate();
+        if (validationErrors.length > 0) {
+            throw new Error(`Bundle validation failed: ${validationErrors.join(', ')}`);
+        }
+
+        const savedBundle = await this.connection.getRepository(ctx, Bundle).save(bundle);
+
+        // Now set the bundleId on items and save them
+        bundleItems.forEach(item => {
+            (item as any).bundleId = savedBundle.id;
+        });
 
         await this.connection.getRepository(ctx, BundleItem).save(bundleItems);
+
+        // Create shell product for bundle (for SEO/PLP)
+        const shellProductId = await this.createShellProduct(ctx, savedBundle);
+        savedBundle.shellProductId = shellProductId;
+        await this.connection.getRepository(ctx, Bundle).save(savedBundle);
 
         const result = await this.findOne(ctx, savedBundle.id);
         if (!result) {
             throw new Error('Failed to retrieve created bundle');
         }
         return result;
+    }
+    
+    /**
+     * Create shell product for bundle - used for PDP/PLP/SEO
+     * Shell product has customFields.isBundle=true, customFields.bundleId
+     * Single variant with trackInventory=false (never decremented)
+     */
+    private async createShellProduct(ctx: RequestContext, bundle: Bundle): Promise<string> {
+        try {
+            // Create Product with bundle metadata
+            const product = await this.productService.create(ctx, {
+                translations: [{
+                    languageCode: LanguageCode.en,
+                    name: `${bundle.name}`,
+                    slug: bundle.slug || `bundle-${bundle.id}`,
+                    description: bundle.description || `Bundle: ${bundle.name}`
+                }],
+                customFields: {
+                    isBundle: true,
+                    bundleId: String(bundle.id)
+                },
+                enabled: bundle.status === BundleStatus.ACTIVE
+            });
+            
+            // Create single variant with trackInventory=false
+            await this.productVariantService.create(ctx, [{
+                productId: product.id,
+                sku: `BUNDLE-${bundle.id}`,
+                price: 0, // Shell has no price
+                trackInventory: GlobalFlag.FALSE,
+                translations: [{
+                    languageCode: LanguageCode.en,
+                    name: bundle.name
+                }]
+            }]);
+            
+            Logger.info(`Created shell product ${product.id} for bundle ${bundle.id} (${bundle.name})`, 'BundleService');
+            
+            return String(product.id);
+            
+        } catch (error) {
+            Logger.error(
+                `Failed to create shell product for bundle ${bundle.id}: ${error instanceof Error ? error.message : String(error)}`,
+                'BundleService'
+            );
+            throw error;
+        }
     }
     
     /**
@@ -237,8 +311,17 @@ export class BundleService {
             throw new Error(`Bundle with id ${input.id} not found`);
         }
 
+        // Update assets if provided
+        if (input.assets && input.assets.length > 0) {
+            const assetEntities = await this.connection.getRepository(ctx, Asset).findByIds(input.assets);
+            bundle.assets = assetEntities;
+            bundle.featuredAsset = assetEntities[0]; // First asset as featured
+            delete (input as any).assets; // Remove from input to avoid Object.assign overwriting
+        }
+        
         // Update bundle properties
         Object.assign(bundle, input);
+        
         await this.connection.getRepository(ctx, Bundle).save(bundle);
 
         // Update bundle items if provided
@@ -259,6 +342,16 @@ export class BundleService {
         if (!result) {
             throw new Error('Failed to retrieve updated bundle');
         }
+        
+        // Sync to shell product if it exists
+        if (result.shellProductId) {
+            try {
+                await this.syncBundleToShell(ctx, result);
+            } catch (error) {
+                Logger.warn(`Failed to sync bundle ${result.id} to shell: ${error instanceof Error ? error.message : String(error)}`, 'BundleService');
+            }
+        }
+        
         return result;
     }
 
@@ -381,22 +474,35 @@ export class BundleService {
             
             // Get actual stock levels from Vendure stock system
             const stockLevel = await this.getVariantStockLevel(ctx, variant.id);
-            const available = stockLevel.stockOnHand;
+            const onHand = stockLevel.stockOnHand;
             const allocated = stockLevel.stockAllocated || 0;
-            const salableStock = Math.max(0, available - allocated);
+            
+            // Calculate effective available based on backorder settings
+            let effectiveAvailable: number;
+            
+            if (variant.outOfStockThreshold && onHand <= variant.outOfStockThreshold) {
+                // Variant is at or below threshold
+                // Check if backorders are allowed (Vendure uses useGlobalOutOfStockThreshold)
+                // If trackInventory is enabled and threshold reached, check backorder policy
+                // For now, simple logic: if below threshold, available = 0 unless you implement backorder allowance
+                effectiveAvailable = Math.max(0, onHand - allocated);
+            } else {
+                // Normal stock calculation
+                effectiveAvailable = Math.max(0, onHand - allocated);
+            }
 
             // Calculate max bundles possible with this component
-            const maxForThisItem = Math.floor(salableStock / item.quantity);
+            const maxForThisItem = Math.floor(effectiveAvailable / item.quantity);
             componentMaxQuantity = Math.min(componentMaxQuantity, maxForThisItem);
             
             // Track insufficient items for detailed error reporting
-            if (salableStock < item.quantity) {
+            if (effectiveAvailable < item.quantity) {
                 insufficientItems.push({
                     variantId: variant.id.toString(),
                     productName: variant.name,
                     required: item.quantity,
-                    available: salableStock,
-                    shortfall: item.quantity - salableStock
+                    available: effectiveAvailable,
+                    shortfall: item.quantity - effectiveAvailable
                 });
             }
         }
@@ -439,16 +545,18 @@ export class BundleService {
      * Find shell product linked to bundle
      */
     private async findShellProduct(ctx: RequestContext, bundleId: ID): Promise<Product | null> {
-        // Query for products with customFields.bundleId matching this bundle
         try {
-            const products = await this.connection.getRepository(ctx, Product)
-                .createQueryBuilder('product')
-                .leftJoinAndSelect('product.variants', 'variant')
-                .where('product.customFieldsBundleid = :bundleId', { bundleId })
-                .andWhere('product.customFieldsIsbundle = :isBundle', { isBundle: true })
-                .getMany();
-                
-            return products.length > 0 ? products[0] : null;
+            const bundle = await this.findOne(ctx, bundleId);
+            if (!bundle || !bundle.shellProductId) {
+                return null;
+            }
+            
+            const product = await this.connection.getRepository(ctx, Product).findOne({
+                where: { id: bundle.shellProductId },
+                relations: ['variants']
+            });
+            
+            return product || null;
         } catch (error) {
             Logger.warn(`Error finding shell product for bundle ${bundleId}: ${error}`, 'BundleService');
             return null;
@@ -487,7 +595,14 @@ export class BundleService {
     
     /**
      * Get final availability for bundle (public method for PDP/PLP)
-     * A_final = min(A_components, A_shell) for ACTIVE bundles only
+     * A_final = min(A_components, A_shell, A_bundleCap) with scheduling gates
+     * 
+     * Order of checks (hard stops first):
+     * 1. Schedule gate (status === ACTIVE && validFrom <= now <= validTo)
+     * 2. Channel & visibility
+     * 3. Bundle cap (A_shell from bundleCap)
+     * 4. Component availability (A_components)
+     * 5. A_final = min(A_shell, A_components)
      */
     async getBundleAvailability(ctx: RequestContext, bundleId: ID): Promise<{
         isAvailable: boolean;
@@ -505,8 +620,8 @@ export class BundleService {
             };
         }
         
-        // Check bundle status first
-        if (!bundle.isAvailable) {
+        // 1. SCHEDULE GATE (hard stop)
+        if (bundle.status !== BundleStatus.ACTIVE) {
             return {
                 isAvailable: false,
                 maxQuantity: 0,
@@ -515,15 +630,37 @@ export class BundleService {
             };
         }
         
+        // Check schedule dates
+        if (!bundle.isWithinSchedule()) {
+            return {
+                isAvailable: false,
+                maxQuantity: 0,
+                status: 'SCHEDULED',
+                reason: bundle.getAvailabilityMessage()
+            };
+        }
+        
+        // 2. CHANNEL & VISIBILITY (already checked via ctx)
+        
+        // 3. BUNDLE CAP (marketing gate - A_shell)
+        const A_shell = bundle.bundleCap ?? Infinity;
+        
+        // 4. COMPONENT AVAILABILITY (A_components)
         const componentAvailability = await this.calculateComponentAvailability(ctx, bundle);
-        const shellAvailability = await this.getShellAvailabilityGate(ctx, bundle);
-        const finalMaxQuantity = Math.min(componentAvailability.maxQuantity, shellAvailability);
+        const A_components = componentAvailability.maxQuantity;
+        
+        // 5. FINAL SELLABLE QUANTITY
+        const A_final = Math.min(A_shell, A_components);
         
         return {
-            isAvailable: finalMaxQuantity > 0,
-            maxQuantity: finalMaxQuantity,
-            status: 'AVAILABLE',
-            reason: finalMaxQuantity === 0 ? 'Insufficient component stock' : undefined
+            isAvailable: A_final > 0,
+            maxQuantity: A_final,
+            status: A_final > 0 ? 'AVAILABLE' : 'OUT_OF_STOCK',
+            reason: A_final === 0 ? (
+                componentAvailability.insufficientItems.length > 0
+                    ? `Out of stock: ${componentAvailability.insufficientItems.map(i => i.productName).join(', ')}`
+                    : 'Out of stock'
+            ) : undefined
         };
     }
 
@@ -577,8 +714,12 @@ export class BundleService {
             await this.connection.getRepository(ctx, Bundle)
                 .update(bundleId, {
                     price: basePrice,
+                    lastRecomputedAt: new Date(),
                     updatedAt: new Date()
                 });
+                
+            // PHASE 5: Sync computed data to shell product
+            await this.syncBundleToShell(ctx, bundle);
                 
             Logger.debug(
                 `Bundle ${bundleId} recomputed: basePrice=${basePrice}`,
@@ -591,6 +732,88 @@ export class BundleService {
                 'BundleService'
             );
             throw error;
+        }
+    }
+    
+    /**
+     * Sync bundle data to shell product - Phase 5
+     * Updates shell product with:
+     * - Computed bundle price
+     * - Availability (A_final)
+     * - Component data
+     */
+    private async syncBundleToShell(ctx: RequestContext, bundle: Bundle): Promise<void> {
+        try {
+            if (!bundle.shellProductId) {
+                Logger.warn(`Bundle ${bundle.id} has no shell product to sync`, 'BundleService');
+                return;
+            }
+            
+            // Get shell product
+            const shellProduct = await this.connection.getRepository(ctx, Product).findOne({
+                where: { id: bundle.shellProductId },
+                relations: ['variants']
+            });
+            
+            if (!shellProduct) {
+                Logger.warn(`Shell product ${bundle.shellProductId} not found for bundle ${bundle.id}`, 'BundleService');
+                return;
+            }
+            
+            // Calculate A_final
+            const availability = await this.getBundleAvailability(ctx, bundle.id);
+            const A_final = availability.maxQuantity;
+            
+            // Calculate effective price
+            const effectivePrice = bundle.effectivePrice; // Use computed property from entity
+            
+            // Prepare asset updates for shell product
+            const assetIds = bundle.assets?.map(a => a.id) || [];
+            const featuredAssetId = bundle.featuredAsset?.id;
+            
+            // Update shell product with bundle assets
+            await this.productService.update(ctx, {
+                id: shellProduct.id,
+                assetIds: assetIds,
+                featuredAssetId: featuredAssetId,
+                customFields: {
+                    ...shellProduct.customFields,
+                    bundlePrice: effectivePrice,
+                    bundleAvailability: A_final,
+                    bundleComponents: JSON.stringify(
+                        bundle.items.map(item => ({
+                            variantId: item.productVariantId,
+                            qty: item.quantity
+                        }))
+                    )
+                },
+                enabled: bundle.status === BundleStatus.ACTIVE && bundle.isWithinSchedule()
+            });
+            
+            // Update shell variant price
+            if (shellProduct.variants && shellProduct.variants.length > 0) {
+                const shellVariant = shellProduct.variants[0];
+                await this.productVariantService.update(ctx, [{
+                    id: shellVariant.id,
+                    price: effectivePrice,
+                    translations: [{
+                        languageCode: LanguageCode.en,
+                        name: bundle.name
+                    }]
+                }]);
+            }
+            
+            Logger.info(
+                `Synced bundle ${bundle.id} to shell product ${shellProduct.id}: price=${effectivePrice}, availability=${A_final}`,
+                'BundleService'
+            );
+            
+        } catch (error) {
+            Logger.error(
+                `Failed to sync bundle ${bundle.id} to shell: ${error instanceof Error ? error.message : String(error)}`,
+                'BundleService'
+            );
+            // Don't throw - sync failure shouldn't break recompute
         }
     }
     

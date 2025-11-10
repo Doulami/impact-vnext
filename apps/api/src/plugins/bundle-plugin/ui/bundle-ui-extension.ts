@@ -16,4 +16,7 @@ export const bundleUiExtension: AdminUiExtension = {
       ngModuleName: 'BundleUiModule',
     },
   ],
+  translations: {
+    fr: path.join(__dirname, 'translations/fr.json'),
+  },
 };
