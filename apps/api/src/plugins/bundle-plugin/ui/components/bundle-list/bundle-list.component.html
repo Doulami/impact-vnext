@@ -82,6 +82,10 @@
                   class="text-muted small d-block">
                 {{ bundle.brokenReason }}
             </span>
+            <span *ngIf="!bundle.isAvailable && bundle.validTo" 
+                  class="text-warning small d-block">
+                ⚠ Expired: {{ bundle.validTo | date:'short' }}
+            </span>
         </ng-template>
     </vdr-dt2-column>
 
