@@ -9,6 +9,7 @@ import { BundlePromotionGuardService } from './services/bundle-promotion-guard.s
 // import { BundlePromotionInterceptor } from './promotions/bundle-promotion-interceptor'; // Temporarily disabled
 import { BundleSafetyService } from './services/bundle-safety.service';
 import { BundleLifecycleService } from './services/bundle-lifecycle.service';
+import { BundleReservationService } from './services/bundle-reservation.service';
 import { ShopApiBundleResolver, AdminApiBundleResolver } from './api/bundle-v3.resolver';
 import { BundleAdminResolver } from './api/bundle-admin.resolver';
 import { applyBundleLineAdjustments } from './promotions/bundle-line-adjustment.action';
@@ -52,7 +53,9 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
         // Phase 4.3: Background jobs and consistency
         BundleJobQueueService,
         BundleSchedulerService,
-        BundleEventHandlersService
+        BundleEventHandlersService,
+        // Phase 2 v3: Reservation system
+        BundleReservationService
     ],
     
     // Register GraphQL resolvers

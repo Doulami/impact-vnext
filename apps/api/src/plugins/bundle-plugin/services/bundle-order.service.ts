@@ -12,6 +12,7 @@ import {
     ID,
 } from '@vendure/core';
 import { BundleService } from './bundle.service';
+import { BundleReservationService } from './bundle-reservation.service';
 
 /**
  * Bundle Order Service
@@ -33,6 +34,7 @@ export class BundleOrderService implements OnModuleInit {
         private eventBus: EventBus,
         private connection: TransactionalConnection,
         private bundleService: BundleService,
+        private bundleReservationService: BundleReservationService,
     ) {}
 
     onModuleInit() {
@@ -135,7 +137,7 @@ export class BundleOrderService implements OnModuleInit {
     }
 
     /**
-     * Handle order state transitions for bundle tracking
+     * Handle order state transitions for bundle tracking (Phase 2 - v3 Reservation System)
      */
     private async handleOrderStateTransition(event: OrderStateTransitionEvent): Promise<void> {
         const { order, fromState, toState } = event;
@@ -150,12 +152,91 @@ export class BundleOrderService implements OnModuleInit {
             BundleOrderService.loggerCtx
         );
 
+        // Phase 2 v3: Update bundleReservedOpen based on order state
+        await this.updateBundleReservations(event.ctx, bundleGroups, fromState, toState);
+
         // Track important state transitions for bundle analytics
         if (toState === 'Delivered' || toState === 'Shipped') {
             await this.trackBundleFulfillment(event.ctx, bundleGroups, toState);
         } else if (toState === 'Cancelled') {
             this.handleOrderCancellation(order);
         }
+    }
+
+    /**
+     * Update bundle reservations based on order state transitions (Phase 2 - v3)
+     * 
+     * Reservation Rules:
+     * - PaymentSettled: Increment Reserved (order is paid, capacity consumed)
+     * - Shipped/Delivered: Decrement Reserved (capacity released back)
+     * - Cancelled: Decrement Reserved if coming from PaymentSettled (capacity released)
+     */
+    private async updateBundleReservations(
+        ctx: RequestContext,
+        bundleGroups: Array<{ parentLine: OrderLine; childLines: OrderLine[] }>,
+        fromState: string,
+        toState: string
+    ): Promise<void> {
+        for (const group of bundleGroups) {
+            const bundleId = (group.parentLine.customFields as any)?.bundleId;
+            if (!bundleId) continue;
+
+            // Determine the quantity from bundleKey grouping
+            // Note: Using bundleKey to group lines (existing v2 pattern)
+            const bundleKey = (group.parentLine.customFields as any)?.bundleKey;
+            const quantity = this.getBundleQuantityFromGroup(group);
+
+            try {
+                // Increment Reserved when payment is settled
+                if (toState === 'PaymentSettled' && fromState !== 'PaymentSettled') {
+                    await this.bundleReservationService.incrementReserved(ctx, bundleId, quantity);
+                    Logger.info(
+                        `Bundle ${bundleId}: Incremented Reserved by ${quantity} (Order transition: ${fromState} → ${toState})`,
+                        BundleOrderService.loggerCtx
+                    );
+                }
+
+                // Decrement Reserved when shipped or delivered
+                else if ((toState === 'Shipped' || toState === 'Delivered') && fromState === 'PaymentSettled') {
+                    await this.bundleReservationService.decrementReserved(ctx, bundleId, quantity);
+                    Logger.info(
+                        `Bundle ${bundleId}: Decremented Reserved by ${quantity} (Order transition: ${fromState} → ${toState})`,
+                        BundleOrderService.loggerCtx
+                    );
+                }
+
+                // Decrement Reserved when cancelled (if was previously paid)
+                else if (toState === 'Cancelled' && fromState === 'PaymentSettled') {
+                    await this.bundleReservationService.decrementReserved(ctx, bundleId, quantity);
+                    Logger.info(
+                        `Bundle ${bundleId}: Decremented Reserved by ${quantity} (Order cancelled from ${fromState})`,
+                        BundleOrderService.loggerCtx
+                    );
+                }
+
+            } catch (error) {
+                Logger.error(
+                    `Failed to update reservation for bundle ${bundleId}: ${error instanceof Error ? error.message : String(error)}`,
+                    BundleOrderService.loggerCtx
+                );
+            }
+        }
+    }
+
+    /**
+     * Get bundle quantity from bundle group
+     * In v2 exploded bundles, the quantity is stored on child lines
+     */
+    private getBundleQuantityFromGroup(group: { parentLine: OrderLine; childLines: OrderLine[] }): number {
+        // Get quantity from the first component's bundleComponentQty field
+        // This represents how many bundles were ordered
+        const firstChild = group.childLines[0];
+        if (firstChild) {
+            const componentQty = (firstChild.customFields as any)?.bundleComponentQty || 1;
+            // The bundle quantity is the line quantity divided by component quantity
+            return Math.floor(firstChild.quantity / componentQty);
+        }
+        return 1; // Fallback
     }
 
     /**
