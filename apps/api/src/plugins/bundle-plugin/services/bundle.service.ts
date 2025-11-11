@@ -857,7 +857,10 @@ export class BundleService {
                             variantId: item.productVariantId,
                             qty: item.quantity
                         }))
-                    )
+                    ),
+                    // Store bundle validity dates for PLP filtering
+                    bundleValidFrom: bundle.validFrom?.toISOString(),
+                    bundleValidTo: bundle.validTo?.toISOString()
                 },
                 enabled: bundle.status === BundleStatus.ACTIVE && bundle.isWithinSchedule()
             });
