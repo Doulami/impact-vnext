@@ -75,13 +75,12 @@
         <!-- Component Health -->
         <vdr-card *ngIf="!isNew && analytics" [title]="'Component Health' | translate">
             <vdr-labeled-data [label]="'Max available'">
-                <span [class.text-success]="analytics.availabilityStatus?.valid"
-                      [class.text-danger]="!analytics.availabilityStatus?.valid">
+                <span [style.color]="analytics.availabilityStatus?.valid ? '#22c55e' : '#c92100'">
                     {{ analytics.availabilityStatus?.maxQuantityAvailable || 0 }} bundles
                 </span>
             </vdr-labeled-data>
             <vdr-labeled-data [label]="'Total savings'">
-                <span class="text-success">
+                <span style="color: #22c55e;">
                     {{ analytics.totalSavings | currency }} ({{ analytics.savingsPercentage | number:'1.1-1' }}%)
                 </span>
             </vdr-labeled-data>
@@ -213,17 +212,15 @@
                     tooltip="Available capacity: max(0, Cap - Reserved)">
                     <div class="virtual-stock-status">
                         <span 
-                            [class.text-success]="bundle?.bundleVirtualStock > 0"
-                            [class.text-warning]="bundle?.bundleVirtualStock === 0"
-                            [class.text-danger]="isOverbooked()"
                             class="virtual-stock-count"
+                            [style.color]="getVirtualStockColor()"
                         >
                             {{ bundle?.bundleVirtualStock ?? 'N/A' }}
                         </span>
-                        <span *ngIf="isOverbooked()" class="text-danger ml-2" style="font-size: 0.9em;">
+                        <span *ngIf="isOverbooked()" style="color: #c92100; margin-left: 0.5rem; font-size: 0.9em;">
                             ⚠️ OVERBOOKED
                         </span>
-                        <span class="text-muted ml-2" style="font-size: 0.9em;">(computed)</span>
+                        <span style="color: #6c757d; margin-left: 0.5rem; font-size: 0.9em;">(computed)</span>
                     </div>
                 </vdr-form-field>
             </vdr-card>

@@ -51,7 +51,7 @@ npm run dev
 
 **Development Servers** 🎉
 - **Web App**: http://localhost:3001 ✅ Ready (Next.js storefront)
-- **CMS Admin**: http://localhost:1337 ✅ Running (Strapi dashboard)
+- **Blog Admin**: http://localhost:1337 ✅ Running (Strapi dashboard)
 - **API**: http://localhost:3000 ⏳ Ready to start (Vendure GraphQL)
 
 ## Stack
@@ -116,7 +116,7 @@ impact-vnext/
 ├── apps/
 │   ├── api/          → Vendure backend (GraphQL Shop/Admin APIs, plugins)
 │   ├── web/          → Next.js storefront (PWA, pages)
-│   └── cms/          → Strapi CMS (content + StoreConfig flags)
+│   └── blog/         → Strapi CMS (content + StoreConfig flags)
 ├── packages/
 │   ├── feature-flags/    → SDK to read flags from Strapi StoreConfig
 │   ├── payments-gpg/     → GPG Checkout payment provider
@@ -144,7 +144,7 @@ impact-vnext/
 ```bash
 npm run dev          # Start all services (Web + CMS)
 npm run dev:web      # Start Next.js frontend only  
-npm run dev:cms      # Start Strapi CMS only
+npm run dev:blog     # Start Strapi CMS only
 ```
 
 ### Production
@@ -164,7 +164,7 @@ npm run install:all  # Reinstall all dependencies
 
 - **[📋 Installation Guide](./docs/INSTALLATION.md)** - Complete setup instructions for new developers
 - **[🛍 Web App Development](./apps/web/WARP.md)** - Frontend development guide and patterns
-- **[📝 CMS Development](./apps/cms/WARP.md)** - Backend content management guide
+- **[📝 Blog Development](./apps/blog/WARP.md)** - Backend content management guide
 
 ## 🚨 Troubleshooting
 

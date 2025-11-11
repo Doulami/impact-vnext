@@ -8,23 +8,23 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:cms\" \"npm run dev:web\"",
+    "dev": "concurrently \"npm run dev:blog\" \"npm run dev:web\"",
     "dev:web": "cd apps/web && npm run dev",
-    "dev:cms": "cd apps/cms && npm run develop",
-    "build": "npm run build:web && npm run build:cms",
+    "dev:blog": "cd apps/blog && npm run develop",
+    "build": "npm run build:web && npm run build:blog",
     "build:web": "cd apps/web && npm run build",
-    "build:cms": "cd apps/cms && npm run build",
-    "start": "npm run start:web && npm run start:cms",
+    "build:blog": "cd apps/blog && npm run build",
+    "start": "npm run start:web && npm run start:blog",
     "start:web": "cd apps/web && npm run start",
-    "start:cms": "cd apps/cms && npm run start",
-    "lint": "npm run lint:web && npm run lint:cms",
+    "start:blog": "cd apps/blog && npm run start",
+    "lint": "npm run lint:web && npm run lint:blog",
     "lint:web": "cd apps/web && npm run lint",
-    "lint:cms": "echo 'No lint script for CMS'",
+    "lint:blog": "echo 'No lint script for Blog'",
     "clean": "npm run clean:deps && npm run clean:build",
     "clean:deps": "rm -rf node_modules apps/*/node_modules packages/*/node_modules",
-    "clean:build": "rm -rf apps/web/.next apps/cms/build apps/cms/.tmp",
+    "clean:build": "rm -rf apps/web/.next apps/blog/build apps/blog/.tmp",
     "install:all": "npm install && npm run install:apps",
-    "install:apps": "cd apps/web && npm install && cd ../cms && npm install"
+    "install:apps": "cd apps/web && npm install && cd ../blog && npm install"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

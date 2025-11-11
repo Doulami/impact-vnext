@@ -598,4 +598,18 @@ export class BundleDetailComponent implements OnInit {
         }
         return (this.bundle.bundleReservedOpen || 0) > this.bundle.bundleCap;
     }
+
+    /**
+     * Get color for virtual stock display - Phase 2 v3
+     */
+    getVirtualStockColor(): string {
+        if (this.isOverbooked()) {
+            return '#c92100'; // danger/red
+        }
+        const virtualStock = this.bundle?.bundleVirtualStock ?? 0;
+        if (virtualStock > 0) {
+            return '#22c55e'; // success/green
+        }
+        return '#f59e0b'; // warning/yellow
+    }
 }

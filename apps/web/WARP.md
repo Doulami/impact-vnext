@@ -110,7 +110,7 @@ public/
 
 This web app is part of a larger composable commerce stack:
 - **Backend**: `apps/api` (Vendure GraphQL APIs)
-- **CMS**: `apps/cms` (Strapi for content and feature flags)
+- **CMS**: `apps/blog` (Strapi for content and feature flags)
 - **Packages**: Shared utilities for payments, loyalty, shipping, etc.
 
 ### Core Principle

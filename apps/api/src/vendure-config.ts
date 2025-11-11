@@ -133,7 +133,7 @@ export const config: VendureConfig = {
                         extensionPath: path.join(__dirname, '../ui-extensions'),
                         providers: ['providers.ts'],
                     },
-                    bundleUiExtension,
+                    // bundleUiExtension, // Temporarily disabled - use GraphQL API to manage bundles
                 ],
                 devMode: IS_DEV,
             }),
@@ -141,7 +141,6 @@ export const config: VendureConfig = {
                 apiHost: 'http://localhost',
                 apiPort: serverPort,
             },
-            compatibilityMode: true,
         }),
         DashboardPlugin.init({
             route: 'dashboard',
