@@ -688,8 +688,9 @@ export class BundleService {
         
         // 2. CHANNEL & VISIBILITY (already checked via ctx)
         
-        // 3. BUNDLE CAP (marketing gate - A_shell)
-        const A_shell = bundle.bundleCap ?? Infinity;
+        // 3. BUNDLE CAP (marketing gate - A_shell with v3 reservation system)
+        // Use Virtual Stock if bundleCap is set, otherwise use component availability only
+        const A_shell = bundle.bundleVirtualStock ?? Infinity;
         
         // 4. COMPONENT AVAILABILITY (A_components)
         const componentAvailability = await this.calculateComponentAvailability(ctx, bundle);

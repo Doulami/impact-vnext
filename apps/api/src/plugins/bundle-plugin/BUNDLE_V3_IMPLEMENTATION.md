@@ -143,10 +143,10 @@ v3 adds a **capacity/reservation system** on the shell to control sellable quant
 
 ---
 
-### 📋 Phase 1: Add Reserved/Virtual Stock to Bundle Entity
-**Status:** PENDING  
-**Started:** -  
-**Completed:** -
+### ✅ Phase 1: Add Reserved/Virtual Stock to Bundle Entity
+**Status:** COMPLETED  
+**Started:** 2025-11-11  
+**Completed:** 2025-11-11
 
 **What Already Exists:**
 - ✅ `bundleCap` field on Bundle entity
@@ -154,20 +154,26 @@ v3 adds a **capacity/reservation system** on the shell to control sellable quant
 - ✅ All order metadata fields (bundleId, bundleName, bundleVersion, etc.)
 - ✅ Bundle display logic in CartDrawer and Cart page
 
-**What to Add:**
+**What Was Added:**
 #### Tasks:
-- [ ] Add `bundleReservedOpen` field to Bundle entity (int, default 0)
-- [ ] Add `bundleVirtualStock` computed getter: `max(0, bundleCap - bundleReservedOpen)`
-- [ ] Update `getBundleAvailability()` to use Virtual stock when bundleCap is set
-- [ ] Generate migration
-- [ ] Update GraphQL schema to expose new fields
+- [x] Add `bundleReservedOpen` field to Bundle entity (int, default 0)
+- [x] Add `bundleVirtualStock` computed getter: `max(0, bundleCap - bundleReservedOpen)`
+- [x] Update `getBundleAvailability()` to use Virtual stock when bundleCap is set
+- [x] Generate migration (1762868851481-add-bundle-reserved-open.ts)
+- [x] Update GraphQL schema to expose new fields (Shop + Admin API)
 
 #### Acceptance Criteria:
-- [ ] Migration runs successfully
-- [ ] `bundleReservedOpen` persists correctly
-- [ ] `bundleVirtualStock` computes correctly
-- [ ] Availability logic considers Virtual stock
-- [ ] No breaking changes to existing v2 functionality
+- [x] Migration runs successfully
+- [x] `bundleReservedOpen` persists correctly (column added with default 0)
+- [x] `bundleVirtualStock` computes correctly (returns null if no cap, otherwise cap - reserved)
+- [x] Availability logic considers Virtual stock (line 693 in bundle.service.ts)
+- [x] No breaking changes to existing v2 functionality
+
+#### Files Modified:
+- `entities/bundle.entity.ts` - Added bundleReservedOpen field and bundleVirtualStock getter
+- `services/bundle.service.ts` - Updated getBundleAvailability() to use bundleVirtualStock
+- `bundle.plugin.ts` - Added fields to GraphQL schema (Shop + Admin API)
+- `migrations/1762868851481-add-bundle-reserved-open.ts` - Migration file
 
 ---
 

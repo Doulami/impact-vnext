@@ -79,6 +79,8 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
                 validFrom: DateTime
                 validTo: DateTime
                 bundleCap: Int
+                bundleReservedOpen: Int!
+                bundleVirtualStock: Int
                 shellProductId: String
                 shellProduct: Product
                 items: [BundleItem!]!
@@ -258,6 +260,8 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
                 validFrom: DateTime
                 validTo: DateTime
                 bundleCap: Int
+                bundleReservedOpen: Int!
+                bundleVirtualStock: Int
                 shellProductId: String
                 shellProduct: Product
                 items: [BundleItem!]!

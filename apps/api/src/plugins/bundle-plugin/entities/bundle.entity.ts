@@ -94,6 +94,9 @@ export class Bundle extends VendureEntity implements HasCustomFields {
     @Column('int', { nullable: true })
     bundleCap?: number; // Optional marketing cap (A_shell)
 
+    @Column('int', { default: 0 })
+    bundleReservedOpen: number; // Count of bundles in paid-but-not-shipped orders (for v3 reservation system)
+
     @Column({ default: false })
     allowExternalPromos: boolean; // Per-bundle external promotion policy
 
@@ -174,6 +177,18 @@ export class Bundle extends VendureEntity implements HasCustomFields {
     get totalSavings(): number {
         const componentTotal = this.items?.reduce((sum, item) => sum + (item.productVariant.price * item.quantity), 0) || 0;
         return Math.max(0, componentTotal - this.effectivePrice);
+    }
+
+    /**
+     * Calculate virtual bundle stock (v3 reservation system)
+     * Virtual Stock = max(0, Bundle Cap - Reserved Open)
+     * Returns null if bundleCap is not set (unlimited availability from components)
+     */
+    get bundleVirtualStock(): number | null {
+        if (this.bundleCap === null || this.bundleCap === undefined) {
+            return null; // No cap set, availability driven by components only
+        }
+        return Math.max(0, this.bundleCap - (this.bundleReservedOpen || 0));
     }
 
     /**
