@@ -370,9 +370,10 @@ export class Bundle extends VendureEntity implements HasCustomFields {
     
     /**
      * Check if bundle is available for add-to-cart
+     * Returns true only if status is ACTIVE AND bundle is within date range
      */
     get isAvailable(): boolean {
-        return this.status === BundleStatus.ACTIVE;
+        return this.status === BundleStatus.ACTIVE && this.isWithinSchedule();
     }
     
     /**
