@@ -184,7 +184,7 @@
                     ></vdr-datetime-picker>
                 </vdr-form-field>
 
-                <vdr-form-field [label]="'Bundle cap' | translate" for="bundleCap" tooltip="Leave empty for unlimited">
+                <vdr-form-field [label]="'Bundle cap' | translate" for="bundleCap" tooltip="Maximum bundles that can be sold">
                     <input 
                         id="bundleCap"
                         type="number" 
@@ -192,6 +192,39 @@
                         min="0"
                         step="1"
                     />
+                </vdr-form-field>
+
+                <!-- Phase 2 v3: Reservation System Display (Read-only) -->
+                <vdr-form-field 
+                    *ngIf="!isNew && bundle?.bundleCap" 
+                    [label]="'Reserved (Open)' | translate" 
+                    for="bundleReservedOpen"
+                    tooltip="Bundles in paid-but-not-shipped orders">
+                    <div class="reservation-status">
+                        <span class="reserved-count">{{ bundle?.bundleReservedOpen || 0 }}</span>
+                        <span class="text-muted ml-2" style="font-size: 0.9em;">(read-only)</span>
+                    </div>
+                </vdr-form-field>
+
+                <vdr-form-field 
+                    *ngIf="!isNew && bundle?.bundleCap" 
+                    [label]="'Virtual Stock' | translate" 
+                    for="bundleVirtualStock"
+                    tooltip="Available capacity: max(0, Cap - Reserved)">
+                    <div class="virtual-stock-status">
+                        <span 
+                            [class.text-success]="bundle?.bundleVirtualStock > 0"
+                            [class.text-warning]="bundle?.bundleVirtualStock === 0"
+                            [class.text-danger]="isOverbooked()"
+                            class="virtual-stock-count"
+                        >
+                            {{ bundle?.bundleVirtualStock ?? 'N/A' }}
+                        </span>
+                        <span *ngIf="isOverbooked()" class="text-danger ml-2" style="font-size: 0.9em;">
+                            ⚠️ OVERBOOKED
+                        </span>
+                        <span class="text-muted ml-2" style="font-size: 0.9em;">(computed)</span>
+                    </div>
                 </vdr-form-field>
             </vdr-card>
 

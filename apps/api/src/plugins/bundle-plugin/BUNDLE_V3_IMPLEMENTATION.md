@@ -220,25 +220,55 @@ When an order containing bundles transitions states:
 
 ---
 
-### 📋 Phase 3: Admin UI - Bundle Edit Page (Reserved/Virtual Display)
-**Status:** PENDING  
-**Started:** -  
-**Completed:** -
+### ✅ Phase 3: Admin UI - Bundle Edit Page (Reserved/Virtual Display)
+**Status:** COMPLETED  
+**Started:** 2025-11-11  
+**Completed:** 2025-11-11
 
 #### Tasks:
-- [ ] Update Bundle Detail component to show:
-  - Bundle Cap (editable - already exists)
-  - Reserved (Open) (read-only, new field)
-  - Virtual Stock (read-only, computed)
-  - Warning badge when `Cap < Reserved`
-- [ ] Add to "Availability" section of bundle editor
-- [ ] Wire up to BundleService to fetch/update fields
+- [x] Update GET_BUNDLE GraphQL query to include bundleReservedOpen and bundleVirtualStock
+- [x] Add Reserved (Open) display field in Availability section (read-only)
+- [x] Add Virtual Stock display field in Availability section (read-only, computed)
+- [x] Add color coding: green (available), warning (0), danger (overbooked)
+- [x] Add "OVERBOOKED" warning badge when Cap < Reserved
+- [x] Add isOverbooked() method to check overbooked status
+- [x] Show fields only when bundleCap is set (conditional display)
 
 #### Acceptance Criteria:
-- [ ] Reserved count displays correctly
-- [ ] Virtual stock displays correctly
-- [ ] Warning shows when Cap < Reserved
-- [ ] UI updates when Reserved changes
+- [x] Reserved count displays correctly (read-only)
+- [x] Virtual stock displays correctly (computed, read-only)
+- [x] Warning shows when Cap < Reserved (⚠️ OVERBOOKED)
+- [x] Fields only visible when bundle has a cap
+- [x] Color coding works (success/warning/danger)
+- [x] UI updates when bundle is reloaded after order state changes
+
+#### Files Modified:
+- `ui/bundle-detail.component.ts`:
+  - Updated GET_BUNDLE query (lines 48-49)
+  - Added isOverbooked() method
+- `ui/bundle-detail.component.html`:
+  - Added Reserved (Open) field (lines 198-207)
+  - Added Virtual Stock field with color coding (lines 209-228)
+  - Added overbooked warning badge
+
+#### How It Looks:
+```
+Availability Section:
+┌─────────────────────────────────────┐
+│ Available from: [date picker]       │
+│ Available until: [date picker]      │
+│ Bundle cap: [100]                   │
+│ Reserved (Open): 25 (read-only)     │
+│ Virtual Stock: 75 (computed)        │
+└─────────────────────────────────────┘
+
+When Overbooked (Reserved > Cap):
+┌─────────────────────────────────────┐
+│ Bundle cap: [100]                   │
+│ Reserved (Open): 120 (read-only)    │
+│ Virtual Stock: 0 ⚠️ OVERBOOKED     │
+└─────────────────────────────────────┘
+```
 
 ---
 

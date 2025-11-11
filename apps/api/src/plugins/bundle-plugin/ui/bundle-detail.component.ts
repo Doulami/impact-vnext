@@ -45,6 +45,8 @@ const GET_BUNDLE = gql`
             validFrom
             validTo
             bundleCap
+            bundleReservedOpen
+            bundleVirtualStock
             shellProductId
             effectivePrice
             totalSavings
@@ -585,5 +587,15 @@ export class BundleDetailComponent implements OnInit {
             'ARCHIVED': 'archive'
         };
         return icons[status] || 'help';
+    }
+
+    /**
+     * Check if bundle is overbooked (Reserved > Cap) - Phase 2 v3
+     */
+    isOverbooked(): boolean {
+        if (!this.bundle || !this.bundle.bundleCap) {
+            return false;
+        }
+        return (this.bundle.bundleReservedOpen || 0) > this.bundle.bundleCap;
     }
 }
