@@ -177,6 +177,8 @@ export default function BundlesPage() {
     const savings = Math.max(0, componentTotal - bundlePrice);
     const savingsPercentage = componentTotal > 0 ? Math.round((savings / componentTotal) * 100) : 0;
     
+    // Bundle is in stock if ACTIVE status AND within date range (already filtered above)
+    // Since visibleBundles is already filtered by these criteria, all are in stock
     return {
       id: bundle.id,
       name: bundle.name,
@@ -187,7 +189,7 @@ export default function BundlesPage() {
       savings: savings,
       savingsPercentage: savingsPercentage,
       itemCount: bundle.items?.length || 0,
-      inStock: bundle.status === 'ACTIVE',
+      inStock: true, // Already filtered by status + date validity above
       rating: 4.5,
       reviews: 127,
       description: bundle.description
