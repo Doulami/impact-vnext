@@ -78,9 +78,7 @@ export const config: VendureConfig = {
             // Phase 5: Shell sync fields
             { name: 'bundlePrice', type: 'int', nullable: true, label: [{ languageCode: LanguageCode.en, value: 'Bundle Price' }], description: [{ languageCode: LanguageCode.en, value: 'Computed bundle price (cents, synced from Bundle)' }] },
             { name: 'bundleAvailability', type: 'int', nullable: true, label: [{ languageCode: LanguageCode.en, value: 'Bundle Availability' }], description: [{ languageCode: LanguageCode.en, value: 'A_final availability (synced from Bundle)' }] },
-            { name: 'bundleComponents', type: 'string', nullable: true, label: [{ languageCode: LanguageCode.en, value: 'Bundle Components' }], description: [{ languageCode: LanguageCode.en, value: 'JSON: [{variantId, qty}]' }] },
-            { name: 'bundleValidFrom', type: 'string', nullable: true, label: [{ languageCode: LanguageCode.en, value: 'Bundle Valid From' }], description: [{ languageCode: LanguageCode.en, value: 'ISO date string for bundle start date' }] },
-            { name: 'bundleValidTo', type: 'string', nullable: true, label: [{ languageCode: LanguageCode.en, value: 'Bundle Valid To' }], description: [{ languageCode: LanguageCode.en, value: 'ISO date string for bundle end date' }] }
+            { name: 'bundleComponents', type: 'string', nullable: true, label: [{ languageCode: LanguageCode.en, value: 'Bundle Components' }], description: [{ languageCode: LanguageCode.en, value: 'JSON: [{variantId, qty}]' }] }
         ],
         OrderLine: [
             // Bundle metadata fields for exploded bundles
