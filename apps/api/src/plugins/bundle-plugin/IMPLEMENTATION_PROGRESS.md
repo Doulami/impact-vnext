@@ -275,6 +275,13 @@ Tasks:
    - Proper price calculations with effectivePrice
    - Stock status based on bundle.status
 
+5. ✅ **Checkout & Orders**:
+   - Bundle custom fields schema implemented (bundleKey, bundleName, etc.)
+   - Unified add-to-cart across all pages (PDP, PLP, Featured Products, Bundles)
+   - GraphQL mutation simplified (returns Order directly, errors via exceptions)
+   - Migration created for OrderLine custom fields
+   - Admin UI order list loading correctly
+
 #### Files Modified:
 - ✅ `/apps/web/src/lib/graphql/queries.ts`
   - Updated BUNDLE_FRAGMENT with Asset fields
