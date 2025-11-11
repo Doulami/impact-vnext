@@ -201,8 +201,33 @@ export default function ProductDetailPage() {
   }
 
   const currentItem = product; // Always use shell product for consistent breadcrumbs/title/metadata
+  
+  // Bundle availability check - match bundles listing page logic
+  const isBundleAvailable = () => {
+    if (!isBundle || !bundle) return false;
+    
+    // Must be ACTIVE status
+    if (bundle.status !== 'ACTIVE') return false;
+    
+    const now = new Date();
+    
+    // Check validFrom date
+    if (bundle.validFrom) {
+      const validFrom = new Date(bundle.validFrom);
+      if (now < validFrom) return false;
+    }
+    
+    // Check validTo date
+    if (bundle.validTo) {
+      const validTo = new Date(bundle.validTo);
+      if (now > validTo) return false;
+    }
+    
+    return true;
+  };
+  
   const isInStock = isBundle 
-    ? (product?.customFields?.bundleAvailability || 0) > 0 
+    ? isBundleAvailable()
     : selectedVariant?.stockLevel !== 'OUT_OF_STOCK';
   
   // Price logic:

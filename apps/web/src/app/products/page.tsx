@@ -159,6 +159,37 @@ function ProductsPageContent() {
                 <SlidersHorizontal className="w-5 h-5" />
               </div>
 
+              {/* Bundle Filter - show first */}
+              {bundleFacet && (
+                <div key={bundleFacet.id} className="mb-6">
+                  <h3 className="font-semibold mb-3 uppercase">{bundleFacet.name}</h3>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {bundleFacet.values.map((value) => (
+                      <label key={value.id} className="flex items-center cursor-pointer justify-between">
+                        <div className="flex items-center">
+                          <input 
+                            type="checkbox" 
+                            className="mr-2"
+                            checked={
+                              searchInput.facetValueFilters?.[0]?.or?.includes(value.id) || false
+                            }
+                            onChange={(e) => {
+                              const currentIds = searchInput.facetValueFilters?.[0]?.or || [];
+                              const newIds = e.target.checked
+                                ? [...currentIds, value.id]
+                                : currentIds.filter(id => id !== value.id);
+                              setFacetFilters(newIds);
+                            }}
+                          />
+                          <span className="text-sm">{value.name}</span>
+                        </div>
+                        <span className="text-xs text-gray-500">({value.count})</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Category Filter - using facets with counts */}
               {facets.filter(facet => 
                 facet.code === 'category' || 
@@ -166,7 +197,7 @@ function ProductsPageContent() {
                 facet.name.toLowerCase().includes('type')
               ).map((categoryFacet) => (
                 <div key={categoryFacet.id} className="mb-6">
-                  <h3 className="font-semibold mb-3">{categoryFacet.name}</h3>
+                  <h3 className="font-semibold mb-3 uppercase">{categoryFacet.name}</h3>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {categoryFacet.values.map((value) => (
                       <label key={value.id} className="flex items-center cursor-pointer justify-between">
@@ -196,7 +227,7 @@ function ProductsPageContent() {
 
               {/* Stock Status */}
               <div className="mb-6">
-                <h3 className="font-semibold mb-3">Availability</h3>
+                <h3 className="font-semibold mb-3 uppercase">Availability</h3>
                 <div className="space-y-2">
                   <label className="flex items-center cursor-pointer">
                     <input 
@@ -210,14 +241,16 @@ function ProductsPageContent() {
                 </div>
               </div>
               
-              {/* Other Facet Filters (excluding category-related ones) */}
+              {/* Other Facet Filters (excluding category and bundle) */}
               {facets.filter(facet => 
                 facet.code !== 'category' && 
+                facet.code !== 'bundle' &&
                 !facet.name.toLowerCase().includes('category') &&
-                !facet.name.toLowerCase().includes('type')
+                !facet.name.toLowerCase().includes('type') &&
+                !facet.name.toLowerCase().includes('bundle')
               ).map((facet) => (
                 <div key={facet.id} className="mb-6">
-                  <h3 className="font-semibold mb-3">{facet.name}</h3>
+                  <h3 className="font-semibold mb-3 uppercase">{facet.name}</h3>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {facet.values.map((value) => (
                       <label key={value.id} className="flex items-center cursor-pointer justify-between">
