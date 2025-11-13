@@ -368,13 +368,7 @@ export const GET_ORDER_FOR_CHECKOUT = gql`
           id
           preview
         }
-        customFields {
-          bundleKey
-          bundleId
-          bundleName
-          bundleVersion
-          bundleComponentQty
-        }
+        customFields
       }
       shippingAddress {
         fullName

@@ -34,7 +34,8 @@ function ThankYouContent() {
       // Example: gtag('event', 'purchase', { transaction_id: orderCode, value: total, currency: 'USD' });
       console.log('Order completed:', orderCode);
     }
-  }, [orderCode, data, error, loading]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderCode]);
 
   if (!orderCode) {
     router.push('/');
