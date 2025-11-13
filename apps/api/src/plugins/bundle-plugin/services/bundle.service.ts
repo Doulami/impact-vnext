@@ -142,12 +142,25 @@ export class BundleService {
             featuredAsset = assetEntities[0]; // First asset as featured
         }
         
+        // Determine initial status based on validTo date
+        let initialStatus = BundleStatus.DRAFT;
+        if (input.validTo) {
+            const now = new Date();
+            const validTo = new Date(input.validTo);
+            if (validTo < now) {
+                initialStatus = BundleStatus.EXPIRED; // Expired on creation
+                Logger.info(`Creating bundle with expired validTo date (${input.validTo}), setting status to EXPIRED`, 'BundleService');
+            }
+        }
+        
         // Create bundle entity
         const bundle = new Bundle({
             name: input.name,
             slug: input.slug,
             description: input.description,
-            status: BundleStatus.DRAFT, // Always start as DRAFT
+            status: initialStatus,
+            validFrom: input.validFrom,
+            validTo: input.validTo,
             discountType: input.discountType,
             fixedPrice: input.fixedPrice,
             percentOff: input.percentOff,
@@ -158,7 +171,7 @@ export class BundleService {
             category: input.category,
             allowExternalPromos: input.allowExternalPromos || false,
             // Backwards compatibility
-            enabled: false, // DRAFT bundles are not enabled
+            enabled: initialStatus === BundleStatus.ACTIVE,
             price: this.calculateLegacyPrice(input, validatedItems),
             customFields: {}
         });
@@ -321,6 +334,22 @@ export class BundleService {
         
         // Update bundle properties
         Object.assign(bundle, input);
+        
+        // Check if validTo was updated to an expired date
+        if (input.validTo !== undefined) {
+            const now = new Date();
+            const validTo = new Date(input.validTo);
+            if (validTo < now && bundle.status === BundleStatus.ACTIVE) {
+                bundle.status = BundleStatus.EXPIRED;
+                bundle.enabled = false;
+                Logger.info(`Bundle ${bundle.id} validTo updated to expired date (${input.validTo}), setting status to EXPIRED`, 'BundleService');
+            } else if (validTo >= now && bundle.status === BundleStatus.EXPIRED) {
+                // Reactivate expired bundle if validTo is extended to future
+                bundle.status = BundleStatus.ACTIVE;
+                bundle.enabled = true;
+                Logger.info(`Bundle ${bundle.id} validTo extended to future date (${input.validTo}), reactivating from EXPIRED`, 'BundleService');
+            }
+        }
         
         await this.connection.getRepository(ctx, Bundle).save(bundle);
 
