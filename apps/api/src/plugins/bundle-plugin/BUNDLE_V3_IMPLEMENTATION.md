@@ -1,8 +1,8 @@
 # Bundle v3 Implementation Plan
 ## Shell-Based Availability & Order Tracking
 
-**Last Updated:** 2025-11-11  
-**Status:** Planning Complete - Ready for Phase 1
+**Last Updated:** 2025-11-13  
+**Status:** Phase 1-3 Complete with Critical Fixes Applied
 
 ---
 
@@ -73,7 +73,7 @@ v3 adds a **capacity/reservation system** on the shell to control sellable quant
 - Cart/checkout actually add **only child variants** (they hold the real price/tax/stock)
 - Any bundle discount is allocated across child lines internally so sums equal the bundle total shown to the user
   - If fixed price: math should detect percentage and then apply on children
-- **Shell is never an order line** ⚠️ **CRITICAL: Currently BROKEN - shell is being added as header line**
+- **Shell is never an order line** ✅ **FIXED: 2025-11-13**
 
 ---
 
@@ -143,11 +143,11 @@ v3 adds a **capacity/reservation system** on the shell to control sellable quant
 
 ---
 
-### ⚠️ Phase 1: Add Reserved/Virtual Stock to Bundle Entity
-**Status:** COMPLETED WITH CRITICAL BUG  
+### ✅ Phase 1: Add Reserved/Virtual Stock to Bundle Entity
+**Status:** COMPLETED (Critical bugs fixed 2025-11-13)  
 **Started:** 2025-11-11  
 **Completed:** 2025-11-11  
-**Critical Issue Found:** 2025-11-13 - Shell product being added as order line (violates architecture)
+**Fixed:** 2025-11-13 - Removed shell header from orders, added automatic discount promotion
 
 **What Already Exists:**
 - ✅ `bundleCap` field on Bundle entity
@@ -178,35 +178,55 @@ v3 adds a **capacity/reservation system** on the shell to control sellable quant
 
 ---
 
-## 🚨 CRITICAL ISSUE FOUND (2025-11-13)
+## ✅ CRITICAL ISSUES FIXED (2025-11-13)
 
-**Problem:** Shell product is being added to orders as a "header line" in `bundle-v3.resolver.ts` lines 151-170.
+### Issue 1: Shell Product in Orders (FIXED)
+**Problem:** Shell product was being added to orders as a "header line"
 
 **Impact:**
-- ❌ Shell product appears as real order line (violates architecture)
-- ❌ Shell stock gets reserved by Vendure
+- ❌ Shell product appeared as real order line (violated architecture)
+- ❌ Shell stock got reserved by Vendure
 - ❌ Extra line item in orders (confusing reporting)
-- ❌ Duplicates bundle information (header + children both have bundle data)
+- ❌ Duplicated bundle information
 
-**Root Cause:**
-```typescript
-// bundle-v3.resolver.ts lines 151-159
-await this.orderService.addItemToOrder(
-    ctx, 
-    activeOrder.id, 
-    result.headerLine.productVariantId!, // <- Shell being added!
-    result.headerLine.quantity!, 
-    result.headerLine.customFields
-);
-```
+**Fix Applied:**
+- Removed header line addition from `addBundleToOrder` mutation
+- Removed header line addition from `adjustBundleInOrder` mutation
+- Only child component lines are added to orders now
+- All bundle metadata (bundleKey, bundleId, bundleName) stored on child lines only
+- Commit: `bcf238cd`
 
-**Fix Required:**
-1. Remove header line addition from resolver
-2. Ensure all bundle metadata is on child lines only
-3. UI must reconstruct bundle from child line metadata (bundleKey)
-4. Shell product used only for: SEO, images, capacity tracking (never in order)
+### Issue 2: Bundle Discounts Not Applied (FIXED)
+**Problem:** Bundle items added at full price, no discount applied
 
-**Status:** BLOCKING - Must fix before proceeding with Phase 4+
+**Root Cause:** Vendure's `addItemToOrder` doesn't support custom prices, needs promotion system
+
+**Fix Applied:**
+- Created `BundlePromotionSetupService` that auto-creates global promotion
+- Promotion named "System Bundle Discount" created on plugin init
+- No conditions (runs on all orders, action filters internally)
+- Uses `apply_bundle_line_adjustments` action
+- Reads `bundleAdjAmount` from customFields and applies as adjustment
+- No manual setup required - works in dev and production automatically
+- Commit: `8a65e927`
+
+### Issue 3: Component Quantities Not Visual (FIXED)
+**Problem:** Bundle component quantities didn't update when bundle qty changed
+
+**Fix Applied:**
+- Component quantities now show as: qty per bundle × bundle quantity
+- Example: Bundle qty=2, component qty=1 → displays "(x2)" not "(x1)"
+- Visual only - backend math unchanged
+- Commit: `4f552560`
+
+### Issue 4: Unnecessary Promotion Condition (REMOVED)
+**Problem:** `has_bundle_lines` condition was confusing and redundant
+
+**Fix Applied:**
+- Removed from promotion system
+- Action already filters internally (checks for bundleKey)
+- Simplifies promotion configuration
+- Commit: `7bb559a6`
 
 ---
 
