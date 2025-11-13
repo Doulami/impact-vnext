@@ -45,6 +45,9 @@ import gql from 'graphql-tag';
             <vdr-chip [colorType]="bundle.status === 'ACTIVE' ? 'success' : 'warning'">
               {{ bundle.status }}
             </vdr-chip>
+            <div *ngIf="isExpired(bundle)" style="color: #ff9800; font-size: 0.85em; margin-top: 4px;">
+              ⚠️ Expired: {{ bundle.validTo | date:'short' }}
+            </div>
           </td>
           <td class="left align-middle">{{ bundle.items?.length || 0 }} items</td>
         </ng-template>
@@ -77,6 +80,8 @@ export class BundleListComponent implements OnInit {
             id
             name
             status
+            validFrom
+            validTo
             effectivePrice
             items {
               id
@@ -113,5 +118,14 @@ export class BundleListComponent implements OnInit {
 
   createBundle() {
     this.router.navigate(['create'], { relativeTo: this.route });
+  }
+
+  isExpired(bundle: any): boolean {
+    if (!bundle.validTo) {
+      return false;
+    }
+    const now = new Date();
+    const validTo = new Date(bundle.validTo);
+    return validTo < now;
   }
 }
