@@ -5,9 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useQuery } from '@apollo/client/react';
 import { GET_ORDER_FOR_CHECKOUT } from '@/lib/graphql/checkout';
+import { groupOrderLinesByBundle } from '@/lib/utils/bundleGrouping';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Button from '@/components/Button';
+import BundleCard from '@/components/BundleCard';
 import { CheckCircle, Package, Truck, Mail, Phone } from 'lucide-react';
 
 function ThankYouContent() {
@@ -70,6 +72,9 @@ function ThankYouContent() {
 
   const order = (data as any).orderByCode;
   const totalAmount = (order.totalWithTax / 100).toFixed(2);
+  
+  // Group order lines by bundle
+  const groupedItems = groupOrderLinesByBundle(order.lines);
 
   return (
     <div className="min-h-screen bg-white">
@@ -96,28 +101,39 @@ function ThankYouContent() {
             
             {/* Order Items */}
             <div className="space-y-4 mb-6">
-              {order.lines.map((line: any) => (
-                <div key={line.id} className="flex gap-4 pb-4 border-b last:border-b-0">
-                  <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0 overflow-hidden">
-                    {line.featuredAsset?.preview ? (
-                      <img 
-                        src={line.featuredAsset.preview} 
-                        alt={line.productVariant.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-2xl">
-                        🏋️
+              {groupedItems.map((item) => (
+                <div key={item.variantId} className="pb-4 border-b last:border-b-0">
+                  {item.isBundle ? (
+                    <BundleCard
+                      item={item}
+                      showQuantityControls={false}
+                      showRemoveButton={false}
+                      showTotal={true}
+                    />
+                  ) : (
+                    <div className="flex gap-4">
+                      <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0 overflow-hidden">
+                        {item.image ? (
+                          <img 
+                            src={item.image} 
+                            alt={item.productName}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-2xl">
+                            🏋️
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">{line.productVariant.name}</h3>
-                    <p className="text-sm text-gray-600">Quantity: {line.quantity}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900">${(line.linePriceWithTax / 100).toFixed(2)}</p>
-                  </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-900">{item.productName}</h3>
+                        <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-gray-900">${((item.price * item.quantity) / 100).toFixed(2)}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

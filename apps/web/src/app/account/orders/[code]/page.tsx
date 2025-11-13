@@ -5,10 +5,12 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useQuery } from '@apollo/client/react';
 import { GET_ORDER_FOR_CHECKOUT } from '@/lib/graphql/checkout';
+import { groupOrderLinesByBundle } from '@/lib/utils/bundleGrouping';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Button from '@/components/Button';
+import BundleCard from '@/components/BundleCard';
 import { ArrowLeft, Package, Truck, Mail, Phone, Calendar, MapPin, CreditCard, CheckCircle, Clock, Box } from 'lucide-react';
 
 export default function OrderDetailsPage() {
@@ -68,6 +70,9 @@ export default function OrderDetailsPage() {
 
   const order = (data as any).orderByCode;
   const totalAmount = (order.totalWithTax / 100).toFixed(2);
+  
+  // Group order lines by bundle
+  const groupedItems = groupOrderLinesByBundle(order.lines);
 
   const getStatusInfo = (state: string) => {
     const statusMap: Record<string, { color: string; icon: any; label: string }> = {
@@ -139,32 +144,43 @@ export default function OrderDetailsPage() {
                   Order Items
                 </h2>
                 <div className="space-y-4">
-                  {order.lines.map((line: any) => (
-                    <div key={line.id} className="flex gap-4 pb-4 border-b last:border-b-0">
-                      <div className="w-20 h-20 bg-gray-100 rounded flex-shrink-0 overflow-hidden">
-                        {line.featuredAsset?.preview ? (
-                          <img 
-                            src={line.featuredAsset.preview} 
-                            alt={line.productVariant.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-2xl">
-                            🏋️
+                  {groupedItems.map((item) => (
+                    <div key={item.variantId} className="pb-4 border-b last:border-b-0">
+                      {item.isBundle ? (
+                        <BundleCard
+                          item={item}
+                          showQuantityControls={false}
+                          showRemoveButton={false}
+                          showTotal={true}
+                        />
+                      ) : (
+                        <div className="flex gap-4">
+                          <div className="w-20 h-20 bg-gray-100 rounded flex-shrink-0 overflow-hidden">
+                            {item.image ? (
+                              <img 
+                                src={item.image} 
+                                alt={item.productName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-2xl">
+                                🏋️
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 mb-1">{line.productVariant.name}</h3>
-                        <p className="text-sm text-gray-600 mb-2">SKU: {line.productVariant.sku}</p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Quantity: {line.quantity}</span>
-                          <div className="text-right">
-                            <p className="font-semibold text-gray-900">${(line.linePriceWithTax / 100).toFixed(2)}</p>
-                            <p className="text-xs text-gray-500">${(line.linePriceWithTax / line.quantity / 100).toFixed(2)} each</p>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900 mb-1">{item.productName}</h3>
+                            <p className="text-sm text-gray-600 mb-2">SKU: {item.variantName}</p>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-600">Quantity: {item.quantity}</span>
+                              <div className="text-right">
+                                <p className="font-semibold text-gray-900">${((item.price * item.quantity) / 100).toFixed(2)}</p>
+                                <p className="text-xs text-gray-500">${(item.price / 100).toFixed(2)} each</p>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   ))}
                 </div>
