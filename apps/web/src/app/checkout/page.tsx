@@ -17,7 +17,8 @@ import {
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Button from '@/components/Button';
-import { Package, CreditCard, CheckCircle, AlertCircle } from 'lucide-react';
+import BundleCard from '@/components/BundleCard';
+import { Package, CreditCard, CheckCircle, AlertCircle, ShoppingCart } from 'lucide-react';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -376,41 +377,93 @@ export default function CheckoutPage() {
 
           {/* Step 3: Payment */}
           {currentStep === 3 && (
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-bold mb-6">Payment Method</h2>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <p className="text-sm text-blue-800">
-                  <strong>Cash on Delivery:</strong> Pay when you receive your order. Our delivery agent will collect payment upon delivery.
-                </p>
-              </div>
-              <div className="border-2 border-[var(--brand-primary)] rounded-lg p-6 mb-6 bg-gray-50">
-                <div className="flex items-center mb-4">
-                  <Package className="w-6 h-6 text-gray-900 mr-3" />
-                  <span className="font-medium text-lg">Cash on Delivery (COD)</span>
+            <div className="space-y-6">
+              {/* Order Summary */}
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                  <ShoppingCart className="w-5 h-5" />
+                  Order Summary
+                </h2>
+                <div className="space-y-4">
+                  {items.map((item) => (
+                    <div key={item.variantId} className="pb-4 border-b last:border-b-0">
+                      {item.isBundle ? (
+                        <BundleCard
+                          item={item}
+                          showQuantityControls={false}
+                          showRemoveButton={false}
+                          showTotal={false}
+                          compact={true}
+                        />
+                      ) : (
+                        <div className="flex gap-3">
+                          <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0 overflow-hidden">
+                            {item.image ? (
+                              <img 
+                                src={item.image} 
+                                alt={item.productName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-2xl">
+                                🏋️
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium text-sm mb-1">{item.productName}</h4>
+                            {item.variantName && (
+                              <p className="text-xs text-gray-500 mb-1">{item.variantName}</p>
+                            )}
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
+                              <span className="font-semibold text-sm">${(item.price / 100).toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-                <p className="text-sm text-gray-600">Pay in cash when your order is delivered to your address.</p>
-                <p className="text-xs text-gray-500 mt-2">💡 Please keep the exact amount ready for a smooth transaction.</p>
               </div>
-              <div className="bg-gray-100 rounded-lg p-4 mb-6">
-                <div className="flex justify-between mb-2">
-                  <span>Subtotal:</span>
-                  <span>${(totalPrice / 100).toFixed(2)}</span>
+
+              {/* Payment Method */}
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h2 className="text-xl font-bold mb-6">Payment Method</h2>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-blue-800">
+                    <strong>Cash on Delivery:</strong> Pay when you receive your order. Our delivery agent will collect payment upon delivery.
+                  </p>
                 </div>
-                <div className="flex justify-between font-bold text-lg">
-                  <span>Total:</span>
-                  <span>${(totalPrice / 100).toFixed(2)}</span>
+                <div className="border-2 border-[var(--brand-primary)] rounded-lg p-6 mb-6 bg-gray-50">
+                  <div className="flex items-center mb-4">
+                    <Package className="w-6 h-6 text-gray-900 mr-3" />
+                    <span className="font-medium text-lg">Cash on Delivery (COD)</span>
+                  </div>
+                  <p className="text-sm text-gray-600">Pay in cash when your order is delivered to your address.</p>
+                  <p className="text-xs text-gray-500 mt-2">💡 Please keep the exact amount ready for a smooth transaction.</p>
                 </div>
+                <div className="bg-gray-100 rounded-lg p-4 mb-6">
+                  <div className="flex justify-between mb-2">
+                    <span>Subtotal:</span>
+                    <span>${(totalPrice / 100).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-lg">
+                    <span>Total:</span>
+                    <span>${(totalPrice / 100).toFixed(2)}</span>
+                  </div>
+                </div>
+                <Button
+                  onClick={handlePaymentSubmit}
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  disabled={processing}
+                  loading={processing}
+                >
+                  Place Order
+                </Button>
               </div>
-              <Button
-                onClick={handlePaymentSubmit}
-                variant="primary"
-                size="lg"
-                fullWidth
-                disabled={processing}
-                loading={processing}
-              >
-                Place Order
-              </Button>
             </div>
           )}
 
