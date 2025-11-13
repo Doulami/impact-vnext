@@ -51,7 +51,7 @@ export default function CheckoutPage() {
   const [transitionToPayment] = useMutation(TRANSITION_TO_ARRANGING_PAYMENT);
   const [addPayment] = useMutation(ADD_PAYMENT_TO_ORDER);
 
-  const { data: shippingMethodsData } = useQuery(GET_ELIGIBLE_SHIPPING_METHODS, {
+  const { data: shippingMethodsData, loading: shippingMethodsLoading, error: shippingMethodsError } = useQuery(GET_ELIGIBLE_SHIPPING_METHODS, {
     skip: currentStep !== 2
   });
 
@@ -175,9 +175,12 @@ export default function CheckoutPage() {
 
     try {
       // Transition to arranging payment
-      await transitionToPayment();
+      console.log('Transitioning to ArrangingPayment state...');
+      const transitionResult = await transitionToPayment();
+      console.log('Transition result:', transitionResult);
 
       // Add Cash on Delivery payment
+      console.log('Adding payment to order...');
       const { data } = await addPayment({
         variables: {
           input: {
@@ -189,18 +192,31 @@ export default function CheckoutPage() {
         }
       });
 
+      console.log('Payment response:', data);
+      
       const order = (data as any)?.addPaymentToOrder;
+      
+      // Check for error responses
+      if (order?.__typename && order.__typename !== 'Order') {
+        console.error('Payment failed with error:', order);
+        throw new Error(order.message || `Payment failed: ${order.__typename}`);
+      }
+      
       if (order && '__typename' in order && order.__typename === 'Order' && order.code) {
+        console.log('Order created successfully:', order.code);
         setOrderCompleted(true); // Mark order as completed to prevent cart redirect
         clearCart(); // Clear local cart after successful order
         // Redirect to thank you page with order code
         router.push(`/thank-you?order=${order.code}`);
       } else {
+        console.error('Unexpected payment response structure:', order);
         throw new Error('Payment failed or order not created');
       }
     } catch (err: any) {
       console.error('Payment error:', err);
-      setError(err.message || 'Failed to process payment');
+      // Extract more specific error message if available
+      const errorMessage = err.graphQLErrors?.[0]?.message || err.message || 'Failed to process payment';
+      setError(errorMessage);
     } finally {
       setProcessing(false);
     }
@@ -339,39 +355,67 @@ export default function CheckoutPage() {
           {currentStep === 2 && (
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-xl font-bold mb-6">Select Shipping Method</h2>
-              <div className="space-y-4">
-                {shippingMethods.map((method: any) => (
-                  <label
-                    key={method.id}
-                    className={`block p-4 border-2 rounded-lg cursor-pointer ${
-                      selectedShippingMethod === method.id ? 'border-[var(--brand-primary)] bg-gray-50' : 'border-gray-300'
-                    }`}
+              
+              {shippingMethodsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--brand-primary)]"></div>
+                  <span className="ml-3 text-gray-600">Loading shipping methods...</span>
+                </div>
+              ) : shippingMethodsError ? (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-800">⚠️ Error loading shipping methods. Please try again.</p>
+                  <p className="text-sm text-red-600 mt-2">{shippingMethodsError.message}</p>
+                </div>
+              ) : shippingMethods.length === 0 ? (
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-yellow-800">⚠️ No shipping methods are currently available for your address.</p>
+                  <p className="text-sm text-yellow-700 mt-2">Please contact support or try a different address.</p>
+                  <Button
+                    onClick={() => setCurrentStep(1)}
+                    variant="secondary"
+                    size="md"
+                    className="mt-4"
                   >
-                    <input
-                      type="radio"
-                      name="shipping"
-                      value={method.id}
-                      checked={selectedShippingMethod === method.id}
-                      onChange={(e) => setSelectedShippingMethod(e.target.value)}
-                      className="mr-3"
-                    />
-                    <span className="font-medium">{method.name}</span>
-                    <span className="ml-4 text-gray-600">${(method.priceWithTax / 100).toFixed(2)}</span>
-                    {method.description && <p className="text-sm text-gray-600 mt-1">{method.description}</p>}
-                  </label>
-                ))}
-              </div>
-              <Button
-                onClick={handleShippingMethodSubmit}
-                variant="primary"
-                size="lg"
-                fullWidth
-                disabled={processing || !selectedShippingMethod}
-                loading={processing}
-                className="mt-6"
-              >
-                Continue to Payment
-              </Button>
+                    ← Back to Shipping Address
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-4">
+                    {shippingMethods.map((method: any) => (
+                      <label
+                        key={method.id}
+                        className={`block p-4 border-2 rounded-lg cursor-pointer ${
+                          selectedShippingMethod === method.id ? 'border-[var(--brand-primary)] bg-gray-50' : 'border-gray-300'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="shipping"
+                          value={method.id}
+                          checked={selectedShippingMethod === method.id}
+                          onChange={(e) => setSelectedShippingMethod(e.target.value)}
+                          className="mr-3"
+                        />
+                        <span className="font-medium">{method.name}</span>
+                        <span className="ml-4 text-gray-600">${(method.priceWithTax / 100).toFixed(2)}</span>
+                        {method.description && <p className="text-sm text-gray-600 mt-1">{method.description}</p>}
+                      </label>
+                    ))}
+                  </div>
+                  <Button
+                    onClick={handleShippingMethodSubmit}
+                    variant="primary"
+                    size="lg"
+                    fullWidth
+                    disabled={processing || !selectedShippingMethod}
+                    loading={processing}
+                    className="mt-6"
+                  >
+                    Continue to Payment
+                  </Button>
+                </>
+              )}
             </div>
           )}
 
