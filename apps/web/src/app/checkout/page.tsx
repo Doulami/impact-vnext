@@ -97,27 +97,36 @@ export default function CheckoutPage() {
     setProcessing(true);
 
     try {
-      // Step 1: Add items to Vendure order
-      for (const item of items) {
-        if (item.isBundle && item.bundleId) {
-          // For bundles, use the new Bundle Plugin v2 addBundleToOrder mutation
-          await addBundleToOrder({
-            variables: {
-              bundleId: item.bundleId,
-              quantity: item.quantity
-            }
-          });
-        } else {
-          // For regular products, add normally
-          await addItemToOrder({
-            variables: {
-              productVariantId: item.variantId,
-              quantity: item.quantity
-            }
-          });
+      // Step 1: Add items to Vendure order (only if not already created)
+      if (!orderCreated) {
+        console.log('Adding items to order:', items);
+        for (const item of items) {
+          if (item.isBundle && item.bundleId) {
+            // For bundles, use the new Bundle Plugin v2 addBundleToOrder mutation
+            console.log(`Adding bundle ${item.bundleId} quantity ${item.quantity}`);
+            const result = await addBundleToOrder({
+              variables: {
+                bundleId: item.bundleId,
+                quantity: item.quantity
+              }
+            });
+            console.log('Bundle add result:', result);
+          } else {
+            // For regular products, add normally
+            console.log(`Adding product variant ${item.variantId} quantity ${item.quantity}`);
+            const result = await addItemToOrder({
+              variables: {
+                productVariantId: item.variantId,
+                quantity: item.quantity
+              }
+            });
+            console.log('Product add result:', result);
+          }
         }
+        setOrderCreated(true);
+      } else {
+        console.log('Order already created, skipping item addition');
       }
-      setOrderCreated(true);
 
       // Step 2: Set shipping address
       await setShippingAddress({
