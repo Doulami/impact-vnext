@@ -1394,16 +1394,14 @@ export class BundleService {
                 bundlePctApplied = bundlePricing.bundlePct;
                 bundleAdjAmount = -Math.round(comp.subtotal * (bundlePricing.bundlePct / 100));
             } else {
-                // Fixed price: Use value-based proration with weights if available
-                const effectiveWeight = comp.weight || 1;
-                const totalWeight = componentData.components.reduce((sum, c) => sum + (c.weight || 1), 0);
+                // Fixed price: Calculate effective discount percentage and apply uniformly to all components
+                // Example: $70 total → $50 fixed price → $20 discount = 28.57% off each component
+                const effectiveDiscountPercentage = componentData.totalPreDiscount > 0 
+                    ? (bundlePricing.totalDiscount / componentData.totalPreDiscount) * 100 
+                    : 0;
                 
-                // Weight-adjusted share for fixed-price bundles
-                const weightAdjustedShare = (bundleShare * effectiveWeight) / (totalWeight / componentData.components.length);
-                const normalizedShare = Math.min(weightAdjustedShare, 1); // Ensure share doesn't exceed 1
-                
-                bundleAdjAmount = -Math.round(bundlePricing.totalDiscount * normalizedShare);
-                bundlePctApplied = comp.subtotal > 0 ? ((-bundleAdjAmount) / comp.subtotal) * 100 : 0;
+                bundlePctApplied = effectiveDiscountPercentage;
+                bundleAdjAmount = -Math.round(comp.subtotal * (effectiveDiscountPercentage / 100));
             }
             
             const effectiveUnitPrice = Math.max(0, comp.baseUnitPrice + Math.round(bundleAdjAmount / comp.quantity));
