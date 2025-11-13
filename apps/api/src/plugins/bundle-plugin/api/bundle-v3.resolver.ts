@@ -147,25 +147,17 @@ export class ShopApiBundleResolver {
                 throw new Error(result.error || 'Failed to add bundle to order');
             }
 
-            // Add header line and child lines to actual order
-            if (result.headerLine && result.childLines) {
-                // Add header line (cosmetic display line)
-                await this.orderService.addItemToOrder(
-                    ctx, 
-                    activeOrder.id, 
-                    result.headerLine.productVariantId!, 
-                    result.headerLine.quantity!, 
-                    result.headerLine.customFields
-                );
-
-                // Add each child component line
+            // Add child component lines ONLY (no shell header)
+            // Shell product is used only for SEO, capacity, and UI reconstruction
+            if (result.childLines) {
+                // Add each child component line with full bundle metadata
                 for (const childLine of result.childLines) {
                     await this.orderService.addItemToOrder(
                         ctx,
                         activeOrder.id,
                         childLine.productVariantId!,
                         childLine.quantity!,
-                        childLine.customFields
+                        childLine.customFields // Contains bundleKey, bundleId, bundleName, etc.
                     );
                 }
             }
@@ -259,7 +251,7 @@ export class ShopApiBundleResolver {
                 for (const line of bundleLines) {
                     await this.orderService.removeItemFromOrder(ctx, activeOrder.id, line.id);
                 }
-            } else if (result.operation === 'updated' && result.headerLine && result.childLines) {
+            } else if (result.operation === 'updated' && result.childLines) {
                 // Remove existing bundle lines first
                 const existingBundleLines = activeOrder.lines.filter(
                     line => (line as any).customFields?.bundleKey === args.bundleKey
@@ -269,15 +261,7 @@ export class ShopApiBundleResolver {
                     await this.orderService.removeItemFromOrder(ctx, activeOrder.id, line.id);
                 }
                 
-                // Add updated lines with recalculated pricing
-                await this.orderService.addItemToOrder(
-                    ctx,
-                    activeOrder.id,
-                    result.headerLine.productVariantId!,
-                    result.headerLine.quantity!,
-                    result.headerLine.customFields
-                );
-                
+                // Add updated child lines with recalculated pricing (no header)
                 for (const childLine of result.childLines) {
                     await this.orderService.addItemToOrder(
                         ctx,

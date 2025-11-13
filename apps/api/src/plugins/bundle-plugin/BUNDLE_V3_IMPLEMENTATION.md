@@ -73,7 +73,7 @@ v3 adds a **capacity/reservation system** on the shell to control sellable quant
 - Cart/checkout actually add **only child variants** (they hold the real price/tax/stock)
 - Any bundle discount is allocated across child lines internally so sums equal the bundle total shown to the user
   - If fixed price: math should detect percentage and then apply on children
-- **Shell is never an order line**
+- **Shell is never an order line** ⚠️ **CRITICAL: Currently BROKEN - shell is being added as header line**
 
 ---
 
@@ -143,10 +143,11 @@ v3 adds a **capacity/reservation system** on the shell to control sellable quant
 
 ---
 
-### ✅ Phase 1: Add Reserved/Virtual Stock to Bundle Entity
-**Status:** COMPLETED  
+### ⚠️ Phase 1: Add Reserved/Virtual Stock to Bundle Entity
+**Status:** COMPLETED WITH CRITICAL BUG  
 **Started:** 2025-11-11  
-**Completed:** 2025-11-11
+**Completed:** 2025-11-11  
+**Critical Issue Found:** 2025-11-13 - Shell product being added as order line (violates architecture)
 
 **What Already Exists:**
 - ✅ `bundleCap` field on Bundle entity
@@ -174,6 +175,38 @@ v3 adds a **capacity/reservation system** on the shell to control sellable quant
 - `services/bundle.service.ts` - Updated getBundleAvailability() to use bundleVirtualStock
 - `bundle.plugin.ts` - Added fields to GraphQL schema (Shop + Admin API)
 - `migrations/1762868851481-add-bundle-reserved-open.ts` - Migration file
+
+---
+
+## 🚨 CRITICAL ISSUE FOUND (2025-11-13)
+
+**Problem:** Shell product is being added to orders as a "header line" in `bundle-v3.resolver.ts` lines 151-170.
+
+**Impact:**
+- ❌ Shell product appears as real order line (violates architecture)
+- ❌ Shell stock gets reserved by Vendure
+- ❌ Extra line item in orders (confusing reporting)
+- ❌ Duplicates bundle information (header + children both have bundle data)
+
+**Root Cause:**
+```typescript
+// bundle-v3.resolver.ts lines 151-159
+await this.orderService.addItemToOrder(
+    ctx, 
+    activeOrder.id, 
+    result.headerLine.productVariantId!, // <- Shell being added!
+    result.headerLine.quantity!, 
+    result.headerLine.customFields
+);
+```
+
+**Fix Required:**
+1. Remove header line addition from resolver
+2. Ensure all bundle metadata is on child lines only
+3. UI must reconstruct bundle from child line metadata (bundleKey)
+4. Shell product used only for: SEO, images, capacity tracking (never in order)
+
+**Status:** BLOCKING - Must fix before proceeding with Phase 4+
 
 ---
 
