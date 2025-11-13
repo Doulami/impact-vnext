@@ -14,7 +14,7 @@ import { BundleReservationService } from './services/bundle-reservation.service'
 import { ShopApiBundleResolver, AdminApiBundleResolver } from './api/bundle-v3.resolver';
 import { BundleAdminResolver } from './api/bundle-admin.resolver';
 import { applyBundleLineAdjustments } from './promotions/bundle-line-adjustment.action';
-import { hasBundleLines } from './promotions/has-bundle-lines.condition';
+// import { hasBundleLines } from './promotions/has-bundle-lines.condition'; // Removed - confusing and unnecessary
 import { BundleJobQueueService } from './services/bundle-job-queue.service';
 import { BundleSchedulerService } from './services/bundle-scheduler.service';
 import { BundleEventHandlersService } from './services/bundle-event-handlers.service';
@@ -684,9 +684,9 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
             ...(config.promotionOptions.promotionActions || []),
             applyBundleLineAdjustments
         ];
+        // Removed hasBundleLines condition - unnecessary since action handles filtering internally
         config.promotionOptions.promotionConditions = [
-            ...(config.promotionOptions.promotionConditions || []),
-            hasBundleLines
+            ...(config.promotionOptions.promotionConditions || [])
         ];
         
         return config;
