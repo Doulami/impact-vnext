@@ -27,6 +27,8 @@ export interface CreateBundleInput {
     discountType: BundleDiscountType;
     fixedPrice?: number; // In cents for fixed-price bundles
     percentOff?: number; // 0-100 for percentage bundles
+    validFrom?: Date;
+    validTo?: Date;
     assets?: string[];
     tags?: string[];
     category?: string;
@@ -54,6 +56,8 @@ export interface UpdateBundleInput {
     discountType?: BundleDiscountType;
     fixedPrice?: number;
     percentOff?: number;
+    validFrom?: Date;
+    validTo?: Date;
     assets?: string[];
     tags?: string[];
     category?: string;
@@ -171,7 +175,7 @@ export class BundleService {
             category: input.category,
             allowExternalPromos: input.allowExternalPromos || false,
             // Backwards compatibility
-            enabled: initialStatus === BundleStatus.ACTIVE,
+            enabled: false, // New bundles start as DRAFT or EXPIRED, never enabled
             price: this.calculateLegacyPrice(input, validatedItems),
             customFields: {}
         });
