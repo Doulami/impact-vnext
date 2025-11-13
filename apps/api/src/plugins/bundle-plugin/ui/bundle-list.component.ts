@@ -42,10 +42,10 @@ import gql from 'graphql-tag';
           </td>
           <td class="left align-middle">{{ bundle.effectivePrice | currency }}</td>
           <td class="left align-middle">
-            <vdr-chip [colorType]="bundle.status === 'ACTIVE' ? 'success' : 'warning'">
+            <vdr-chip [colorType]="getStatusColor(bundle.status)">
               {{ bundle.status }}
             </vdr-chip>
-            <div *ngIf="isExpired(bundle)" style="color: #ff9800; font-size: 0.85em; margin-top: 4px;">
+            <div *ngIf="isExpired(bundle) && bundle.status !== 'EXPIRED'" style="color: #ff9800; font-size: 0.85em; margin-top: 4px;">
               ⚠️ Expired: {{ bundle.validTo | date:'short' }}
             </div>
           </td>
@@ -127,5 +127,22 @@ export class BundleListComponent implements OnInit {
     const now = new Date();
     const validTo = new Date(bundle.validTo);
     return validTo < now;
+  }
+
+  getStatusColor(status: string): string {
+    switch (status) {
+      case 'ACTIVE':
+        return 'success';
+      case 'EXPIRED':
+        return 'error';
+      case 'BROKEN':
+        return 'error';
+      case 'ARCHIVED':
+        return 'warning';
+      case 'DRAFT':
+        return 'warning';
+      default:
+        return 'warning';
+    }
   }
 }
