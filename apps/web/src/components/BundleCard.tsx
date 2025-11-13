@@ -75,10 +75,12 @@ export default function BundleCard({
               .filter(component => component.productVariant?.name || component.name)
               .map((component) => {
                 const name = component.productVariant?.name || component.name || 'Component';
-                const quantity = component.quantity || 1;
+                const qtyPerBundle = component.quantity || 1;
+                // Show TOTAL quantity (component qty × bundle qty) for better UX
+                const totalQty = qtyPerBundle * item.quantity;
                 return (
                   <div key={component.id} className={`${compact ? 'text-xs' : 'text-sm'} text-gray-600 py-0.5`}>
-                    • {name} (x{quantity})
+                    • {name} (x{totalQty})
                   </div>
                 );
               })}
