@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { PromotionService, RequestContext, TransactionalConnection, LanguageCode } from '@vendure/core';
+import { PromotionService, RequestContext, TransactionalConnection, LanguageCode, ChannelService } from '@vendure/core';
 import { Logger } from '@vendure/core';
 
 /**
@@ -17,7 +17,8 @@ export class BundlePromotionSetupService implements OnModuleInit {
 
     constructor(
         private promotionService: PromotionService,
-        private connection: TransactionalConnection
+        private connection: TransactionalConnection,
+        private channelService: ChannelService
     ) {}
 
     async onModuleInit() {
@@ -39,11 +40,11 @@ export class BundlePromotionSetupService implements OnModuleInit {
         const ctx = await this.createSuperAdminContext();
 
         try {
-            // Check if promotion already exists
-            const existingPromotion = await this.connection.getRepository(ctx, 'Promotion')
-                .findOne({
-                    where: { couponCode: BundlePromotionSetupService.BUNDLE_PROMOTION_CODE }
-                });
+            // Check if promotion already exists by name (not coupon code)
+            const promotions = await this.promotionService.findAll(ctx, {
+                filter: { name: { eq: 'System Bundle Discount' } }
+            });
+            const existingPromotion = promotions.items[0];
 
             if (existingPromotion) {
                 Logger.info(
@@ -53,22 +54,17 @@ export class BundlePromotionSetupService implements OnModuleInit {
                 return;
             }
 
-            // Create the promotion
+            // Create the promotion - NO CONDITIONS (runs on all orders, action filters internally)
             const promotion = await this.promotionService.createPromotion(ctx, {
                 enabled: true,
-                couponCode: BundlePromotionSetupService.BUNDLE_PROMOTION_CODE,
+                couponCode: null, // No coupon required - automatic
                 startsAt: null,
                 endsAt: null,
                 perCustomerUsageLimit: null,
                 usageLimit: null,
                 name: 'System Bundle Discount',
                 description: 'Automatically applies pre-calculated bundle discounts to bundle components',
-                conditions: [
-                    {
-                        code: 'has_bundle_lines',
-                        arguments: []
-                    }
-                ],
+                conditions: [], // No conditions - action handles filtering
                 actions: [
                     {
                         code: 'apply_bundle_line_adjustments',
@@ -101,31 +97,26 @@ export class BundlePromotionSetupService implements OnModuleInit {
      * Creates a super admin context for system operations
      */
     private async createSuperAdminContext(): Promise<RequestContext> {
-        const channel = await this.connection.getRepository('Channel').findOne({
-            where: { code: '__default_channel__' }
-        });
-
-        if (!channel) {
-            throw new Error('Default channel not found');
-        }
-
-        return new RequestContext({
-            channel,
-            apiType: 'admin',
-            isAuthorized: true,
-            authorizedAsOwnerOnly: false,
-            session: {
+        const channel = await this.channelService.getDefaultChannel();
+        
+        return RequestContext.deserialize({
+            _channel: channel,
+            _languageCode: LanguageCode.en,
+            _isAuthorized: true,
+            _authorizedAsOwnerOnly: false,
+            _session: {
                 id: 'system',
                 token: 'system',
                 expires: new Date(Date.now() + 1000 * 60 * 60),
                 cacheExpiry: 1000 * 60 * 60,
                 user: {
-                    id: 'system',
-                    identifier: 'system',
+                    id: '1', // Superadmin user ID
+                    identifier: 'superadmin',
                     verified: true,
                     channelPermissions: []
                 }
-            }
+            },
+            _apiType: 'admin'
         });
     }
 }
