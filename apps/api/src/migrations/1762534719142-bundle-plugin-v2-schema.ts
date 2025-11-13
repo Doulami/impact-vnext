@@ -3,46 +3,59 @@ import {MigrationInterface, QueryRunner} from "typeorm";
 export class BundlePluginV2Schema1762534719142 implements MigrationInterface {
 
    public async up(queryRunner: QueryRunner): Promise<any> {
-        await queryRunner.query(`ALTER TABLE "bundle_item" DROP CONSTRAINT "FK_bundle_item_productVariantId"`, undefined);
-        await queryRunner.query(`ALTER TABLE "bundle_item" DROP CONSTRAINT "FK_bundle_item_bundleId"`, undefined);
-        await queryRunner.query(`DROP INDEX "public"."IDX_product_isBundle"`, undefined);
-        await queryRunner.query(`DROP INDEX "public"."IDX_product_bundleId"`, undefined);
-        await queryRunner.query(`DROP INDEX "public"."IDX_bundle_item_bundleId"`, undefined);
-        await queryRunner.query(`DROP INDEX "public"."IDX_bundle_item_productVariantId"`, undefined);
-        await queryRunner.query(`DROP INDEX "public"."IDX_bundle_item_displayOrder"`, undefined);
-        await queryRunner.query(`DROP INDEX "public"."IDX_bundle_item_unique"`, undefined);
-        await queryRunner.query(`DROP INDEX "public"."IDX_bundle_status"`, undefined);
-        await queryRunner.query(`DROP INDEX "public"."IDX_bundle_discountType"`, undefined);
-        await queryRunner.query(`DROP INDEX "public"."IDX_bundle_enabled"`, undefined);
-        await queryRunner.query(`DROP INDEX "public"."IDX_bundle_category"`, undefined);
-        await queryRunner.query(`DROP INDEX "public"."IDX_bundle_name"`, undefined);
-        await queryRunner.query(`DROP INDEX "public"."IDX_bundle_slug"`, undefined);
-        await queryRunner.query(`ALTER TABLE "bundle" DROP CONSTRAINT "CHK_bundle_discount_fixed"`, undefined);
-        await queryRunner.query(`ALTER TABLE "bundle" DROP CONSTRAINT "CHK_bundle_percent_range"`, undefined);
-        await queryRunner.query(`ALTER TABLE "bundle" DROP CONSTRAINT "CHK_bundle_fixed_positive"`, undefined);
-        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN "customFieldsBundleversion"`, undefined);
-        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN "customFieldsBundlecomponentqty"`, undefined);
-        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN "customFieldsBaseunitprice"`, undefined);
-        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN "customFieldsEffectiveunitprice"`, undefined);
-        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN "customFieldsBundlepctapplied"`, undefined);
-        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN "customFieldsBundleadjamount"`, undefined);
-        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN "customFieldsBundleshare"`, undefined);
-        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN "customFieldsIsbundleheader"`, undefined);
-        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN "customFieldsBundlekey"`, undefined);
-        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN "customFieldsBundlename"`, undefined);
-        await queryRunner.query(`ALTER TABLE "promotion" ADD "customFieldsBundlepolicy" character varying(255) DEFAULT 'inherit'`, undefined);
-        await queryRunner.query(`ALTER TABLE "promotion" ADD "customFieldsBundleaware" boolean DEFAULT false`, undefined);
-        await queryRunner.query(`ALTER TABLE "bundle_item" ADD "customFields" text`, undefined);
-        await queryRunner.query(`ALTER TABLE "bundle" ADD "lastRecomputedAt" TIMESTAMP`, undefined);
-        await queryRunner.query(`ALTER TABLE "bundle" ADD "customFields" text`, undefined);
-        await queryRunner.query(`ALTER TABLE "bundle_item" DROP COLUMN "unitPrice"`, undefined);
-        await queryRunner.query(`ALTER TABLE "bundle_item" ADD "unitPrice" numeric(10,2) NOT NULL DEFAULT '0'`, undefined);
-        await queryRunner.query(`ALTER TABLE "bundle" ALTER COLUMN "tags" DROP NOT NULL`, undefined);
-        await queryRunner.query(`ALTER TABLE "bundle" ALTER COLUMN "tags" DROP DEFAULT`, undefined);
-        await queryRunner.query(`ALTER TABLE "bundle" DROP COLUMN "price"`, undefined);
-        await queryRunner.query(`ALTER TABLE "bundle" ADD "price" numeric(10,2)`, undefined);
-        await queryRunner.query(`ALTER TABLE "bundle_item" ADD CONSTRAINT "FK_21f62678875562cfa8afe7257a2" FOREIGN KEY ("bundleId") REFERENCES "bundle"("id") ON DELETE CASCADE ON UPDATE NO ACTION`, undefined);
-        await queryRunner.query(`ALTER TABLE "bundle_item" ADD CONSTRAINT "FK_c4fe00612215a91aeb40db671e1" FOREIGN KEY ("productVariantId") REFERENCES "product_variant"("id") ON DELETE RESTRICT ON UPDATE NO ACTION`, undefined);
+        // Drop old FKs & indexes if they exist (idempotent)
+        await queryRunner.query(`ALTER TABLE "bundle_item" DROP CONSTRAINT IF EXISTS "FK_bundle_item_productVariantId"`);
+        await queryRunner.query(`ALTER TABLE "bundle_item" DROP CONSTRAINT IF EXISTS "FK_bundle_item_bundleId"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_product_isBundle"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_product_bundleId"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_bundle_item_bundleId"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_bundle_item_productVariantId"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_bundle_item_displayOrder"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_bundle_item_unique"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_bundle_status"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_bundle_discountType"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_bundle_enabled"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_bundle_category"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_bundle_name"`);
+        await queryRunner.query(`DROP INDEX IF EXISTS "public"."IDX_bundle_slug"`);
+        await queryRunner.query(`ALTER TABLE "bundle" DROP CONSTRAINT IF EXISTS "CHK_bundle_discount_fixed"`);
+        await queryRunner.query(`ALTER TABLE "bundle" DROP CONSTRAINT IF EXISTS "CHK_bundle_percent_range"`);
+        await queryRunner.query(`ALTER TABLE "bundle" DROP CONSTRAINT IF EXISTS "CHK_bundle_fixed_positive"`);
+
+        // Safe drops of columns (if they exist)
+        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN IF EXISTS "customFieldsBundleversion"`);
+        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN IF EXISTS "customFieldsBundlecomponentqty"`);
+        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN IF EXISTS "customFieldsBaseunitprice"`);
+        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN IF EXISTS "customFieldsEffectiveunitprice"`);
+        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN IF EXISTS "customFieldsBundlepctapplied"`);
+        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN IF EXISTS "customFieldsBundleadjamount"`);
+        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN IF EXISTS "customFieldsBundleshare"`);
+        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN IF EXISTS "customFieldsIsbundleheader"`);
+        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN IF EXISTS "customFieldsBundlekey"`);
+        await queryRunner.query(`ALTER TABLE "order_line" DROP COLUMN IF EXISTS "customFieldsBundlename"`);
+
+        // New fields / alterations
+        await queryRunner.query(`ALTER TABLE "promotion" ADD COLUMN IF NOT EXISTS "customFieldsBundlepolicy" character varying(255) DEFAULT 'inherit'`);
+        await queryRunner.query(`ALTER TABLE "promotion" ADD COLUMN IF NOT EXISTS "customFieldsBundleaware" boolean DEFAULT false`);
+        await queryRunner.query(`ALTER TABLE "bundle_item" ADD COLUMN IF NOT EXISTS "customFields" text`);
+        await queryRunner.query(`ALTER TABLE "bundle" ADD COLUMN IF NOT EXISTS "lastRecomputedAt" TIMESTAMP`);
+        await queryRunner.query(`ALTER TABLE "bundle" ADD COLUMN IF NOT EXISTS "customFields" text`);
+        await queryRunner.query(`ALTER TABLE "bundle_item" DROP COLUMN IF EXISTS "unitPrice"`);
+        await queryRunner.query(`ALTER TABLE "bundle_item" ADD COLUMN IF NOT EXISTS "unitPrice" numeric(10,2) NOT NULL DEFAULT '0'`);
+        await queryRunner.query(`ALTER TABLE "bundle" ALTER COLUMN "tags" DROP NOT NULL`);
+        await queryRunner.query(`ALTER TABLE "bundle" ALTER COLUMN "tags" DROP DEFAULT`);
+        await queryRunner.query(`ALTER TABLE "bundle" DROP COLUMN IF EXISTS "price"`);
+        await queryRunner.query(`ALTER TABLE "bundle" ADD COLUMN IF NOT EXISTS "price" numeric(10,2)`);
+
+        // Recreate FKs (conditionally)
+        const fkBundle = await queryRunner.query(`SELECT 1 FROM pg_constraint WHERE conname='FK_21f62678875562cfa8afe7257a2'`);
+        if (fkBundle.length === 0) {
+            await queryRunner.query(`ALTER TABLE "bundle_item" ADD CONSTRAINT "FK_21f62678875562cfa8afe7257a2" FOREIGN KEY ("bundleId") REFERENCES "bundle"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        }
+        const fkVariant = await queryRunner.query(`SELECT 1 FROM pg_constraint WHERE conname='FK_c4fe00612215a91aeb40db671e1'`);
+        if (fkVariant.length === 0) {
+            await queryRunner.query(`ALTER TABLE "bundle_item" ADD CONSTRAINT "FK_c4fe00612215a91aeb40db671e1" FOREIGN KEY ("productVariantId") REFERENCES "product_variant"("id") ON DELETE RESTRICT ON UPDATE NO ACTION`);
+        }
    }
 
    public async down(queryRunner: QueryRunner): Promise<any> {

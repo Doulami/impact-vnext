@@ -133,7 +133,7 @@ export const config: VendureConfig = {
                         extensionPath: path.join(__dirname, '../ui-extensions'),
                         providers: ['providers.ts'],
                     },
-                    // bundleUiExtension, // Temporarily disabled - use GraphQL API to manage bundles
+                    bundleUiExtension,
                 ],
                 devMode: IS_DEV,
             }),
