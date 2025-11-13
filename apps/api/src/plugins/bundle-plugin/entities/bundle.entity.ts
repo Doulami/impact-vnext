@@ -8,7 +8,8 @@ import { BundleItem } from './bundle-item.entity';
  */
 export enum BundleStatus {
     DRAFT = 'DRAFT',
-    ACTIVE = 'ACTIVE', 
+    ACTIVE = 'ACTIVE',
+    EXPIRED = 'EXPIRED', 
     BROKEN = 'BROKEN',
     ARCHIVED = 'ARCHIVED'
 }
@@ -26,7 +27,7 @@ export enum BundleDiscountType {
  * 
  * Represents a bundle definition with exploded bundle support:
  * - Manages bundle composition and discount rules
- * - Tracks status lifecycle (DRAFT → ACTIVE → BROKEN → ARCHIVED)
+ * - Tracks status lifecycle (DRAFT → ACTIVE → EXPIRED/BROKEN → ARCHIVED)
  * - Supports both fixed-price and percentage discounts
  * - Version controlled for auditability
  */
@@ -386,6 +387,7 @@ export class Bundle extends VendureEntity implements HasCustomFields {
     /**
      * Check if bundle is available for add-to-cart
      * Returns true only if status is ACTIVE AND bundle is within date range
+     * Note: EXPIRED bundles are not available even if manually set back to ACTIVE
      */
     get isAvailable(): boolean {
         return this.status === BundleStatus.ACTIVE && this.isWithinSchedule();

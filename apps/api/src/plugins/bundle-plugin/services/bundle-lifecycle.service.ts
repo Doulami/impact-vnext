@@ -209,8 +209,9 @@ export class BundleLifecycleService {
     isTransitionAllowed(from: BundleStatus, to: BundleStatus): boolean {
         const allowedTransitions: Record<BundleStatus, BundleStatus[]> = {
             [BundleStatus.DRAFT]: [BundleStatus.ACTIVE, BundleStatus.ARCHIVED],
-            [BundleStatus.ACTIVE]: [BundleStatus.BROKEN, BundleStatus.ARCHIVED],
+            [BundleStatus.ACTIVE]: [BundleStatus.BROKEN, BundleStatus.EXPIRED, BundleStatus.ARCHIVED],
             [BundleStatus.BROKEN]: [BundleStatus.ACTIVE, BundleStatus.ARCHIVED],
+            [BundleStatus.EXPIRED]: [BundleStatus.ACTIVE, BundleStatus.ARCHIVED], // Can reactivate expired bundles
             [BundleStatus.ARCHIVED]: [] // No transitions allowed from archived
         };
         
@@ -237,6 +238,10 @@ export class BundleLifecycleService {
                 { status: BundleStatus.ACTIVE, action: 'restore', description: 'Restore bundle after fixing issues' },
                 { status: BundleStatus.ARCHIVED, action: 'archive', description: 'Permanently retire broken bundle' }
             ],
+            [BundleStatus.EXPIRED]: [
+                { status: BundleStatus.ACTIVE, action: 'reactivate', description: 'Reactivate expired bundle with new dates' },
+                { status: BundleStatus.ARCHIVED, action: 'archive', description: 'Permanently retire expired bundle' }
+            ],
             [BundleStatus.ARCHIVED]: [] // No transitions from archived
         };
         
@@ -251,6 +256,7 @@ export class BundleLifecycleService {
         draftBundles: number;
         activeBundles: number;
         brokenBundles: number;
+        expiredBundles: number;
         archivedBundles: number;
         recentTransitions: Array<{
             bundleId: ID;
@@ -264,11 +270,12 @@ export class BundleLifecycleService {
         const repo = this.connection.getRepository(ctx, Bundle);
         
         // Get counts by status
-        const [totalBundles, draftBundles, activeBundles, brokenBundles, archivedBundles] = await Promise.all([
+        const [totalBundles, draftBundles, activeBundles, brokenBundles, expiredBundles, archivedBundles] = await Promise.all([
             repo.count(),
             repo.count({ where: { status: BundleStatus.DRAFT } }),
             repo.count({ where: { status: BundleStatus.ACTIVE } }),
             repo.count({ where: { status: BundleStatus.BROKEN } }),
+            repo.count({ where: { status: BundleStatus.EXPIRED } }),
             repo.count({ where: { status: BundleStatus.ARCHIVED } })
         ]);
         
@@ -294,6 +301,7 @@ export class BundleLifecycleService {
             draftBundles,
             activeBundles,
             brokenBundles,
+            expiredBundles,
             archivedBundles,
             recentTransitions
         };
