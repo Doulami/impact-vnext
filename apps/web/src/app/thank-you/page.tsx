@@ -24,12 +24,17 @@ function ThankYouContent() {
   });
 
   useEffect(() => {
+    console.log('Thank you page - orderCode:', orderCode);
+    console.log('Thank you page - query data:', data);
+    console.log('Thank you page - query error:', error);
+    console.log('Thank you page - query loading:', loading);
+    
     // Google Analytics / Facebook Pixel tracking can be added here
     if (orderCode && data) {
       // Example: gtag('event', 'purchase', { transaction_id: orderCode, value: total, currency: 'USD' });
       console.log('Order completed:', orderCode);
     }
-  }, [orderCode, data]);
+  }, [orderCode, data, error, loading]);
 
   if (!orderCode) {
     router.push('/');
