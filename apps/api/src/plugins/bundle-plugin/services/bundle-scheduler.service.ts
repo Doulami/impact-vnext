@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Logger, RequestContext } from '@vendure/core';
 import { BundleJobQueueService } from './bundle-job-queue.service';
-import { AutoExpireBundlesJob } from '../jobs/auto-expire-bundles.job';
 
 /**
  * Bundle Scheduler Service
@@ -28,28 +27,14 @@ export class BundleSchedulerService {
     private static readonly loggerCtx = 'BundleSchedulerService';
     
     constructor(
-        private bundleJobQueueService: BundleJobQueueService,
-        private autoExpireBundlesJob: AutoExpireBundlesJob
+        private bundleJobQueueService: BundleJobQueueService
     ) {}
     
     /**
-     * Auto-expire bundles - runs every 15 minutes
-     * Checks for bundles with validTo <= now and status = ACTIVE, sets them to EXPIRED
+     * NOTE: Auto-expire bundles task has been moved to Vendure ScheduledTask system
+     * See: src/plugins/bundle-plugin/tasks/auto-expire-bundles.task.ts
+     * Visible in Admin UI: Settings → Scheduled tasks
      */
-    @Cron('*/15 * * * *', {
-        name: 'bundle-auto-expire',
-        timeZone: 'UTC'
-    })
-    async runAutoExpireBundles(): Promise<void> {
-        try {
-            await this.autoExpireBundlesJob.triggerExpireCheck(false);
-        } catch (error) {
-            Logger.error(
-                `Auto-expire bundles failed: ${error instanceof Error ? error.message : String(error)}`,
-                BundleSchedulerService.loggerCtx
-            );
-        }
-    }
     
     /**
      * Nightly consistency check - runs every day at 2 AM UTC
@@ -238,15 +223,4 @@ export class BundleSchedulerService {
         );
     }
     
-    /**
-     * Manual trigger for auto-expire check
-     * Useful for testing or immediate expiration after date changes
-     */
-    async triggerAutoExpire(dryRun: boolean = false): Promise<void> {
-        Logger.info(
-            `Manual auto-expire trigger (dryRun=${dryRun})`,
-            BundleSchedulerService.loggerCtx
-        );
-        await this.autoExpireBundlesJob.triggerExpireCheck(dryRun);
-    }
 }

@@ -18,7 +18,6 @@ import { BundleJobQueueService } from './services/bundle-job-queue.service';
 import { BundleSchedulerService } from './services/bundle-scheduler.service';
 import { BundleEventHandlersService } from './services/bundle-event-handlers.service';
 import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
-import { AutoExpireBundlesJob } from './jobs/auto-expire-bundles.job';
 
 /**
  * Bundle Plugin for Vendure
@@ -55,7 +54,6 @@ import { AutoExpireBundlesJob } from './jobs/auto-expire-bundles.job';
         BundleJobQueueService,
         BundleSchedulerService,
         BundleEventHandlersService,
-        AutoExpireBundlesJob,
         // Phase 2 v3: Reservation system
         BundleReservationService
     ],

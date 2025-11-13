@@ -18,6 +18,7 @@ import path from 'path';
 import { CustomerAdminVerificationPlugin } from './plugins/customer-admin-verification.plugin';
 import { BundlePlugin, bundleUiExtension } from './plugins/bundle-plugin/bundle.plugin';
 import { FeaturedCollectionPlugin } from './plugins/featured-collection.plugin';
+import { autoExpireBundlesTask } from './plugins/bundle-plugin/tasks/auto-expire-bundles.task';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
 const serverPort = +process.env.PORT || 3000;
@@ -64,6 +65,12 @@ export const config: VendureConfig = {
         port: +process.env.DB_PORT,
         username: process.env.DB_USERNAME,
         password: process.env.DB_PASSWORD,
+    },
+    schedulerOptions: {
+        // Register scheduled tasks for Admin UI visibility
+        tasks: [
+            autoExpireBundlesTask,
+        ],
     },
     paymentOptions: {
         paymentMethodHandlers: [dummyPaymentHandler, codPaymentHandler],
