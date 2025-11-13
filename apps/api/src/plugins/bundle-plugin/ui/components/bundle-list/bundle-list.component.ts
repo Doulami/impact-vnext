@@ -44,6 +44,7 @@ export class BundleListComponent extends BaseListComponent<Bundle, BundleFilterP
                 { value: 'DRAFT', label: 'Draft' },
                 { value: 'ACTIVE', label: 'Active' },
                 { value: 'BROKEN', label: 'Broken' },
+                { value: 'EXPIRED', label: 'Expired' },
                 { value: 'ARCHIVED', label: 'Archived' }
             ]
         },
@@ -205,7 +206,8 @@ export class BundleListComponent extends BaseListComponent<Bundle, BundleFilterP
         const colors = {
             'DRAFT': 'warning',
             'ACTIVE': 'success',
-            'BROKEN': 'error', 
+            'BROKEN': 'error',
+            'EXPIRED': 'error',
             'ARCHIVED': 'secondary'
         };
         return colors[status] || 'secondary';
@@ -216,6 +218,7 @@ export class BundleListComponent extends BaseListComponent<Bundle, BundleFilterP
             'DRAFT': 'edit',
             'ACTIVE': 'check-circle',
             'BROKEN': 'exclamation-triangle',
+            'EXPIRED': 'clock',
             'ARCHIVED': 'archive'
         };
         return icons[status] || 'help';

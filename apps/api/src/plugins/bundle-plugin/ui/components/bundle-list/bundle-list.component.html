@@ -82,7 +82,7 @@
                   class="text-muted small d-block">
                 {{ bundle.brokenReason }}
             </span>
-            <span *ngIf="!bundle.isAvailable && bundle.validTo" 
+            <span *ngIf="!bundle.isAvailable && bundle.validTo && bundle.status !== 'EXPIRED'" 
                   class="text-warning small d-block">
                 ⚠ Expired: {{ bundle.validTo | date:'short' }}
             </span>
