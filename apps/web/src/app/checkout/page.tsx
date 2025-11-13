@@ -445,7 +445,7 @@ export default function CheckoutPage() {
                           item={item}
                           showQuantityControls={false}
                           showRemoveButton={false}
-                          showTotal={false}
+                          showTotal={true}
                           compact={true}
                         />
                       ) : (
@@ -470,7 +470,7 @@ export default function CheckoutPage() {
                             )}
                             <div className="flex items-center justify-between">
                               <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
-                              <span className="font-semibold text-sm">${(item.price / 100).toFixed(2)}</span>
+                              <span className="font-semibold text-sm">${((item.price * item.quantity) / 100).toFixed(2)}</span>
                             </div>
                           </div>
                         </div>

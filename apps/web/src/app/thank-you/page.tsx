@@ -77,6 +77,30 @@ function ThankYouContent() {
   }
 
   const order = (data as any).orderByCode;
+  
+  if (!order || !order.lines) {
+    console.error('Order data is incomplete:', order);
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="max-w-md w-full text-center p-8">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Order Data Incomplete</h1>
+            <p className="text-gray-600 mb-6">We're having trouble loading your order details. Please check your email for confirmation.</p>
+            <Button
+              as="link"
+              href="/"
+              variant="primary"
+            >
+              Back to Home
+            </Button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+  
   const totalAmount = (order.totalWithTax / 100).toFixed(2);
   
   // Group order lines by bundle
@@ -107,8 +131,8 @@ function ThankYouContent() {
             
             {/* Order Items */}
             <div className="space-y-4 mb-6">
-              {groupedItems.map((item) => (
-                <div key={item.variantId} className="pb-4 border-b last:border-b-0">
+              {groupedItems.map((item, index) => (
+                <div key={`order-item-${index}-${item.variantId}`} className="pb-4 border-b last:border-b-0">
                   {item.isBundle ? (
                     <BundleCard
                       item={item}

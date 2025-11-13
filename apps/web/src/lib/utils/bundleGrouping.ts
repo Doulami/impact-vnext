@@ -58,20 +58,22 @@ export function groupOrderLinesByBundle(orderLines: any[]): CartItem[] {
     const bundleQuantity = Math.floor(firstLine.quantity / (bundleMetadata?.bundleComponentQty || 1));
 
     // Build bundle components array
-    const components: BundleComponent[] = lines.map(line => ({
-      id: line.id,
-      productVariantId: line.productVariant.id,
-      quantity: bundleMetadata?.bundleComponentQty || 1,
-      displayOrder: 0,
-      name: line.productVariant.name,
-      productVariant: {
-        id: line.productVariant.id,
+    const components: BundleComponent[] = lines
+      .filter(line => !line.customFields?.isBundleHeader) // Skip header line
+      .map((line, index) => ({
+        id: `${bundleKey}-component-${index}`, // Unique key per component
+        productVariantId: line.productVariant.id,
+        quantity: line.quantity / bundleQuantity, // Actual quantity per single bundle
+        displayOrder: index,
         name: line.productVariant.name,
-        sku: line.productVariant.sku,
-        price: line.linePriceWithTax / line.quantity,
-      },
-      unitPrice: (line.linePriceWithTax / line.quantity) / 100, // Convert to dollars
-    }));
+        productVariant: {
+          id: line.productVariant.id,
+          name: line.productVariant.name,
+          sku: line.productVariant.sku,
+          price: line.linePriceWithTax / line.quantity,
+        },
+        unitPrice: (line.linePriceWithTax / line.quantity) / 100, // Convert to dollars
+      }));
 
     // Create bundle CartItem
     bundleItems.push({
