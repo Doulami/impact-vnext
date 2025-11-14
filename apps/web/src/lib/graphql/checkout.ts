@@ -373,6 +373,7 @@ export const GET_ORDER_FOR_CHECKOUT = gql`
         quantity
         linePrice
         linePriceWithTax
+        discountedLinePriceWithTax
         productVariant {
           id
           name
@@ -387,7 +388,13 @@ export const GET_ORDER_FOR_CHECKOUT = gql`
           id
           preview
         }
-        customFields
+        customFields {
+          bundleKey
+          bundleId
+          bundleName
+          isBundleHeader
+          bundleComponentQty
+        }
       }
       shippingAddress {
         fullName

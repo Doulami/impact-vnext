@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useQuery } from '@apollo/client/react';
 import { GET_ORDER_FOR_CHECKOUT } from '@/lib/graphql/checkout';
+import { GET_BUNDLES_SHELL_PRODUCTS } from '@/lib/graphql/bundles';
 import { groupOrderLinesByBundle } from '@/lib/utils/bundleGrouping';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -22,6 +23,21 @@ function ThankYouContent() {
   const { data, loading, error } = useQuery(GET_ORDER_FOR_CHECKOUT, {
     variables: { code: orderCode || '' },
     skip: !orderCode
+  });
+
+  // Extract bundle IDs from order lines
+  const bundleIds = Array.from(
+    new Set(
+      (data as any)?.orderByCode?.lines
+        ?.map((l: any) => l.customFields?.bundleId)
+        .filter(Boolean) || []
+    )
+  );
+
+  // Fetch shell products for bundles
+  const { data: shellData } = useQuery(GET_BUNDLES_SHELL_PRODUCTS, {
+    variables: { ids: bundleIds },
+    skip: bundleIds.length === 0,
   });
 
   useEffect(() => {
@@ -103,7 +119,12 @@ function ThankYouContent() {
   }
   
   const totalAmount = (order.totalWithTax / 100).toFixed(2);
-  const subtotal = (order.total / 100).toFixed(2);
+  // Calculate subtotal with tax (sum of all line prices with tax and discounts)
+  const subtotalWithTax = order.lines.reduce((sum: number, line: any) => {
+    const finalPrice = line.discountedLinePriceWithTax || line.linePriceWithTax;
+    return sum + finalPrice;
+  }, 0);
+  const subtotal = (subtotalWithTax / 100).toFixed(2);
   const shippingCost = order.shippingLines?.[0]?.priceWithTax ? (order.shippingLines[0].priceWithTax / 100).toFixed(2) : '0.00';
   const shippingMethod = order.shippingLines?.[0]?.shippingMethod?.name || 'Standard Shipping';
   
@@ -115,8 +136,18 @@ function ThankYouContent() {
     customFields: l.customFields
   })));
   
+  // Create map of bundleId -> shell product slug
+  const shellProductSlugs = new Map<string, string>();
+  if (shellData?.bundles?.items) {
+    for (const bundle of shellData.bundles.items) {
+      if (bundle.shellProduct?.slug) {
+        shellProductSlugs.set(bundle.id, bundle.shellProduct.slug);
+      }
+    }
+  }
+  
   // Group order lines by bundle
-  const groupedItems = groupOrderLinesByBundle(order.lines);
+  const groupedItems = groupOrderLinesByBundle(order.lines, shellProductSlugs);
   console.log('[ThankYou] Grouped items:', groupedItems);
 
   return (

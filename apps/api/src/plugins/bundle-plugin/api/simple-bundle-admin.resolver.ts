@@ -93,8 +93,21 @@ export class SimpleBundleAdminResolver {
             throw new Error(`Bundle with id ${args.bundleId} not found`);
         }
 
-        const componentTotal = bundle.items.reduce((sum, item) => sum + item.unitPrice, 0);
-        const savings = componentTotal - (bundle.price || 0);
+        // Use bundle.totalSavings getter which now correctly calculates with tax
+        const componentTotal = bundle.items.reduce((sum, item) => sum + (item.productVariant.priceWithTax * item.quantity), 0);
+        const bundlePrice = bundle.effectivePrice;
+        
+        // Apply tax to bundle price for display
+        let bundlePriceWithTax = bundlePrice;
+        if (bundle.items.length > 0) {
+            const firstItem = bundle.items[0];
+            if (firstItem.productVariant?.price > 0 && firstItem.productVariant?.priceWithTax > 0) {
+                const taxRatio = firstItem.productVariant.priceWithTax / firstItem.productVariant.price;
+                bundlePriceWithTax = Math.round(bundlePrice * taxRatio);
+            }
+        }
+        
+        const savings = bundle.totalSavings; // Use the fixed getter
         const savingsPercentage = componentTotal > 0 ? (savings / componentTotal) * 100 : 0;
 
         const stockValidation = await this.bundleService.validateBundleStock(ctx, args.bundleId, 1);
@@ -103,7 +116,7 @@ export class SimpleBundleAdminResolver {
             bundleId: bundle.id,
             totalComponents: bundle.items.length,
             componentTotal,
-            bundlePrice: bundle.price,
+            bundlePrice: bundlePriceWithTax,
             totalSavings: savings,
             savingsPercentage: Math.round(savingsPercentage * 100) / 100,
             totalWeight: 0, // Placeholder

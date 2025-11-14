@@ -58,24 +58,12 @@ export default function BundleCard({
           </h4>
         )}
         
-        {/* Bundle item count */}
-        {item.bundleComponents && (
-          <p className={`${compact ? 'text-xs' : 'text-sm'} text-gray-500 mb-2`}>
-            {item.bundleComponents.length} items included
+        {/* Quantity (no price here - shown in total column) */}
+        {!showQuantityControls && (
+          <p className={`${compact ? 'text-xs' : 'text-sm'} text-gray-600 ${compact ? 'mb-2' : 'mb-3'}`}>
+            Quantity: {item.quantity}
           </p>
         )}
-        
-        {/* Price and Quantity */}
-        <div className={`flex items-center gap-4 ${compact ? 'mb-2' : 'mb-3'}`}>
-          <p className={`font-bold ${compact ? 'text-sm' : 'text-lg'}`}>
-            ${(item.price / 100).toFixed(2)}
-          </p>
-          {!showQuantityControls && (
-            <span className={`${compact ? 'text-xs' : 'text-sm'} text-gray-500`}>
-              Qty: {item.quantity}
-            </span>
-          )}
-        </div>
 
         {/* Bundle Components List with fancy border design */}
         {item.bundleComponents && item.bundleComponents.length > 0 && (

@@ -300,10 +300,18 @@ export const BUNDLE_FRAGMENT = gql`
         sku
         price
         priceWithTax
+        featuredAsset {
+          id
+          preview
+        }
         product {
           id
           name
           slug
+          featuredAsset {
+            id
+            preview
+          }
         }
       }
       quantity

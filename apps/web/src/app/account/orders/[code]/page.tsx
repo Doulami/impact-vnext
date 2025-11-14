@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useQuery } from '@apollo/client/react';
 import { GET_ORDER_FOR_CHECKOUT } from '@/lib/graphql/checkout';
+import { GET_BUNDLES_SHELL_PRODUCTS } from '@/lib/graphql/bundles';
 import { groupOrderLinesByBundle } from '@/lib/utils/bundleGrouping';
 import Link from 'next/link';
 import Header from '@/components/Header';
@@ -29,6 +30,21 @@ export default function OrderDetailsPage() {
     variables: { code: orderCode },
     skip: !isAuthenticated || !orderCode,
     fetchPolicy: 'network-only',
+  });
+
+  // Extract bundle IDs from order lines
+  const bundleIds = Array.from(
+    new Set(
+      (data as any)?.orderByCode?.lines
+        ?.map((l: any) => l.customFields?.bundleId)
+        .filter(Boolean) || []
+    )
+  );
+
+  // Fetch shell products for bundles
+  const { data: shellData } = useQuery(GET_BUNDLES_SHELL_PRODUCTS, {
+    variables: { ids: bundleIds },
+    skip: bundleIds.length === 0,
   });
 
   if (authLoading || loading) {
@@ -79,8 +95,20 @@ export default function OrderDetailsPage() {
     customFields: l.customFields
   })));
   
+  // Create map of bundleId -> shell product slug
+  const shellProductSlugs = new Map<string, string>();
+  if (shellData?.bundles?.items) {
+    for (const bundle of shellData.bundles.items) {
+      if (bundle.shellProduct?.slug) {
+        shellProductSlugs.set(bundle.id, bundle.shellProduct.slug);
+      }
+    }
+  }
+  console.log('[OrderDetails] Shell data:', shellData);
+  console.log('[OrderDetails] Shell product slugs map:', Array.from(shellProductSlugs.entries()));
+  
   // Group order lines by bundle
-  const groupedItems = groupOrderLinesByBundle(order.lines);
+  const groupedItems = groupOrderLinesByBundle(order.lines, shellProductSlugs);
   console.log('[OrderDetails] Grouped items:', groupedItems);
 
   const getStatusInfo = (state: string) => {
@@ -204,7 +232,7 @@ export default function OrderDetailsPage() {
                 <div className="mt-6 pt-4 border-t space-y-2">
                   <div className="flex justify-between text-gray-600">
                     <span>Subtotal:</span>
-                    <span>${(order.total / 100).toFixed(2)}</span>
+                    <span>${(order.lines.reduce((sum: number, line: any) => sum + (line.discountedLinePriceWithTax || line.linePriceWithTax), 0) / 100).toFixed(2)}</span>
                   </div>
                   {order.shippingLines && order.shippingLines.length > 0 && (
                     <div className="flex justify-between text-gray-600">
@@ -212,10 +240,6 @@ export default function OrderDetailsPage() {
                       <span>${(order.shippingLines[0].priceWithTax / 100).toFixed(2)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-gray-600">
-                    <span>Tax:</span>
-                    <span>${((order.totalWithTax - order.total) / 100).toFixed(2)}</span>
-                  </div>
                   <div className="flex justify-between text-xl font-bold text-gray-900 pt-2 border-t">
                     <span>Total:</span>
                     <span>${totalAmount}</span>

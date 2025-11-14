@@ -11,11 +11,12 @@ import { CartItem, BundleComponent } from '@/lib/hooks/useCart';
  * 
  * Returns array of items ready for BundleCard or regular display
  * 
- * Note: To get shell product images, pass shellProductImages map fetched from GraphQL
+ * @param orderLines - Array of order lines from GraphQL
+ * @param shellProductSlugs - Map of bundleId -> shell product slug for links
  */
 export function groupOrderLinesByBundle(
   orderLines: any[], 
-  shellProductImages?: Map<string, string>
+  shellProductSlugs?: Map<string, string>
 ): CartItem[] {
   const bundleGroups = new Map<string, any[]>();
   const regularItems: CartItem[] = [];
@@ -32,12 +33,13 @@ export function groupOrderLinesByBundle(
       bundleGroups.get(bundleKey)!.push(line);
     } else {
       // Regular product line
+      const finalPrice = line.discountedLinePriceWithTax || line.linePriceWithTax;
       regularItems.push({
         id: line.productVariant.id,
         variantId: line.productVariant.id,
         productName: line.productVariant.name,
         variantName: line.productVariant.sku,
-        price: line.linePriceWithTax / line.quantity, // Unit price
+        price: finalPrice / line.quantity, // Unit price with discounts
         quantity: line.quantity,
         image: line.featuredAsset?.preview || null,
         slug: line.productVariant.product?.slug || '',
@@ -57,8 +59,11 @@ export function groupOrderLinesByBundle(
     const firstLine = lines[0];
     const bundleMetadata = firstLine.customFields;
 
-    // Calculate total bundle price (sum of all component lines)
-    const totalBundlePrice = lines.reduce((sum, line) => sum + line.linePriceWithTax, 0);
+    // Calculate total bundle price (sum of all component lines with discounts)
+    const totalBundlePrice = lines.reduce((sum, line) => {
+      const finalPrice = line.discountedLinePriceWithTax || line.linePriceWithTax;
+      return sum + finalPrice;
+    }, 0);
     
     // Calculate bundle quantity (how many bundles were ordered)
     // Use the first line's quantity divided by its component quantity per bundle
@@ -87,8 +92,8 @@ export function groupOrderLinesByBundle(
         unitPrice: (line.linePriceWithTax / line.quantity) / 100, // Convert to dollars
       }));
 
-    // Get shell product image if available
-    const shellImage = shellProductImages?.get(bundleMetadata?.bundleId) || null;
+    // Get shell product slug for links
+    const shellSlug = shellProductSlugs?.get(bundleMetadata?.bundleId) || '';
     
     // Create bundle CartItem
     bundleItems.push({
@@ -98,8 +103,8 @@ export function groupOrderLinesByBundle(
       variantName: undefined,
       price: totalBundlePrice / bundleQuantity, // Unit bundle price
       quantity: bundleQuantity,
-      image: shellImage || lines[0].featuredAsset?.preview || null, // Use shell image if available
-      slug: '', // Shell product slug should be used for navigation, not stored here
+      image: lines[0].featuredAsset?.preview || null,
+      slug: shellSlug, // Shell product slug for navigation
       inStock: true,
       isBundle: true,
       bundleId: bundleMetadata?.bundleId,

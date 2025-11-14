@@ -1,7 +1,8 @@
 'use client';
 
-import { useQuery, useLazyQuery } from '@apollo/client/react';
+import { useQuery, useLazyQuery, useMutation } from '@apollo/client/react';
 import { GET_RELATED_PRODUCTS, GET_PRODUCT_BY_SLUG } from '@/lib/graphql/queries';
+import { ADD_BUNDLE_TO_ORDER } from '@/lib/graphql/checkout';
 import { Star, ChevronLeft, ChevronRight, Package } from 'lucide-react';
 import Link from 'next/link';
 import { useRef } from 'react';
@@ -16,6 +17,7 @@ export function RelatedProducts({ currentProductId, collections }: RelatedProduc
   const scrollRef = useRef<HTMLDivElement>(null);
   const { addItem, openCart } = useCart();
   const [getProductBySlug] = useLazyQuery(GET_PRODUCT_BY_SLUG);
+  const [addBundleToOrder] = useMutation(ADD_BUNDLE_TO_ORDER);
   
   // Determine which collection to query:
   // - If product is in "featured" collection, show featured products
@@ -49,6 +51,10 @@ export function RelatedProducts({ currentProductId, collections }: RelatedProduc
             name: string;
             slug: string;
             description: string;
+            customFields?: {
+              isBundle?: boolean;
+              bundleId?: string;
+            };
             featuredAsset?: {
               id: string;
               preview: string;
@@ -72,13 +78,9 @@ export function RelatedProducts({ currentProductId, collections }: RelatedProduc
     .filter((v: any) => v.product.id !== currentProductId) // Exclude current product
     .slice(0, 8) // Limit to 8 products
     .map((v: any) => {
-      // Check if product has bundle facet (check the parent facet name/code)
-      const facetValues = v.product?.facetValues || [];
-      const isBundle = facetValues.some((fv: any) => {
-        const facetName = fv.facet?.name?.toLowerCase() || '';
-        const facetCode = fv.facet?.code?.toLowerCase() || '';
-        return facetName.includes('bundle') || facetCode === 'bundle';
-      });
+      // Check if product is a bundle via customFields
+      const isBundle = v.product?.customFields?.isBundle === true;
+      const bundleId = v.product?.customFields?.bundleId;
       
       return {
         id: v.id,
@@ -91,7 +93,8 @@ export function RelatedProducts({ currentProductId, collections }: RelatedProduc
         inStock: v.stockLevel !== 'OUT_OF_STOCK',
         rating: 4.5,
         reviews: 0,
-        isBundle
+        isBundle,
+        bundleId
       };
     });
 
@@ -224,30 +227,18 @@ export function RelatedProducts({ currentProductId, collections }: RelatedProduc
                       e.preventDefault();
                       e.stopPropagation();
                       
-                      if (product.isBundle) {
-                        // Fetch bundle details before adding to cart
+                      if (product.isBundle && product.bundleId) {
+                        // Add bundle via proper mutation
                         try {
-                          const { data } = await getProductBySlug({ variables: { slug: product.slug } });
-                          const productData = (data as any)?.product;
-                          const bundleComponents = productData?.customFields?.bundleComponents 
-                            ? JSON.parse(productData.customFields.bundleComponents)
-                            : [];
-                          
-                          addItem({
-                            id: product.id,
-                            variantId: product.id,
-                            productName: product.name,
-                            price: product.priceWithTax,
-                            image: product.image,
-                            slug: product.slug,
-                            inStock: product.inStock,
-                            isBundle: true,
-                            bundleId: productData?.customFields?.bundleId,
-                            bundleComponents: bundleComponents
+                          await addBundleToOrder({
+                            variables: {
+                              bundleId: product.bundleId,
+                              quantity: 1
+                            }
                           });
                           openCart();
                         } catch (err) {
-                          console.error('Error fetching bundle data:', err);
+                          console.error('Error adding bundle to cart:', err);
                         }
                       } else {
                         // Add regular product to cart

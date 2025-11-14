@@ -522,21 +522,21 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
     // Add custom fields to OrderLine for bundle grouping and register promotion components
     configuration: config => {
         config.customFields.OrderLine = [
-            // Bundle identification fields
+            // Bundle identification fields (exposed for frontend grouping)
             {
                 name: 'bundleKey',
                 type: 'string',
-                internal: true,
+                public: true,
             },
             {
                 name: 'bundleId',
                 type: 'string',
-                internal: true,
+                public: true,
             },
             {
                 name: 'bundleName',
                 type: 'string',
-                internal: true,
+                public: true,
             },
             {
                 name: 'bundleVersion',
@@ -553,12 +553,12 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
                 name: 'isBundleHeader',
                 type: 'boolean',
                 defaultValue: false,
-                internal: true,
+                public: true,
             },
             {
                 name: 'bundleComponentQty',
                 type: 'int',
-                internal: true,
+                public: true,
                 nullable: true,
             },
             // Pricing fields

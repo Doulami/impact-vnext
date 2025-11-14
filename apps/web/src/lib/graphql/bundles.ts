@@ -11,9 +11,29 @@ export const GET_BUNDLE_SHELL = gql`
       shellProduct {
         id
         name
+        slug
         featuredAsset {
           id
           preview
+        }
+      }
+    }
+  }
+`;
+
+// Get multiple bundles with shell product slugs
+export const GET_BUNDLES_SHELL_PRODUCTS = gql`
+  query GetBundlesShellProducts($ids: [String!]!) {
+    bundles(options: { filter: { id: { in: $ids } } }) {
+      items {
+        id
+        shellProduct {
+          id
+          slug
+          featuredAsset {
+            id
+            preview
+          }
         }
       }
     }

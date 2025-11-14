@@ -172,11 +172,21 @@ export class Bundle extends VendureEntity implements HasCustomFields {
     }
 
     /**
-     * Calculate total savings compared to buying components separately (PRE-TAX)
-     * NOTE: Uses pre-tax prices for consistency with effectivePrice calculation
+     * Calculate total savings compared to buying components separately (WITH TAX)
+     * NOTE: Uses priceWithTax to match frontend display prices
      */
     get totalSavings(): number {
-        const componentTotal = this.items?.reduce((sum, item) => sum + (item.productVariant.price * item.quantity), 0) || 0;
+        const componentTotal = this.items?.reduce((sum, item) => sum + (item.productVariant.priceWithTax * item.quantity), 0) || 0;
+        // effectivePrice is pre-tax, so we need to apply tax ratio to compare with componentTotal
+        if (this.items?.length > 0) {
+            for (const item of this.items) {
+                if (item.productVariant?.price > 0 && item.productVariant?.priceWithTax > 0) {
+                    const taxRatio = item.productVariant.priceWithTax / item.productVariant.price;
+                    const effectivePriceWithTax = Math.round(this.effectivePrice * taxRatio);
+                    return Math.max(0, componentTotal - effectivePriceWithTax);
+                }
+            }
+        }
         return Math.max(0, componentTotal - this.effectivePrice);
     }
 

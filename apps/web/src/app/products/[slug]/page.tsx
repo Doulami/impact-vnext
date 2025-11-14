@@ -236,14 +236,14 @@ export default function ProductDetailPage() {
   // - Both are in cents and include tax calculated by Vendure
   const price = selectedVariant?.priceWithTax || 0;
   
-  // Calculate bundle savings (all in cents)
-  const bundleSavings = isBundle && bundle
-    ? bundle.totalSavings || 0
-    : 0;
-  
   // Calculate component total for display (use priceWithTax from variants for consistency)
   const componentTotal = isBundle && bundle
     ? bundle.items.reduce((sum, item) => sum + (item.productVariant.priceWithTax * item.quantity), 0)
+    : 0;
+  
+  // Get bundle savings from backend (now correctly calculated with tax)
+  const bundleSavings = isBundle && bundle
+    ? bundle.totalSavings || 0
     : 0;
 
   return (
@@ -397,10 +397,15 @@ export default function ProductDetailPage() {
                     .map((item) => {
                       // Use priceWithTax for consistency with regular products (already in cents)
                       const itemTotal = item.productVariant.priceWithTax * item.quantity;
+                      const itemImage = item.productVariant.featuredAsset?.preview || item.productVariant.product?.featuredAsset?.preview;
                       return (
                         <div key={item.id} className="flex items-center gap-4 p-3 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
-                          <div className="w-14 h-14 bg-gray-50 rounded flex items-center justify-center flex-shrink-0">
-                            <Package className="w-8 h-8 text-gray-400" />
+                          <div className="w-14 h-14 bg-gray-50 rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            {itemImage ? (
+                              <img src={itemImage} alt={item.productVariant.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <Package className="w-8 h-8 text-gray-400" />
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="font-medium text-sm">{item.productVariant.name}</h4>
