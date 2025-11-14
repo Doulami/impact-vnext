@@ -1260,7 +1260,7 @@ export class BundleService {
                 throw new Error(`ProductVariant with id ${item.productVariantId} not found`);
             }
             
-            const baseUnitPrice = variant.priceWithTax; // Use tax-inclusive price
+            const baseUnitPrice = variant.price; // Use PRE-TAX price (Vendure applies tax at checkout)
             const componentQty = item.quantity;
             const totalQuantity = componentQty * bundleQuantity;
             const subtotal = baseUnitPrice * totalQuantity;
@@ -1304,8 +1304,9 @@ export class BundleService {
             totalDiscount = Math.round(componentData.totalPreDiscount * discountMultiplier);
             totalBundlePrice = componentData.totalPreDiscount - totalDiscount;
         } else if (bundle.discountType === BundleDiscountType.FIXED && bundle.fixedPrice) {
-            // Fixed-price bundle: Set total price, calculate discount
-            totalBundlePrice = bundle.fixedPrice * bundleQuantity; // fixedPrice is in cents
+            // Fixed-price bundle: Admin enters tax-inclusive price, convert to pre-tax
+            // Use effectivePrice which converts tax-inclusive fixedPrice to pre-tax
+            totalBundlePrice = bundle.effectivePrice * bundleQuantity; // effectivePrice converts to pre-tax
             totalDiscount = componentData.totalPreDiscount - totalBundlePrice;
             
             // Validate that fixed price is lower than component total
