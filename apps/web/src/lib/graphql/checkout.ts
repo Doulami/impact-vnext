@@ -58,6 +58,20 @@ export const GET_ACTIVE_ORDER = gql`
   }
 `;
 
+// Get active order state only (lightweight query for checking state)
+export const GET_ACTIVE_ORDER_STATE = gql`
+  query GetActiveOrderState {
+    activeOrder {
+      id
+      code
+      state
+      lines {
+        id
+      }
+    }
+  }
+`;
+
 // Add item to order
 export const ADD_ITEM_TO_ORDER = gql`
   mutation AddItemToOrder($productVariantId: ID!, $quantity: Int!) {

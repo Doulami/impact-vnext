@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useCart } from '@/lib/hooks/useCart';
-import { useMutation, useQuery } from '@apollo/client/react';
+import { useMutation, useQuery, useLazyQuery } from '@apollo/client/react';
 import {
   ADD_ITEM_TO_ORDER,
   ADD_BUNDLE_TO_ORDER,
@@ -13,7 +13,9 @@ import {
   SET_ORDER_SHIPPING_METHOD,
   GET_ELIGIBLE_SHIPPING_METHODS,
   TRANSITION_TO_ARRANGING_PAYMENT,
-  ADD_PAYMENT_TO_ORDER
+  ADD_PAYMENT_TO_ORDER,
+  GET_ACTIVE_ORDER_STATE,
+  REMOVE_ORDER_LINE
 } from '@/lib/graphql/checkout';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -45,9 +47,11 @@ function CheckoutPageContent() {
     phoneNumber: ''
   });
 
-  // GraphQL mutations
+  // GraphQL queries and mutations
+  const [getActiveOrderState] = useLazyQuery(GET_ACTIVE_ORDER_STATE);
   const [addItemToOrder] = useMutation(ADD_ITEM_TO_ORDER);
   const [addBundleToOrder] = useMutation(ADD_BUNDLE_TO_ORDER);
+  const [removeOrderLine] = useMutation(REMOVE_ORDER_LINE);
   const [setShippingAddress] = useMutation(SET_ORDER_SHIPPING_ADDRESS);
   const [setShippingMethod] = useMutation(SET_ORDER_SHIPPING_METHOD);
   const [transitionToPayment] = useMutation(TRANSITION_TO_ARRANGING_PAYMENT);
@@ -99,30 +103,68 @@ function CheckoutPageContent() {
     setProcessing(true);
 
     try {
-      // Step 1: Add items to Vendure order (only if not already created)
+      // Step 1: Check for existing active order and clear it if needed
       if (!orderCreated) {
+        console.log('Checking for existing active order...');
+        const { data: orderStateData } = await getActiveOrderState();
+        const activeOrder = orderStateData?.activeOrder;
+        
+        if (activeOrder) {
+          console.log('Found active order:', activeOrder.code, 'State:', activeOrder.state);
+          
+          // If order exists and has lines, clear them to start fresh
+          if (activeOrder.lines && activeOrder.lines.length > 0) {
+            console.log(`Clearing ${activeOrder.lines.length} existing order lines...`);
+            for (const line of activeOrder.lines) {
+              try {
+                await removeOrderLine({
+                  variables: { orderLineId: line.id }
+                });
+                console.log('Removed order line:', line.id);
+              } catch (removeError) {
+                console.error('Error removing order line:', removeError);
+                // Continue trying to remove other lines
+              }
+            }
+            console.log('Existing order lines cleared successfully');
+          }
+        } else {
+          console.log('No active order found, will create new one');
+        }
+        
+        // Step 2: Add items to Vendure order
         console.log('Adding items to order:', items);
-        for (const item of items) {
-          if (item.isBundle && item.bundleId) {
-            // For bundles, use the new Bundle Plugin v2 addBundleToOrder mutation
-            console.log(`Adding bundle ${item.bundleId} quantity ${item.quantity}`);
-            const result = await addBundleToOrder({
-              variables: {
-                bundleId: item.bundleId,
-                quantity: item.quantity
-              }
-            });
-            console.log('Bundle add result:', result);
-          } else {
-            // For regular products, add normally
-            console.log(`Adding product variant ${item.variantId} quantity ${item.quantity}`);
-            const result = await addItemToOrder({
-              variables: {
-                productVariantId: item.variantId,
-                quantity: item.quantity
-              }
-            });
-            console.log('Product add result:', result);
+        
+        // Add items one by one and handle errors
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          try {
+            if (item.isBundle && item.bundleId) {
+              // For bundles, use the new Bundle Plugin v2 addBundleToOrder mutation
+              console.log(`Adding bundle ${item.bundleId} quantity ${item.quantity}`);
+              const result = await addBundleToOrder({
+                variables: {
+                  bundleId: item.bundleId,
+                  quantity: item.quantity
+                }
+              });
+              console.log('Bundle add result:', result);
+            } else {
+              // For regular products, add normally
+              console.log(`Adding product variant ${item.variantId} quantity ${item.quantity}`);
+              const result = await addItemToOrder({
+                variables: {
+                  productVariantId: item.variantId,
+                  quantity: item.quantity
+                }
+              });
+              console.log('Product add result:', result);
+            }
+          } catch (itemError: any) {
+            console.error(`Failed to add item ${i + 1}:`, itemError);
+            throw new Error(
+              `Failed to add item "${item.productName}" to order: ${itemError.message || 'Unknown error'}`
+            );
           }
         }
         setOrderCreated(true);
