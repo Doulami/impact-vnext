@@ -16,13 +16,15 @@ import {
   ADD_PAYMENT_TO_ORDER,
   GET_ACTIVE_ORDER_STATE,
   GET_ACTIVE_ORDER,
-  REMOVE_ORDER_LINE
+  REMOVE_ORDER_LINE,
+  GET_AVAILABLE_COUNTRIES
 } from '@/lib/graphql/checkout';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Button from '@/components/Button';
 import BundleCard from '@/components/BundleCard';
 import CouponCodeInput from '@/components/CouponCodeInput';
+import RewardPointsRedemption from '@/components/RewardPointsRedemption';
 import { Package, CreditCard, CheckCircle, AlertCircle, ShoppingCart } from 'lucide-react';
 
 function CheckoutPageContent() {
@@ -37,6 +39,8 @@ function CheckoutPageContent() {
   const [error, setError] = useState('');
   const [processing, setProcessing] = useState(false);
   const [orderCompleted, setOrderCompleted] = useState(false);
+  const [pointsRedeemed, setPointsRedeemed] = useState(0);
+  const [pointsDiscount, setPointsDiscount] = useState(0);
 
   const [shippingForm, setShippingForm] = useState({
     fullName: '',
@@ -45,7 +49,7 @@ function CheckoutPageContent() {
     city: '',
     province: '',
     postalCode: '',
-    countryCode: 'US',
+    countryCode: '',
     phoneNumber: ''
   });
 
@@ -65,6 +69,10 @@ function CheckoutPageContent() {
 
   const { data: activeOrderData, refetch: refetchActiveOrder } = useQuery(GET_ACTIVE_ORDER, {
     skip: currentStep !== 3
+  });
+  
+  const { data: countriesData, loading: countriesLoading } = useQuery(GET_AVAILABLE_COUNTRIES, {
+    skip: currentStep !== 1
   });
 
   const [selectedShippingMethod, setSelectedShippingMethod] = useState('');
@@ -90,6 +98,22 @@ function CheckoutPageContent() {
       }));
     }
   }, [customer]);
+  
+  // Set default country when countries data loads
+  useEffect(() => {
+    if (countriesData?.availableCountries && shippingForm.countryCode === '') {
+      // Find a common default country (try TN, US, CA, or first available country)
+      const availableCountries = countriesData.availableCountries;
+      const defaultCountry = availableCountries.find((c: any) => ['TN', 'US', 'CA', 'GB', 'FR', 'DE'].includes(c.code)) || availableCountries[0];
+      
+      if (defaultCountry) {
+        setShippingForm(prev => ({
+          ...prev,
+          countryCode: defaultCountry.code
+        }));
+      }
+    }
+  }, [countriesData, shippingForm.countryCode]);
 
   if (authLoading || !isAuthenticated || (items.length === 0 && !orderCompleted)) {
     return (
@@ -398,6 +422,31 @@ function CheckoutPageContent() {
                     />
                   </div>
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Country *</label>
+                    {countriesLoading ? (
+                      <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 flex items-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400 mr-2"></div>
+                        <span className="text-gray-500 text-sm">Loading countries...</span>
+                      </div>
+                    ) : (
+                      <select
+                        required
+                        value={shippingForm.countryCode}
+                        onChange={(e) => setShippingForm({ ...shippingForm, countryCode: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)]"
+                      >
+                        <option value="">Select a country...</option>
+                        {(countriesData?.availableCountries || []).map((country: any) => (
+                          <option key={country.code} value={country.code}>
+                            {country.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                     <input
                       type="tel"
@@ -554,6 +603,23 @@ function CheckoutPageContent() {
                     onSuccess={() => refetchActiveOrder()}
                   />
                 </div>
+
+                {/* Reward Points Redemption */}
+                <RewardPointsRedemption
+                  orderTotal={(() => {
+                    const selectedMethod = shippingMethods.find((m: any) => m.id === selectedShippingMethod);
+                    const shippingCost = selectedMethod?.priceWithTax || 0;
+                    return activeOrderData?.activeOrder?.totalWithTax || (totalPrice + shippingCost);
+                  })()}
+                  onRedemptionSuccess={(newTotal, points) => {
+                    setPointsRedeemed(points);
+                    setPointsDiscount(points); // 1 point = 1 cent discount
+                    refetchActiveOrder();
+                  }}
+                  onRedemptionError={(error) => {
+                    setError(error);
+                  }}
+                />
               </div>
 
               {/* Payment Method */}
@@ -586,6 +652,14 @@ function CheckoutPageContent() {
                     </div>
                   ))}
                   
+                  {/* Show reward points discount */}
+                  {pointsDiscount > 0 && (
+                    <div className="flex justify-between mb-2 text-sm text-green-600">
+                      <span>Reward Points Discount ({pointsRedeemed} points)</span>
+                      <span>-${(pointsDiscount / 100).toFixed(2)}</span>
+                    </div>
+                  )}
+                  
                   {(() => {
                     const selectedMethod = shippingMethods.find((m: any) => m.id === selectedShippingMethod);
                     const shippingCost = selectedMethod?.priceWithTax || 0;
@@ -598,7 +672,7 @@ function CheckoutPageContent() {
                         </div>
                         <div className="flex justify-between font-bold text-lg border-t pt-2">
                           <span>Total:</span>
-                          <span>${(orderTotal / 100).toFixed(2)}</span>
+                          <span>${(Math.max(0, orderTotal - pointsDiscount) / 100).toFixed(2)}</span>
                         </div>
                       </>
                     );

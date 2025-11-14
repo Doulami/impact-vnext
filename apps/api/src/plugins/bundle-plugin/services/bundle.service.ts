@@ -286,7 +286,7 @@ export class BundleService {
             }
             
             // Warn about inventory tracking
-            if (!variant.trackInventory || variant.trackInventory === 'FALSE') {
+            if (!variant.trackInventory || variant.trackInventory === GlobalFlag.FALSE) {
                 Logger.warn(`Bundle component ${variant.name} does not track inventory`, 'BundleService');
             }
             

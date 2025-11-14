@@ -1,0 +1,367 @@
+.subtitle {
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0;
+}
+
+.customer-points-container {
+    padding: 1rem;
+}
+
+.search-filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+
+    .search-field {
+        flex: 1;
+        max-width: 400px;
+        margin-bottom: 0;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--color-grey-300);
+        border-radius: 4px;
+        font-size: 0.9rem;
+
+        &:focus {
+            outline: none;
+            border-color: var(--color-primary-500);
+            box-shadow: 0 0 0 2px var(--color-primary-100);
+        }
+    }
+
+    .results-info {
+        font-size: 0.85rem;
+        color: var(--color-text-secondary);
+    }
+}
+
+.customer-points-table {
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+
+        th {
+            background-color: var(--color-grey-50);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            border-bottom: 1px solid var(--color-grey-200);
+
+            &.sortable {
+                cursor: pointer;
+                user-select: none;
+                transition: background-color 0.2s;
+
+                &:hover {
+                    background-color: var(--color-grey-100);
+                }
+
+                .sort-icon {
+                    margin-left: 0.5rem;
+                    opacity: 0.5;
+                    transition: opacity 0.2s;
+                }
+            }
+
+            &.number-col {
+                text-align: right;
+                width: 120px;
+            }
+
+            &.actions-col {
+                text-align: center;
+                width: 120px;
+            }
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--color-grey-100);
+            vertical-align: middle;
+
+            &.number-col {
+                text-align: right;
+            }
+
+            &.actions-col {
+                text-align: center;
+            }
+
+            &.date-col {
+                font-size: 0.85rem;
+                color: var(--color-text-secondary);
+            }
+        }
+
+        tr:hover {
+            background-color: var(--color-grey-25);
+        }
+    }
+}
+
+.customer-info {
+    .customer-name {
+        font-weight: 600;
+        color: var(--color-text-primary);
+        margin-bottom: 0.25rem;
+    }
+
+    .customer-email {
+        font-size: 0.85rem;
+        color: var(--color-text-secondary);
+    }
+}
+
+.points-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+
+    &.current-balance {
+        background-color: var(--color-primary-100);
+        color: var(--color-primary-700);
+    }
+}
+
+.points-earned {
+    color: var(--color-success-600);
+    font-weight: 600;
+}
+
+.points-redeemed {
+    color: var(--color-primary-600);
+    font-weight: 600;
+}
+
+.empty-state {
+    .empty-message {
+        padding: 3rem 2rem;
+        text-align: center;
+
+        .empty-icon {
+            font-size: 3rem;
+            color: var(--color-grey-300);
+            margin-bottom: 1rem;
+        }
+
+        h3 {
+            color: var(--color-text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        p {
+            color: var(--color-text-secondary);
+            margin: 0;
+        }
+    }
+}
+
+// Modal Styles
+.adjust-modal-content {
+    min-width: 500px;
+    max-width: 700px;
+}
+
+.customer-header {
+    padding: 1rem;
+    background-color: var(--color-grey-50);
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+
+    h3 {
+        margin: 0 0 0.5rem 0;
+        color: var(--color-text-primary);
+    }
+
+    .customer-email {
+        margin: 0 0 1rem 0;
+        color: var(--color-text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .current-balance {
+        .points-badge {
+            background-color: var(--color-primary-500);
+            color: white;
+        }
+    }
+}
+
+.adjust-form {
+    margin-bottom: 1.5rem;
+
+    .points-input {
+        font-size: 1.1rem;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .adjustment-hint {
+        display: block;
+        margin-top: 0.5rem;
+        color: var(--color-text-secondary);
+        font-style: italic;
+    }
+}
+
+.adjustment-preview {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: var(--color-primary-50);
+    border: 1px solid var(--color-primary-200);
+    border-radius: 4px;
+
+    .preview-header {
+        font-weight: 600;
+        color: var(--color-primary-700);
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .preview-calculation {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+
+        .current {
+            color: var(--color-text-secondary);
+        }
+
+        .adjustment {
+            &.positive {
+                color: var(--color-success-600);
+            }
+
+            &.negative {
+                color: var(--color-error-600);
+            }
+        }
+
+        .new-balance {
+            color: var(--color-primary-600);
+            font-size: 1.4rem;
+        }
+
+        clr-icon {
+            color: var(--color-text-secondary);
+        }
+    }
+}
+
+.recent-transactions {
+    border-top: 1px solid var(--color-grey-200);
+    padding-top: 1.5rem;
+
+    h4 {
+        margin: 0 0 1rem 0;
+        color: var(--color-text-primary);
+    }
+
+    .transactions-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .transaction-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 0.75rem;
+        border: 1px solid var(--color-grey-100);
+        border-radius: 4px;
+        margin-bottom: 0.5rem;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    .transaction-details {
+        flex: 1;
+
+        .transaction-description {
+            font-weight: 500;
+            color: var(--color-text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .transaction-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+
+            .transaction-date {
+                color: var(--color-text-secondary);
+            }
+
+            .transaction-points {
+                font-weight: 600;
+
+                &.positive {
+                    color: var(--color-success-600);
+                }
+
+                &.negative {
+                    color: var(--color-error-600);
+                }
+            }
+        }
+    }
+
+    .view-all-transactions {
+        margin-top: 1rem;
+        text-align: center;
+    }
+}
+
+// Mobile responsiveness
+@media (max-width: 768px) {
+    .search-filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+
+        .search-field {
+            max-width: none;
+        }
+
+        .results-info {
+            text-align: center;
+        }
+    }
+
+    .customer-points-table {
+        overflow-x: auto;
+
+        table {
+            min-width: 800px;
+        }
+    }
+
+    .adjust-modal-content {
+        min-width: auto;
+        max-width: 95vw;
+    }
+
+    .preview-calculation {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+}

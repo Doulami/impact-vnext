@@ -1,5 +1,76 @@
 import { gql } from '@apollo/client';
 
+// ============================================================================
+// REWARD POINTS QUERIES & MUTATIONS
+// ============================================================================
+
+// Get customer's reward points balance and settings
+export const GET_CUSTOMER_REWARD_POINTS = gql`
+  query GetCustomerRewardPoints {
+    customerRewardPoints {
+      id
+      balance
+      lifetimeEarned
+      lifetimeRedeemed
+      createdAt
+      updatedAt
+    }
+    rewardPointSettings {
+      enabled
+      minRedeemAmount
+      maxRedeemPerOrder
+    }
+  }
+`;
+
+// Get customer's reward transaction history
+export const GET_REWARD_TRANSACTION_HISTORY = gql`
+  query GetRewardTransactionHistory($options: RewardTransactionListOptions) {
+    rewardTransactionHistory(options: $options) {
+      items {
+        id
+        type
+        points
+        orderTotal
+        description
+        createdAt
+        order {
+          id
+          code
+        }
+      }
+      totalItems
+    }
+  }
+`;
+
+// Redeem points mutation
+export const REDEEM_POINTS = gql`
+  mutation RedeemPoints($points: Int!) {
+    redeemPoints(points: $points) {
+      id
+      code
+      state
+      total
+      totalWithTax
+      customFields {
+        pointsRedeemed
+      }
+    }
+  }
+`;
+
+// Get reward points settings (public info only)
+export const GET_REWARD_POINTS_SETTINGS = gql`
+  query GetRewardPointSettings {
+    rewardPointSettings {
+      enabled
+      minRedeemAmount
+      maxRedeemPerOrder
+    }
+  }
+`;
+
 // Product fragment for PDP
 export const PRODUCT_FRAGMENT = gql`
   fragment ProductFields on Product {

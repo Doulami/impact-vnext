@@ -1,0 +1,213 @@
+<vdr-page-block>
+    <vdr-action-bar>
+        <vdr-ab-left>
+            <div class="page-title">
+                <h1>{{ 'reward-points.page-title' | translate }}</h1>
+                <p class="subtitle">{{ 'reward-points.page-subtitle' | translate }}</p>
+            </div>
+        </vdr-ab-left>
+        <vdr-ab-right>
+            <button 
+                class="btn btn-secondary" 
+                (click)="resetForm()" 
+                [disabled]="!settingsForm.dirty">
+                <clr-icon shape="refresh"></clr-icon>
+                {{ 'common.reset' | translate }}
+            </button>
+            <button 
+                class="btn btn-primary" 
+                (click)="saveSettings()" 
+                [disabled]="settingsForm.invalid || !settingsForm.dirty">
+                <clr-icon shape="check"></clr-icon>
+                {{ 'common.save' | translate }}
+            </button>
+        </vdr-ab-right>
+    </vdr-action-bar>
+</vdr-page-block>
+
+<vdr-page-detail-layout>
+    <vdr-page-detail-sidebar>
+        <!-- System Status Card -->
+        <vdr-card [title]="'reward-points.status.title' | translate">
+            <vdr-form-field [label]="'reward-points.status.current-status' | translate" for="status">
+                <div class="status-badge">
+                    <vdr-chip
+                        [colorType]="settingsForm.get('enabled')?.value ? 'success' : 'warning'"
+                        [icon]="settingsForm.get('enabled')?.value ? 'check-circle' : 'warning-standard'"
+                    >
+                        {{ (settingsForm.get('enabled')?.value ? 'reward-points.status.enabled' : 'reward-points.status.disabled') | translate }}
+                    </vdr-chip>
+                </div>
+            </vdr-form-field>
+
+            <vdr-labeled-data [label]="'reward-points.status.total-customers' | translate">
+                {{ (customerCount$ | async) || 0 | number }} {{ 'reward-points.status.customers' | translate }}
+            </vdr-labeled-data>
+        </vdr-card>
+
+        <!-- Rate Calculator Card -->
+        <vdr-card [title]="'reward-points.calculator.title' | translate">
+            <vdr-labeled-data [label]="'reward-points.calculator.example-earning' | translate">
+                <span class="earning-example">
+                    {{ calculateExampleEarning() }} {{ 'reward-points.points' | translate }}
+                </span>
+                <small class="text-muted d-block">
+                    {{ 'reward-points.calculator.earning-description' | translate }}
+                </small>
+            </vdr-labeled-data>
+
+            <vdr-labeled-data [label]="'reward-points.calculator.example-redemption' | translate">
+                <span class="redemption-example">
+                    ${{ calculateExampleRedemption() }}
+                </span>
+                <small class="text-muted d-block">
+                    {{ 'reward-points.calculator.redemption-description' | translate }}
+                </small>
+            </vdr-labeled-data>
+        </vdr-card>
+
+        <!-- Help Card -->
+        <vdr-card [title]="'reward-points.help.title' | translate">
+            <p class="text-muted">{{ 'reward-points.help.description' | translate }}</p>
+            <ul class="help-list">
+                <li>{{ 'reward-points.help.tip-1' | translate }}</li>
+                <li>{{ 'reward-points.help.tip-2' | translate }}</li>
+                <li>{{ 'reward-points.help.tip-3' | translate }}</li>
+            </ul>
+        </vdr-card>
+    </vdr-page-detail-sidebar>
+
+    <vdr-page-block>
+        <form [formGroup]="settingsForm">
+            <!-- Basic Configuration -->
+            <vdr-card [title]="'reward-points.config.basic.title' | translate">
+                <vdr-form-field 
+                    [label]="'reward-points.config.basic.enable-feature' | translate" 
+                    for="enabled"
+                    [tooltip]="'reward-points.config.basic.enable-tooltip' | translate">
+                    <clr-toggle-wrapper>
+                        <input 
+                            type="checkbox" 
+                            clrToggle 
+                            id="enabled"
+                            formControlName="enabled" 
+                        />
+                        <label for="enabled">
+                            {{ 'reward-points.config.basic.enable-reward-points' | translate }}
+                        </label>
+                    </clr-toggle-wrapper>
+                </vdr-form-field>
+
+                <div class="feature-warning" *ngIf="!settingsForm.get('enabled')?.value">
+                    <clr-icon shape="warning-standard" class="warning-icon"></clr-icon>
+                    <span>{{ 'reward-points.config.basic.disabled-warning' | translate }}</span>
+                </div>
+            </vdr-card>
+
+            <!-- Point Earning Rules -->
+            <vdr-card 
+                [title]="'reward-points.config.earning.title' | translate"
+                [paddingX]="true">
+                <vdr-form-field 
+                    [label]="'reward-points.config.earning.earn-rate' | translate" 
+                    for="earnRate"
+                    [tooltip]="'reward-points.config.earning.earn-rate-tooltip' | translate">
+                    <div class="rate-input-group">
+                        <input 
+                            id="earnRate"
+                            type="number" 
+                            formControlName="earnRate"
+                            min="0.001"
+                            step="0.1"
+                            (blur)="onEarnRateChange()"
+                        />
+                        <span class="input-suffix">{{ 'reward-points.config.earning.points-per-dollar' | translate }}</span>
+                    </div>
+                    <vdr-form-item-error 
+                        *ngIf="settingsForm.get('earnRate')?.invalid && settingsForm.get('earnRate')?.touched">
+                        {{ 'reward-points.validation.earn-rate-required' | translate }}
+                    </vdr-form-item-error>
+                </vdr-form-field>
+
+                <div class="example-calculation">
+                    <strong>{{ 'reward-points.config.earning.example' | translate }}</strong>
+                    <p>{{ 'reward-points.config.earning.example-text' | translate: { points: calculateExampleEarning() } }}</p>
+                </div>
+            </vdr-card>
+
+            <!-- Point Redemption Rules -->
+            <vdr-card 
+                [title]="'reward-points.config.redemption.title' | translate"
+                [paddingX]="true">
+                <vdr-form-field 
+                    [label]="'reward-points.config.redemption.redeem-rate' | translate" 
+                    for="redeemRate"
+                    [tooltip]="'reward-points.config.redemption.redeem-rate-tooltip' | translate">
+                    <div class="rate-input-group">
+                        <span class="input-prefix">$</span>
+                        <input 
+                            id="redeemRate"
+                            type="number" 
+                            formControlName="redeemRate"
+                            min="0.001"
+                            step="0.001"
+                            (blur)="onEarnRateChange()"
+                        />
+                        <span class="input-suffix">{{ 'reward-points.config.redemption.per-point' | translate }}</span>
+                    </div>
+                    <vdr-form-item-error 
+                        *ngIf="settingsForm.get('redeemRate')?.invalid && settingsForm.get('redeemRate')?.touched">
+                        {{ 'reward-points.validation.redeem-rate-required' | translate }}
+                    </vdr-form-item-error>
+                </vdr-form-field>
+
+                <vdr-form-field 
+                    [label]="'reward-points.config.redemption.min-redeem' | translate" 
+                    for="minRedeemAmount"
+                    [tooltip]="'reward-points.config.redemption.min-redeem-tooltip' | translate">
+                    <div class="rate-input-group">
+                        <input 
+                            id="minRedeemAmount"
+                            type="number" 
+                            formControlName="minRedeemAmount"
+                            min="1"
+                            step="1"
+                            (blur)="onMinRedeemAmountChange()"
+                        />
+                        <span class="input-suffix">{{ 'reward-points.points' | translate }}</span>
+                    </div>
+                    <vdr-form-item-error 
+                        *ngIf="settingsForm.get('minRedeemAmount')?.invalid && settingsForm.get('minRedeemAmount')?.touched">
+                        {{ 'reward-points.validation.min-redeem-required' | translate }}
+                    </vdr-form-item-error>
+                </vdr-form-field>
+
+                <vdr-form-field 
+                    [label]="'reward-points.config.redemption.max-redeem' | translate" 
+                    for="maxRedeemPerOrder"
+                    [tooltip]="'reward-points.config.redemption.max-redeem-tooltip' | translate">
+                    <div class="rate-input-group">
+                        <input 
+                            id="maxRedeemPerOrder"
+                            type="number" 
+                            formControlName="maxRedeemPerOrder"
+                            min="1"
+                            step="1"
+                            (blur)="onMaxRedeemAmountChange()"
+                        />
+                        <span class="input-suffix">{{ 'reward-points.points' | translate }}</span>
+                    </div>
+                    <vdr-form-item-error 
+                        *ngIf="settingsForm.get('maxRedeemPerOrder')?.invalid && settingsForm.get('maxRedeemPerOrder')?.touched">
+                        {{ 'reward-points.validation.max-redeem-required' | translate }}
+                    </vdr-form-item-error>
+                </vdr-form-field>
+
+                <div class="example-calculation">
+                    <strong>{{ 'reward-points.config.redemption.example' | translate }}</strong>
+                    <p>{{ 'reward-points.config.redemption.example-text' | translate: { value: calculateExampleRedemption() } }}</p>
+                </div>
+            </vdr-card>
+        </form>
+    </vdr-page-block>
+</vdr-page-detail-layout>

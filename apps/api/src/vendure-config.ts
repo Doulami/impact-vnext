@@ -17,6 +17,7 @@ import 'dotenv/config';
 import path from 'path';
 import { CustomerAdminVerificationPlugin } from './plugins/customer-admin-verification.plugin';
 import { BundlePlugin, bundleUiExtension } from './plugins/bundle-plugin/bundle.plugin';
+import { RewardPointsPlugin, rewardPointsUiExtension } from './plugins/reward-points-plugin';
 import { FeaturedCollectionPlugin } from './plugins/featured-collection.plugin';
 import { autoExpireBundlesTask } from './plugins/bundle-plugin/tasks/auto-expire-bundles.task';
 
@@ -141,6 +142,7 @@ export const config: VendureConfig = {
                         providers: ['providers.ts'],
                     },
                     bundleUiExtension,
+                    rewardPointsUiExtension,
                 ],
                 devMode: IS_DEV,
             }),
@@ -169,6 +171,8 @@ export const config: VendureConfig = {
             // Guard mode: strict prevents double-discounting
             guardMode: 'strict',
         }),
+        // Reward Points Plugin for customer loyalty
+        RewardPointsPlugin,
         // Auto-create Featured collection
         FeaturedCollectionPlugin,
     ],

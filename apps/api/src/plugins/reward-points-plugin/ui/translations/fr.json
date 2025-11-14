@@ -1,0 +1,108 @@
+{
+  "reward-points-plugin": {
+    "reward-points": "Points de Récompense",
+    "settings": "Paramètres",
+    "customers": "Clients",
+    "transactions": "Transactions",
+    
+    "settings-management": "Gestion des Paramètres",
+    "customer-management": "Gestion des Clients",
+    "transaction-history": "Historique des Transactions",
+    
+    "enabled": "Activé",
+    "disabled": "Désactivé",
+    "enable-reward-points": "Activer les Points de Récompense",
+    "disable-reward-points": "Désactiver les Points de Récompense",
+    
+    "earn-rate": "Taux de Gain",
+    "earn-rate-description": "Points gagnés par unité monétaire (ex: 1 point par 1€)",
+    "redeem-rate": "Taux de Rachat",
+    "redeem-rate-description": "Valeur monétaire par point (ex: 0,01€ par point)",
+    "min-redeem-amount": "Montant Minimum de Rachat",
+    "min-redeem-amount-description": "Points minimum requis pour racheter",
+    "max-redeem-per-order": "Maximum de Rachat par Commande",
+    "max-redeem-per-order-description": "Points maximum pouvant être rachetés dans une commande",
+    
+    "customer-balance": "Solde Client",
+    "customer-email": "Email du Client",
+    "customer-name": "Nom du Client",
+    "balance": "Solde",
+    "lifetime-earned": "Total Gagné",
+    "lifetime-redeemed": "Total Racheté",
+    "created-at": "Créé le",
+    "updated-at": "Mis à jour le",
+    
+    "transaction-type": "Type de Transaction",
+    "points": "Points",
+    "order-total": "Total de la Commande",
+    "description": "Description",
+    "order-id": "ID de la Commande",
+    
+    "transaction-types": {
+      "EARNED": "Gagné",
+      "REDEEMED": "Racheté",
+      "EXPIRED": "Expiré",
+      "ADJUSTED": "Ajusté"
+    },
+    
+    "actions": {
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "edit": "Modifier",
+      "view": "Voir",
+      "delete": "Supprimer",
+      "adjust-points": "Ajuster les Points",
+      "view-history": "Voir l'Historique",
+      "export": "Exporter"
+    },
+    
+    "adjust-customer-points": "Ajuster les Points du Client",
+    "add-points": "Ajouter des Points",
+    "subtract-points": "Soustraire des Points",
+    "adjustment-reason": "Raison de l'Ajustement",
+    "adjustment-reason-placeholder": "Entrez la raison de l'ajustement...",
+    "points-to-adjust": "Points à Ajuster",
+    
+    "messages": {
+      "settings-saved": "Paramètres enregistrés avec succès",
+      "settings-save-error": "Erreur lors de l'enregistrement des paramètres",
+      "points-adjusted": "Points du client ajustés avec succès",
+      "points-adjust-error": "Erreur lors de l'ajustement des points du client",
+      "loading": "Chargement...",
+      "no-data": "Aucune donnée disponible",
+      "confirm-adjustment": "Êtes-vous sûr de vouloir ajuster les points de ce client ?",
+      "invalid-input": "Veuillez entrer des valeurs valides",
+      "feature-enabled": "La fonctionnalité de points de récompense a été activée",
+      "feature-disabled": "La fonctionnalité de points de récompense a été désactivée"
+    },
+    
+    "search-placeholder": "Rechercher des clients...",
+    "filter-by-type": "Filtrer par type",
+    "all-types": "Tous les types",
+    "date-range": "Plage de Dates",
+    "from": "De",
+    "to": "À",
+    
+    "pagination": {
+      "items-per-page": "Éléments par page",
+      "showing": "Affichage de {start} à {end} sur {total} éléments",
+      "previous": "Précédent",
+      "next": "Suivant"
+    },
+    
+    "validation": {
+      "required": "Ce champ est requis",
+      "min-value": "La valeur doit être au minimum de {min}",
+      "max-value": "La valeur doit être au maximum de {max}",
+      "positive-number": "La valeur doit être un nombre positif",
+      "invalid-email": "Format d'email invalide"
+    },
+    
+    "tooltips": {
+      "earn-rate": "Combien de points les clients gagnent par unité monétaire dépensée",
+      "redeem-rate": "Quelle valeur monétaire chaque point vaut lors du rachat",
+      "min-redeem": "Nombre minimum de points requis avant que les clients puissent racheter",
+      "max-redeem": "Points maximum qui peuvent être rachetés dans une seule commande"
+    }
+  }
+}

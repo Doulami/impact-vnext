@@ -412,6 +412,17 @@ export const ADD_BUNDLE_TO_ORDER = gql`
 `;
 
 // Get order by code (for order confirmation)
+// Get available countries
+export const GET_AVAILABLE_COUNTRIES = gql`
+  query GetAvailableCountries {
+    availableCountries {
+      id
+      code
+      name
+    }
+  }
+`;
+
 export const GET_ORDER_FOR_CHECKOUT = gql`
   query GetOrderForCheckout($code: String!) {
     orderByCode(code: $code) {

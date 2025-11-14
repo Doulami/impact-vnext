@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/lib/hooks/useAuth';
+import { useRewardPoints } from '@/lib/hooks/useRewardPoints';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import Link from 'next/link';
@@ -23,6 +24,7 @@ import {
 
 export default function AccountDashboard() {
   const { isAuthenticated, isLoading, customer, user } = useAuth();
+  const { rewardPoints, isEnabled: rewardPointsEnabled } = useRewardPoints();
   const router = useRouter();
 
   useEffect(() => {
@@ -99,12 +101,12 @@ export default function AccountDashboard() {
           title: "Wishlist",
           description: "Your saved products and favorites",
         },
-        {
+        ...(rewardPointsEnabled ? [{
           href: "/account/rewards",
           icon: Star,
           title: "Loyalty & Rewards",
           description: "Points balance and rewards catalog",
-        },
+        }] : []),
       ]
     },
     {
@@ -174,7 +176,9 @@ export default function AccountDashboard() {
             <div className="flex items-center">
               <Star className="h-8 w-8 text-yellow-500 mr-3" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">0</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {rewardPointsEnabled ? (rewardPoints?.balance || 0) : 0}
+                </p>
                 <p className="text-sm text-gray-600">Reward Points</p>
               </div>
             </div>

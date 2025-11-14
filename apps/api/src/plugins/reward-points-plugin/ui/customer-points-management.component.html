@@ -1,0 +1,230 @@
+<vdr-page-block>
+    <vdr-action-bar>
+        <vdr-ab-left>
+            <div class="page-title">
+                <h1>Customer Points Management</h1>
+                <p class="subtitle">View and manage reward points for customers</p>
+            </div>
+        </vdr-ab-left>
+    </vdr-action-bar>
+</vdr-page-block>
+
+<div class="customer-points-container" style="padding: 20px;">
+    <div *ngIf="loading" class="loading-state">
+        <div class="spinner">Loading customers...</div>
+    </div>
+    
+    <div *ngIf="!loading">
+        <div class="results-info" style="margin-bottom: 20px;">
+            <strong>{{ totalItems }} customers found</strong>
+        </div>
+
+        <!-- Simple Customer Table -->
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Customer</th>
+                    <th>Email</th>
+                    <th>Balance</th>
+                    <th>Lifetime Earned</th>
+                    <th>Lifetime Redeemed</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let customer of customers">
+                    <td>{{ getCustomerDisplayName(customer.customer) }}</td>
+                    <td>{{ customer.customer?.emailAddress }}</td>
+                    <td><strong>{{ customer.balance }} points</strong></td>
+                    <td>{{ customer.lifetimeEarned }}</td>
+                    <td>{{ customer.lifetimeRedeemed }}</td>
+                    <td>
+                        <button 
+                            class="btn btn-sm btn-primary"
+                            (click)="openAdjustDialog(customer)">
+                            Adjust Points
+                        </button>
+                    </td>
+                </tr>
+                
+                <tr *ngIf="customers.length === 0">
+                    <td colspan="6" class="text-center">
+                        <div style="padding: 40px;">
+                            <h3>No customers found</h3>
+                            <p>No customers with reward points yet.</p>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Simple Adjust Points Modal -->
+<div *ngIf="showAdjustModal" class="modal-backdrop" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+    <div class="modal-dialog" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 8px; min-width: 400px; z-index: 1001;">
+        <h3>Adjust Points for {{ getCustomerDisplayName(selectedCustomer?.customer) }}</h3>
+        
+        <div style="margin: 20px 0;">
+            <p><strong>Current Balance:</strong> {{ selectedCustomer?.balance }} points</p>
+        </div>
+        
+        <form [formGroup]="adjustForm" (ngSubmit)="adjustCustomerPoints()">
+            <div style="margin-bottom: 15px;">
+                <label for="points"><strong>Points to Add/Remove:</strong></label>
+                <input 
+                    id="points" 
+                    type="number" 
+                    formControlName="points" 
+                    style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;"
+                    placeholder="Enter positive number to add, negative to remove">
+                <small style="color: #666; display: block; margin-top: 5px;">
+                    Example: 1000 (adds points), -500 (removes points)
+                </small>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label for="description"><strong>Description:</strong></label>
+                <input 
+                    id="description" 
+                    type="text" 
+                    formControlName="description" 
+                    style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;"
+                    placeholder="Reason for adjustment">
+            </div>
+            
+            <div style="text-align: right;">
+                <button 
+                    type="button" 
+                    (click)="cancelAdjust()" 
+                    style="margin-right: 10px; padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Cancel
+                </button>
+                <button 
+                    type="submit" 
+                    [disabled]="adjustForm.invalid"
+                    style="padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;"
+                    [style.opacity]="adjustForm.invalid ? '0.5' : '1'">
+                    Apply Adjustment
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Adjust Points Modal -->
+<vdr-modal *ngIf="selectedCustomer" [title]="'reward-points.customers.adjust-points-modal.title' | translate" (closeModal)="cancelAdjust()">
+    <div class="adjust-modal-content">
+        <!-- Customer Info Header -->
+        <div class="customer-header">
+            <h3>{{ getCustomerDisplayName(selectedCustomer.customer) }}</h3>
+            <p class="customer-email">{{ selectedCustomer.customer.emailAddress }}</p>
+            <div class="current-balance">
+                <strong>{{ 'reward-points.customers.current-balance' | translate }}: </strong>
+                <span class="points-badge">{{ selectedCustomer.balance | number }} {{ 'reward-points.points' | translate }}</span>
+            </div>
+        </div>
+
+        <!-- Adjustment Form -->
+        <form [formGroup]="adjustForm" class="adjust-form">
+            <vdr-form-field 
+                [label]="'reward-points.customers.adjust-points-modal.points-adjustment' | translate" 
+                for="points"
+                [tooltip]="'reward-points.customers.adjust-points-modal.points-tooltip' | translate">
+                <input 
+                    id="points"
+                    type="number" 
+                    formControlName="points"
+                    placeholder="0"
+                    class="points-input"
+                />
+                <small class="adjustment-hint">
+                    {{ 'reward-points.customers.adjust-points-modal.points-hint' | translate }}
+                </small>
+                <vdr-form-item-error 
+                    *ngIf="adjustForm.get('points')?.invalid && adjustForm.get('points')?.touched">
+                    {{ 'reward-points.validation.points-required' | translate }}
+                </vdr-form-item-error>
+            </vdr-form-field>
+
+            <vdr-form-field 
+                [label]="'reward-points.customers.adjust-points-modal.description' | translate" 
+                for="description">
+                <textarea 
+                    id="description"
+                    formControlName="description"
+                    rows="3"
+                    placeholder="{{ 'reward-points.customers.adjust-points-modal.description-placeholder' | translate }}"
+                ></textarea>
+                <vdr-form-item-error 
+                    *ngIf="adjustForm.get('description')?.invalid && adjustForm.get('description')?.touched">
+                    {{ 'reward-points.validation.description-required' | translate }}
+                </vdr-form-item-error>
+            </vdr-form-field>
+
+            <!-- Preview -->
+            <div class="adjustment-preview" *ngIf="adjustForm.get('points')?.value !== 0">
+                <div class="preview-header">{{ 'reward-points.customers.adjust-points-modal.preview' | translate }}</div>
+                <div class="preview-calculation">
+                    <span class="current">{{ selectedCustomer.balance | number }}</span>
+                    <clr-icon shape="plus" *ngIf="adjustForm.get('points')?.value > 0"></clr-icon>
+                    <clr-icon shape="minus" *ngIf="adjustForm.get('points')?.value < 0"></clr-icon>
+                    <span class="adjustment" [class.positive]="adjustForm.get('points')?.value > 0" [class.negative]="adjustForm.get('points')?.value < 0">
+                        {{ Math.abs(adjustForm.get('points')?.value || 0) | number }}
+                    </span>
+                    <clr-icon shape="arrow-right"></clr-icon>
+                    <span class="new-balance">{{ (selectedCustomer.balance + (adjustForm.get('points')?.value || 0)) | number }}</span>
+                </div>
+            </div>
+        </form>
+
+        <!-- Recent Transactions -->
+        <div class="recent-transactions" *ngIf="customerTransactions.length > 0">
+            <h4>{{ 'reward-points.customers.recent-transactions' | translate }}</h4>
+            <div class="transactions-list">
+                <div class="transaction-item" *ngFor="let transaction of customerTransactions">
+                    <div class="transaction-icon">
+                        <vdr-chip 
+                            [colorType]="getTransactionTypeColor(transaction.type)"
+                            [icon]="getTransactionTypeIcon(transaction.type)">
+                            {{ ('reward-points.transaction-types.' + transaction.type) | translate }}
+                        </vdr-chip>
+                    </div>
+                    <div class="transaction-details">
+                        <div class="transaction-description">{{ transaction.description }}</div>
+                        <div class="transaction-meta">
+                            <span class="transaction-date">{{ transaction.createdAt | date:'short' }}</span>
+                            <span class="transaction-points" 
+                                  [class.positive]="transaction.points > 0" 
+                                  [class.negative]="transaction.points < 0">
+                                {{ formatPoints(transaction.points) }} {{ 'reward-points.points' | translate }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="view-all-transactions" *ngIf="transactionsTotalItems > customerTransactions.length">
+                <small class="text-muted">
+                    {{ 'reward-points.customers.showing-recent-transactions' | translate: { 
+                        shown: customerTransactions.length, 
+                        total: transactionsTotalItems 
+                    } }}
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <vdr-modal-footer>
+        <button class="btn btn-secondary" (click)="cancelAdjust()">
+            {{ 'common.cancel' | translate }}
+        </button>
+        <button 
+            class="btn btn-primary" 
+            (click)="adjustCustomerPoints()"
+            [disabled]="adjustForm.invalid">
+            <clr-icon shape="check"></clr-icon>
+            {{ 'reward-points.customers.adjust-points-modal.confirm' | translate }}
+        </button>
+    </vdr-modal-footer>
+</vdr-modal>
