@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useCart } from '@/lib/hooks/useCart';
 import { useMutation, useQuery } from '@apollo/client/react';
@@ -20,12 +20,13 @@ import Button from '@/components/Button';
 import BundleCard from '@/components/BundleCard';
 import { Package, CreditCard, CheckCircle, AlertCircle, ShoppingCart } from 'lucide-react';
 
-export default function CheckoutPage() {
+function CheckoutPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isAuthenticated, isLoading: authLoading, customer } = useAuth();
   const { items, totalPrice, clearCart } = useCart();
   
-  const [currentStep, setCurrentStep] = useState(1);
+  const currentStep = parseInt(searchParams.get('step') || '1', 10);
   const [orderCreated, setOrderCreated] = useState(false);
   const [orderCode, setOrderCode] = useState('');
   const [error, setError] = useState('');
@@ -144,7 +145,7 @@ export default function CheckoutPage() {
         }
       });
 
-      setCurrentStep(2);
+      router.push('/checkout?step=2');
     } catch (err: any) {
       console.error('Shipping error:', err);
       setError(err.message || 'Failed to process shipping information');
@@ -169,7 +170,7 @@ export default function CheckoutPage() {
         }
       });
 
-      setCurrentStep(3);
+      router.push('/checkout?step=3');
     } catch (err: any) {
       console.error('Shipping method error:', err);
       setError(err.message || 'Failed to set shipping method');
@@ -250,11 +251,22 @@ export default function CheckoutPage() {
                 { num: 4, label: 'Confirmation' }
               ].map((step, idx) => (
                 <div key={step.num} className="flex items-center">
-                  <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                    currentStep >= step.num ? 'bg-[var(--brand-secondary)] text-white' : 'bg-gray-300 text-gray-600'
-                  }`}>
+                  <button
+                    onClick={() => {
+                      // Can only go back to previous steps, not forward
+                      if (step.num < currentStep && step.num <= 3) {
+                        router.push(`/checkout?step=${step.num}`);
+                      }
+                    }}
+                    disabled={step.num >= currentStep || step.num === 4}
+                    className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                      currentStep >= step.num ? 'bg-[var(--brand-secondary)] text-white' : 'bg-gray-300 text-gray-600'
+                    } ${
+                      step.num < currentStep && step.num <= 3 ? 'cursor-pointer hover:opacity-80' : 'cursor-default'
+                    } transition-opacity`}
+                  >
                     {currentStep > step.num ? <CheckCircle className="w-6 h-6" /> : step.num}
-                  </div>
+                  </button>
                   <span className="ml-2 text-sm font-medium">{step.label}</span>
                   {idx < 3 && <div className="w-16 h-1 mx-4 bg-gray-300"></div>}
                 </div>
@@ -380,7 +392,7 @@ export default function CheckoutPage() {
                   <p className="text-yellow-800">⚠️ No shipping methods are currently available for your address.</p>
                   <p className="text-sm text-yellow-700 mt-2">Please contact support or try a different address.</p>
                   <Button
-                    onClick={() => setCurrentStep(1)}
+                    onClick={() => router.push('/checkout?step=1')}
                     variant="secondary"
                     size="md"
                     className="mt-4"
@@ -497,14 +509,27 @@ export default function CheckoutPage() {
                   <p className="text-xs text-gray-500 mt-2">💡 Please keep the exact amount ready for a smooth transaction.</p>
                 </div>
                 <div className="bg-gray-100 rounded-lg p-4 mb-6">
-                  <div className="flex justify-between mb-2">
-                    <span>Subtotal:</span>
-                    <span>${(totalPrice / 100).toFixed(2)}</span>
+                  <div className="flex justify-between mb-2 text-sm">
+                    <span className="text-gray-600">Subtotal:</span>
+                    <span className="text-gray-900">${(totalPrice / 100).toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between font-bold text-lg">
-                    <span>Total:</span>
-                    <span>${(totalPrice / 100).toFixed(2)}</span>
-                  </div>
+                  {(() => {
+                    const selectedMethod = shippingMethods.find((m: any) => m.id === selectedShippingMethod);
+                    const shippingCost = selectedMethod?.priceWithTax || 0;
+                    const total = totalPrice + shippingCost;
+                    return (
+                      <>
+                        <div className="flex justify-between mb-2 text-sm">
+                          <span className="text-gray-600">Shipping:</span>
+                          <span className="text-gray-900">${(shippingCost / 100).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between font-bold text-lg border-t pt-2">
+                          <span>Total:</span>
+                          <span>${(total / 100).toFixed(2)}</span>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
                 <Button
                   onClick={handlePaymentSubmit}
@@ -551,5 +576,21 @@ export default function CheckoutPage() {
       </div>
       <Footer />
     </div>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--brand-primary)]"></div>
+        </div>
+        <Footer />
+      </div>
+    }>
+      <CheckoutPageContent />
+    </Suspense>
   );
 }

@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, LogIn, AlertCircle, CheckCircle, X } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import Header from '@/components/Header';
 import Button from '@/components/Button';
 
-export default function LoginPage() {
+function LoginPageContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -18,13 +18,15 @@ export default function LoginPage() {
 
   const { login, isAuthenticated, isLoading, error, clearError } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect') || '/';
 
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/');
+      router.push(redirectUrl);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, redirectUrl]);
 
   // Clear form validation errors only when user fixes the specific field
   useEffect(() => {
@@ -81,7 +83,7 @@ export default function LoginPage() {
 
       if (success) {
         // Redirect will happen via useEffect
-        router.push('/');
+        router.push(redirectUrl);
       }
     } finally {
       setIsSubmitting(false);
@@ -285,5 +287,20 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-black border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    }>
+      <LoginPageContent />
+    </Suspense>
   );
 }

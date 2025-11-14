@@ -1260,7 +1260,7 @@ export class BundleService {
                 throw new Error(`ProductVariant with id ${item.productVariantId} not found`);
             }
             
-            const baseUnitPrice = variant.price; // Use PRE-TAX price (Vendure applies tax at checkout)
+            const baseUnitPrice = variant.priceWithTax; // Use tax-inclusive price
             const componentQty = item.quantity;
             const totalQuantity = componentQty * bundleQuantity;
             const subtotal = baseUnitPrice * totalQuantity;
@@ -1304,9 +1304,8 @@ export class BundleService {
             totalDiscount = Math.round(componentData.totalPreDiscount * discountMultiplier);
             totalBundlePrice = componentData.totalPreDiscount - totalDiscount;
         } else if (bundle.discountType === BundleDiscountType.FIXED && bundle.fixedPrice) {
-            // Fixed-price bundle: Admin enters tax-inclusive price, convert to pre-tax
-            // Use effectivePrice which converts tax-inclusive fixedPrice to pre-tax
-            totalBundlePrice = bundle.effectivePrice * bundleQuantity; // effectivePrice converts to pre-tax
+            // Fixed-price bundle: Use fixedPrice directly (already in cents)
+            totalBundlePrice = bundle.fixedPrice * bundleQuantity;
             totalDiscount = componentData.totalPreDiscount - totalBundlePrice;
             
             // Validate that fixed price is lower than component total
@@ -1355,6 +1354,15 @@ export class BundleService {
             weight?: number;
         }> = [];
         
+        // Calculate tax ratio from first component (assumes same tax rate for all)
+        // priceWithTax / price gives us the tax multiplier (e.g., 1.20 for 20% tax)
+        const firstComponent = componentData.components[0];
+        const taxRatio = firstComponent?.bundleItem?.productVariant?.priceWithTax && firstComponent?.bundleItem?.productVariant?.price
+            ? firstComponent.bundleItem.productVariant.priceWithTax / firstComponent.bundleItem.productVariant.price
+            : 1.20; // Default to 20% tax if not available
+        
+        Logger.debug(`Bundle discount tax conversion ratio: ${taxRatio}`, 'BundleService');
+        
         // If no discount, return components at full price
         if (bundlePricing.totalDiscount <= 0) {
             return componentData.components.map(comp => ({
@@ -1393,7 +1401,9 @@ export class BundleService {
             if (discountType === BundleDiscountType.PERCENT && bundlePricing.bundlePct) {
                 // Percent discount: Apply same percentage to all components
                 bundlePctApplied = bundlePricing.bundlePct;
-                bundleAdjAmount = -Math.round(comp.subtotal * (bundlePricing.bundlePct / 100));
+                const taxInclusiveDiscount = -Math.round(comp.subtotal * (bundlePricing.bundlePct / 100));
+                // Convert to tax-exclusive so Vendure doesn't tax the discount
+                bundleAdjAmount = Math.round(taxInclusiveDiscount / taxRatio);
             } else {
                 // Fixed price: Calculate effective discount percentage and apply uniformly to all components
                 // Example: $70 total → $50 fixed price → $20 discount = 28.57% off each component
@@ -1402,7 +1412,9 @@ export class BundleService {
                     : 0;
                 
                 bundlePctApplied = effectiveDiscountPercentage;
-                bundleAdjAmount = -Math.round(comp.subtotal * (effectiveDiscountPercentage / 100));
+                const taxInclusiveDiscount = -Math.round(comp.subtotal * (effectiveDiscountPercentage / 100));
+                // Convert to tax-exclusive so Vendure doesn't tax the discount
+                bundleAdjAmount = Math.round(taxInclusiveDiscount / taxRatio);
             }
             
             const effectiveUnitPrice = Math.max(0, comp.baseUnitPrice + Math.round(bundleAdjAmount / comp.quantity));
@@ -1423,7 +1435,9 @@ export class BundleService {
         }
         
         // Second pass: Fix rounding drift on largest component
-        const driftAmount = bundlePricing.totalDiscount - totalAllocatedDiscount;
+        // Convert expected total discount to tax-exclusive for comparison
+        const expectedTaxExclusiveDiscount = Math.round(bundlePricing.totalDiscount / taxRatio);
+        const driftAmount = expectedTaxExclusiveDiscount - totalAllocatedDiscount;
         if (driftAmount !== 0) {
             const largestChild = childLines[largestComponentIndex];
             largestChild.bundleAdjAmount -= driftAmount; // Adjust for drift
@@ -1439,11 +1453,11 @@ export class BundleService {
             Logger.debug(`Bundle pricing drift correction: ${driftAmount} cents applied to component ${largestChild.productVariantId}`, 'BundleService');
         }
         
-        // Validation: Ensure total adjustments equal total discount
+        // Validation: Ensure total adjustments equal expected tax-exclusive discount
         const finalTotalAdjustment = childLines.reduce((sum, child) => sum + (-child.bundleAdjAmount), 0);
-        if (Math.abs(finalTotalAdjustment - bundlePricing.totalDiscount) > 1) { // Allow 1 cent tolerance
+        if (Math.abs(finalTotalAdjustment - expectedTaxExclusiveDiscount) > 1) { // Allow 1 cent tolerance
             Logger.error(
-                `Bundle pricing validation failed: expected discount ${bundlePricing.totalDiscount}, got ${finalTotalAdjustment}`,
+                `Bundle pricing validation failed: expected tax-exclusive discount ${expectedTaxExclusiveDiscount}, got ${finalTotalAdjustment}`,
                 'BundleService'
             );
         }

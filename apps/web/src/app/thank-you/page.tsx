@@ -103,9 +103,21 @@ function ThankYouContent() {
   }
   
   const totalAmount = (order.totalWithTax / 100).toFixed(2);
+  const subtotal = (order.total / 100).toFixed(2);
+  const shippingCost = order.shippingLines?.[0]?.priceWithTax ? (order.shippingLines[0].priceWithTax / 100).toFixed(2) : '0.00';
+  const shippingMethod = order.shippingLines?.[0]?.shippingMethod?.name || 'Standard Shipping';
+  
+  // Debug order lines
+  console.log('[ThankYou] Raw order lines:', order.lines);
+  console.log('[ThankYou] Order lines with customFields:', order.lines.map((l: any) => ({
+    id: l.id,
+    name: l.productVariant.name,
+    customFields: l.customFields
+  })));
   
   // Group order lines by bundle
   const groupedItems = groupOrderLinesByBundle(order.lines);
+  console.log('[ThankYou] Grouped items:', groupedItems);
 
   return (
     <div className="min-h-screen bg-white">
@@ -176,8 +188,16 @@ function ThankYouContent() {
             </div>
 
             {/* Order Total */}
-            <div className="border-t pt-4">
-              <div className="flex justify-between text-lg font-bold">
+            <div className="border-t pt-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Subtotal:</span>
+                <span className="text-gray-900">${subtotal}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Shipping ({shippingMethod}):</span>
+                <span className="text-gray-900">${shippingCost}</span>
+              </div>
+              <div className="flex justify-between text-lg font-bold border-t pt-2">
                 <span>Total:</span>
                 <span>${totalAmount}</span>
               </div>

@@ -13,12 +13,14 @@ import {
     Permission,
     ID,
     Order,
+    OrderLine,
     ErrorResult,
     OrderService,
     ActiveOrderService,
     ProductVariantService,
     ProductService,
     Logger,
+    TransactionalConnection,
 } from '@vendure/core';
 import { BundleService } from '../services/bundle.service';
 import { BundleOrderService } from '../services/bundle-order.service';
@@ -41,6 +43,7 @@ export class ShopApiBundleResolver {
         private activeOrderService: ActiveOrderService,
         private productVariantService: ProductVariantService,
         private productService: ProductService,
+        private connection: TransactionalConnection,
     ) {}
 
     @Query()
@@ -152,13 +155,33 @@ export class ShopApiBundleResolver {
             if (result.childLines) {
                 // Add each child component line with full bundle metadata
                 for (const childLine of result.childLines) {
-                    await this.orderService.addItemToOrder(
+                    // Step 1: Add item to order (creates OrderLine)
+                    const addResult = await this.orderService.addItemToOrder(
                         ctx,
                         activeOrder.id,
                         childLine.productVariantId!,
-                        childLine.quantity!,
-                        childLine.customFields // Contains bundleKey, bundleId, bundleName, etc.
+                        childLine.quantity!
                     );
+                    
+                    // Handle error results
+                    if ('errorCode' in addResult) {
+                        throw new Error(`Failed to add item ${childLine.productVariantId}: ${addResult.message}`);
+                    }
+                    
+                    // Step 2: Find the newly created OrderLine and update its customFields
+                    // The new line will be the one with this variant that doesn't have bundleKey yet
+                    const newLine = addResult.lines.find((line: any) => 
+                        line.productVariantId === childLine.productVariantId &&
+                        !line.customFields?.bundleKey
+                    );
+                    
+                    if (newLine && childLine.customFields) {
+                        // Update customFields directly on the OrderLine
+                        await this.connection.getRepository(ctx, OrderLine).update(
+                            newLine.id,
+                            { customFields: childLine.customFields as any }
+                        );
+                    }
                 }
             }
 

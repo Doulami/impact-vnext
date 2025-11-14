@@ -71,8 +71,17 @@ export default function OrderDetailsPage() {
   const order = (data as any).orderByCode;
   const totalAmount = (order.totalWithTax / 100).toFixed(2);
   
+  // Debug order lines
+  console.log('[OrderDetails] Raw order lines:', order.lines);
+  console.log('[OrderDetails] Order lines with customFields:', order.lines.map((l: any) => ({
+    id: l.id,
+    name: l.productVariant.name,
+    customFields: l.customFields
+  })));
+  
   // Group order lines by bundle
   const groupedItems = groupOrderLinesByBundle(order.lines);
+  console.log('[OrderDetails] Grouped items:', groupedItems);
 
   const getStatusInfo = (state: string) => {
     const statusMap: Record<string, { color: string; icon: any; label: string }> = {

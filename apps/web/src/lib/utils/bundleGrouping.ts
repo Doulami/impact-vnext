@@ -33,6 +33,7 @@ export function groupOrderLinesByBundle(
     } else {
       // Regular product line
       regularItems.push({
+        id: line.productVariant.id,
         variantId: line.productVariant.id,
         productName: line.productVariant.name,
         variantName: line.productVariant.sku,
@@ -91,9 +92,10 @@ export function groupOrderLinesByBundle(
     
     // Create bundle CartItem
     bundleItems.push({
+      id: `bundle-${bundleKey}`,
       variantId: `bundle-${bundleKey}`,
       productName: bundleMetadata?.bundleName || 'Bundle',
-      variantName: null,
+      variantName: undefined,
       price: totalBundlePrice / bundleQuantity, // Unit bundle price
       quantity: bundleQuantity,
       image: shellImage || lines[0].featuredAsset?.preview || null, // Use shell image if available

@@ -214,6 +214,8 @@ export interface Bundle {
   version: number;
   effectivePrice: number; // Computed price in cents
   totalSavings: number; // Computed savings in cents
+  validFrom?: string; // ISO date string for bundle start date
+  validTo?: string; // ISO date string for bundle end date
   shellProductId?: string;
   shellProduct?: {
     id: string;
