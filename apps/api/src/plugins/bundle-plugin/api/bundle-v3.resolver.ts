@@ -126,7 +126,17 @@ export class ShopApiBundleResolver {
             
             // Get or create active order
             let activeOrder = await this.activeOrderService.getActiveOrder(ctx, {});
-            if (!activeOrder) {
+            
+            // CRITICAL FIX: If order exists but is in wrong state, create new order
+            // This prevents ORDER_MODIFICATION_ERROR when user has stale order from previous session
+            if (activeOrder && activeOrder.state !== 'AddingItems') {
+                Logger.warn(
+                    `Active order ${activeOrder.code} is in '${activeOrder.state}' state, not 'AddingItems'. Creating new order.`,
+                    ShopApiBundleResolver.loggerCtx
+                );
+                // Create a fresh order instead of trying to reuse the stale one
+                activeOrder = await this.orderService.create(ctx, ctx.activeUserId);
+            } else if (!activeOrder) {
                 // Create a new order if none exists
                 activeOrder = await this.orderService.create(ctx, ctx.activeUserId);
             }
