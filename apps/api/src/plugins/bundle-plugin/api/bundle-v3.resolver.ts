@@ -152,6 +152,11 @@ export class ShopApiBundleResolver {
                 args.bundleId,
                 args.quantity
             );
+            
+            Logger.warn(
+                `[addBundleToOrder] BundleService result: success=${result.success}, childLines=${result.childLines?.length || 0}`,
+                ShopApiBundleResolver.loggerCtx
+            );
 
             if (!result.success) {
                 if (result.availabilityError) {
