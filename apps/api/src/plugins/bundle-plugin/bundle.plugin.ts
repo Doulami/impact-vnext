@@ -539,6 +539,12 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
                 internal: true,
             },
             {
+                name: 'bundleSlug',
+                type: 'string',
+                internal: true,
+                nullable: true,
+            },
+            {
                 name: 'bundleVersion',
                 type: 'int',
                 internal: true,
