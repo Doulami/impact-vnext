@@ -101,9 +101,17 @@ export default function CartPage() {
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-lg mb-1 line-clamp-2">
-                                  {item.productName}
-                                </h3>
+                                {item.slug ? (
+                                  <Link href={`/products/${item.slug}`}>
+                                    <h3 className="font-semibold text-lg mb-1 line-clamp-2 hover:text-[var(--brand-primary)] transition-colors cursor-pointer">
+                                      {item.productName}
+                                    </h3>
+                                  </Link>
+                                ) : (
+                                  <h3 className="font-semibold text-lg mb-1 line-clamp-2">
+                                    {item.productName}
+                                  </h3>
+                                )}
                                 {item.variantName && (
                                   <p className="text-gray-600 text-sm mb-2">
                                     Variant: {item.variantName}

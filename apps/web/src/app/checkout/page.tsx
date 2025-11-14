@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useCart } from '@/lib/hooks/useCart';
 import { useMutation, useQuery } from '@apollo/client/react';
@@ -476,7 +477,13 @@ function CheckoutPageContent() {
                             )}
                           </div>
                           <div className="flex-1">
-                            <h4 className="font-medium text-sm mb-1">{item.productName}</h4>
+                            {item.slug ? (
+                              <Link href={`/products/${item.slug}`}>
+                                <h4 className="font-medium text-sm mb-1 hover:text-[var(--brand-primary)] transition-colors cursor-pointer">{item.productName}</h4>
+                              </Link>
+                            ) : (
+                              <h4 className="font-medium text-sm mb-1">{item.productName}</h4>
+                            )}
                             {item.variantName && (
                               <p className="text-xs text-gray-500 mb-1">{item.variantName}</p>
                             )}

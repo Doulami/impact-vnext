@@ -2,6 +2,7 @@
 
 import { useCart } from '@/lib/hooks/useCart';
 import { X, ShoppingBag, Plus, Minus, Trash2 } from 'lucide-react';
+import Link from 'next/link';
 import Button from './Button';
 import ConfirmationModal from './ConfirmationModal';
 import BundleCard from './BundleCard';
@@ -119,9 +120,17 @@ export default function CartDrawer() {
 
                             {/* Product Info */}
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-sm line-clamp-2 mb-1">
-                                {item.productName}
-                              </h4>
+                              {item.slug ? (
+                                <Link href={`/products/${item.slug}`}>
+                                  <h4 className="font-medium text-sm line-clamp-2 mb-1 hover:text-[var(--brand-primary)] transition-colors cursor-pointer">
+                                    {item.productName}
+                                  </h4>
+                                </Link>
+                              ) : (
+                                <h4 className="font-medium text-sm line-clamp-2 mb-1">
+                                  {item.productName}
+                                </h4>
+                              )}
                               
                               {/* Variant name */}
                               {item.variantName && (
