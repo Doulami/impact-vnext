@@ -110,6 +110,10 @@ export class ShopApiBundleResolver {
         @Ctx() ctx: RequestContext,
         @Args() args: { bundleId: ID; quantity: number }
     ): Promise<Order> {
+        Logger.warn(
+            `[addBundleToOrder] Starting - bundleId: ${args.bundleId}, quantity: ${args.quantity}`,
+            ShopApiBundleResolver.loggerCtx
+        );
         try {
             // PHASE 4: Validate bundle availability with A_final check
             const availability = await this.bundleService.getBundleAvailability(ctx, args.bundleId);
