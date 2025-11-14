@@ -800,5 +800,7 @@ export * from './services/bundle-safety.service';
 export * from './services/bundle-lifecycle.service';
 export * from './promotions/bundle-promotion-interceptor';
 export * from './types/bundle-config.types';
-export * from './types/custom-fields';
 export * from './ui/bundle-ui-extension';
+
+// Type declarations are automatically loaded by TypeScript
+import './types/custom-fields';
