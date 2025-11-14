@@ -54,17 +54,21 @@ export class BundlePromotionSetupService implements OnModuleInit {
                 return;
             }
 
-            // Create the promotion - NO CONDITIONS (runs on all orders, action filters internally)
-            const promotion = await this.promotionService.createPromotion(ctx, {
+            // Create the promotion with a condition that always passes
+            // Vendure requires at least one condition or action
+            const promotionResult = await this.promotionService.createPromotion(ctx, {
                 enabled: true,
-                couponCode: null, // No coupon required - automatic
-                startsAt: null,
-                endsAt: null,
-                perCustomerUsageLimit: null,
-                usageLimit: null,
-                name: 'System Bundle Discount',
-                description: 'Automatically applies pre-calculated bundle discounts to bundle components',
-                conditions: [], // No conditions - action handles filtering
+                // No coupon required - automatic (omit instead of null)
+                conditions: [
+                    {
+                        // Use minimum order value of 0 - always passes
+                        code: 'minimum_order_amount',
+                        arguments: [
+                            { name: 'amount', value: '0' },
+                            { name: 'taxInclusion', value: 'include' }
+                        ]
+                    }
+                ],
                 actions: [
                     {
                         code: 'apply_bundle_line_adjustments',
@@ -80,10 +84,18 @@ export class BundlePromotionSetupService implements OnModuleInit {
                 ]
             });
 
-            Logger.info(
-                `Created system bundle discount promotion (ID: ${promotion.id})`,
-                BundlePromotionSetupService.loggerCtx
-            );
+            // Check if creation was successful
+            if ('id' in promotionResult) {
+                Logger.info(
+                    `Created system bundle discount promotion (ID: ${promotionResult.id})`,
+                    BundlePromotionSetupService.loggerCtx
+                );
+            } else {
+                Logger.error(
+                    `Failed to create promotion: ${JSON.stringify(promotionResult)}`,
+                    BundlePromotionSetupService.loggerCtx
+                );
+            }
         } catch (error) {
             Logger.error(
                 `Error creating bundle promotion: ${error instanceof Error ? error.message : String(error)}`,
@@ -100,23 +112,32 @@ export class BundlePromotionSetupService implements OnModuleInit {
         const channel = await this.channelService.getDefaultChannel();
         
         return RequestContext.deserialize({
-            _channel: channel,
+            _channel: {
+                id: channel.id,
+                code: channel.code,
+                token: channel.token,
+                defaultLanguageCode: channel.defaultLanguageCode,
+                availableLanguageCodes: channel.availableLanguageCodes,
+                defaultCurrencyCode: channel.defaultCurrencyCode,
+                availableCurrencyCodes: channel.availableCurrencyCodes,
+                pricesIncludeTax: channel.pricesIncludeTax
+            },
             _languageCode: LanguageCode.en,
             _isAuthorized: true,
             _authorizedAsOwnerOnly: false,
             _session: {
                 id: 'system',
                 token: 'system',
-                expires: new Date(Date.now() + 1000 * 60 * 60),
+                expires: Date.now() + 1000 * 60 * 60,
                 cacheExpiry: 1000 * 60 * 60,
                 user: {
-                    id: '1', // Superadmin user ID
+                    id: '1',
                     identifier: 'superadmin',
                     verified: true,
                     channelPermissions: []
                 }
             },
             _apiType: 'admin'
-        });
+        } as any); // Type assertion needed for RequestContext serialization
     }
 }
