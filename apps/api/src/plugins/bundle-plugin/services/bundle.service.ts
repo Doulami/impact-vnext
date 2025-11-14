@@ -2302,6 +2302,7 @@ export class BundleService {
                 bundleKey,
                 bundleId: bundle.id,
                 bundleName: bundle.name,
+                bundleSlug: bundle.slug, // For linking to bundle product page
                 bundleVersion: bundle.version,
                 discountType: bundle.discountType,
                 isBundleHeader: false,

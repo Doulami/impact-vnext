@@ -89,8 +89,7 @@ export function groupOrderLinesByBundle(
     // Get shell product image if available
     const shellImage = shellProductImages?.get(bundleMetadata?.bundleId) || null;
     
-    // Create bundle CartItem  
-    // TODO: Fetch bundle slug from bundleId for proper linking
+    // Create bundle CartItem
     bundleItems.push({
       variantId: `bundle-${bundleKey}`,
       productName: bundleMetadata?.bundleName || 'Bundle',
@@ -98,7 +97,7 @@ export function groupOrderLinesByBundle(
       price: totalBundlePrice / bundleQuantity, // Unit bundle price
       quantity: bundleQuantity,
       image: shellImage || lines[0].featuredAsset?.preview || null, // Use shell image if available
-      slug: '', // Bundle slug - needs to be fetched separately via bundleId
+      slug: bundleMetadata?.bundleSlug || '', // Bundle slug from customFields
       inStock: true,
       isBundle: true,
       bundleId: bundleMetadata?.bundleId,
