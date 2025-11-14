@@ -99,7 +99,7 @@ export function groupOrderLinesByBundle(
       price: totalBundlePrice / bundleQuantity, // Unit bundle price
       quantity: bundleQuantity,
       image: shellImage || lines[0].featuredAsset?.preview || null, // Use shell image if available
-      slug: bundleMetadata?.bundleSlug || '', // Bundle slug from customFields
+      slug: '', // Shell product slug should be used for navigation, not stored here
       inStock: true,
       isBundle: true,
       bundleId: bundleMetadata?.bundleId,
