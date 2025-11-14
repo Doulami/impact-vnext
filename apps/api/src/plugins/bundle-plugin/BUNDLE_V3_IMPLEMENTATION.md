@@ -1,8 +1,8 @@
 # Bundle v3 Implementation Plan
 ## Shell-Based Availability & Order Tracking
 
-**Last Updated:** 2025-11-13  
-**Status:** Phase 1-6 Complete | Phase 4 (Admin Order UI) Pending | Ready for Production Testing
+**Last Updated:** 2025-11-14  
+**Status:** Phase 1-6 Complete | Bundle Discounts Working | Phase 4 (Visual Grouping) In Progress
 
 ---
 
@@ -204,11 +204,13 @@ v3 adds a **capacity/reservation system** on the shell to control sellable quant
 **Fix Applied:**
 - Created `BundlePromotionSetupService` that auto-creates global promotion
 - Promotion named "System Bundle Discount" created on plugin init
-- No conditions (runs on all orders, action filters internally)
+- Uses `minimum_order_amount` condition (value 0) that always passes
+  - Vendure requires at least one condition
 - Uses `apply_bundle_line_adjustments` action
 - Reads `bundleAdjAmount` from customFields and applies as adjustment
 - No manual setup required - works in dev and production automatically
-- Commit: `8a65e927`
+- Fixed TypeScript compilation errors with RequestContext serialization
+- Commits: `8a65e927`, `5db18366`
 
 ### Issue 3: Component Quantities Not Visual (FIXED)
 **Problem:** Bundle component quantities didn't update when bundle qty changed
@@ -527,7 +529,34 @@ After each phase completion:
 
 ---
 
-## 🧪 Testing Checklist for Tomorrow (2025-11-14)
+## 🔧 Current Work: Visual Bundle Grouping (2025-11-14)
+
+**Goal:** Display bundle components grouped under shell product in:
+- Admin Order Details UI
+- Storefront Thank You page
+
+**Status:** Bundle discounts work flawlessly ✅ | Visual grouping for UX polish 🎨
+
+### What Works Now:
+- ✅ Bundle discounts apply correctly via promotion system
+- ✅ Orders contain only child components (no shell)
+- ✅ All metadata stored on child lines (bundleKey, bundleId, etc.)
+- ✅ Cart, checkout display bundles correctly
+- ✅ Reserved/Virtual stock tracking works
+
+### What Needs Polish:
+- 🎨 Admin Order Details: Show components grouped under shell name
+- 🎨 Thank You page: Show components grouped under shell name
+- Both are visual-only changes - backend works perfectly
+
+### Next Steps:
+1. Create visual grouping component for Admin UI
+2. Update Thank You page to show shell product header
+3. Test and commit
+
+---
+
+## 🧪 Testing Checklist (COMPLETED 2025-11-14)
 
 ### Critical: Verify Today's Fixes
 
