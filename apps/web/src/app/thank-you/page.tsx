@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useQuery } from '@apollo/client/react';
 import { GET_ORDER_FOR_CHECKOUT } from '@/lib/graphql/checkout';
