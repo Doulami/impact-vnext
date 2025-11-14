@@ -1,8 +1,33 @@
 # Bundle Promotion Guardrails & Coupon System - Implementation Plan
 
-**Status:** Planning Phase  
+**Status:** ✅ IMPLEMENTED (with known issues to investigate)  
 **Priority:** HIGH - Prevents double-discounting and over-selling  
-**Estimated Effort:** 8-12 hours
+**Completed:** November 14, 2025
+
+---
+
+## ⚠️ KNOWN ISSUES - TO BE INVESTIGATED
+
+**Date Flagged:** November 14, 2025  
+**Reporter:** User  
+**Status:** Pending investigation
+
+### Issues Identified:
+There are calculation and promotion guardrail issues that need to be investigated and fixed. Details to be provided in follow-up session.
+
+**Action Items:**
+- [ ] User to provide specific details of calculation issues
+- [ ] User to provide specific details of promotion guardrail issues
+- [ ] Investigate and diagnose root causes
+- [ ] Implement fixes
+- [ ] Add test cases for identified issues
+
+**Notes for Investigation:**
+- Focus on bundle pricing calculations in checkout
+- Verify promotion exclusion logic is working correctly
+- Check discount cap enforcement
+- Validate coupon code application with bundles
+- Test edge cases with bundle capacity + promotions
 
 ---
 
@@ -10,20 +35,31 @@
 
 This document outlines the implementation plan for activating and completing the bundle promotion guardrails system. The system prevents double-discounting when external promotions/coupons are applied to bundles and enforces bundle capacity limits (bundleCap).
 
-### What Already Exists ✅
-- **Backend Guard Logic:** Complete `BundlePromotionGuardService` with policy hierarchy
-- **Bundle Entity Field:** `allowExternalPromos` (per-bundle control)
-- **Promotion CustomFields:** `bundlePolicy`, `bundleAware`
-- **Backend Cap Validation:** `addBundleToOrder` checks bundleCap availability
-- **Interceptor Service:** `BundlePromotionInterceptor` (currently disabled)
+### Implementation Status ✅
 
-### What's Missing ❌
-- **Active Guard Enforcement:** Interceptor is commented out
-- **Frontend Coupon UI:** No coupon code input in checkout
-- **Frontend Cap Validation:** "Add to Cart" allows exceeding bundleCap
-- **Promotion Display:** Order summaries don't show applied discounts
-- **Admin UI Switch:** No UI for `allowExternalPromos` field
-- **Global Config UI:** No admin setting for `siteWidePromosAffectBundles`
+**All Phases Completed:**
+
+✅ **Phase 1:** Bundle capacity enforcement (frontend availability checks)  
+✅ **Phase 2:** Promotion guards (bundle-aware promotion actions)  
+✅ **Phase 3:** Coupon code UI (apply/remove coupons on checkout)  
+✅ **Phase 4:** Promotion display (checkout & thank you pages)  
+✅ **Phase 5:** Admin UI configuration (per-bundle + global settings)  
+
+**Key Features Implemented:**
+- Runtime-configurable global promotion policy (no server restart required)
+- Database-backed configuration via GlobalSettings custom fields
+- Bundle-aware promotion actions (`bundleAwarePercentageDiscount`, `bundleAwareFixedDiscount`)
+- Admin UI with double-guard protection for critical settings
+- Per-bundle `allowExternalPromos` toggle
+- Frontend coupon code input with apply/remove functionality
+- Comprehensive promotion display on checkout and order confirmation
+
+**Configuration Service:**
+- `BundleConfigService` reads/writes from GlobalSettings entity
+- Default values: `siteWidePromosAffectBundles: 'Exclude'`, `maxCumulativeDiscountPct: 0.50`
+- Changes take effect immediately without server restart
+
+⚠️ **Known Issues:** See section above for issues flagged for investigation
 
 ---
 
