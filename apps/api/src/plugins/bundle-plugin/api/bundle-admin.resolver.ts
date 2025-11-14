@@ -1,6 +1,7 @@
 import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
 import { Transaction, Allow, Permission, RequestContext, ID, Logger, Ctx } from '@vendure/core';
 import { BundleService } from '../services/bundle.service';
+import { BundleConfigService } from '../services/bundle-config.service';
 import { Bundle } from '../entities/bundle.entity';
 
 /**
@@ -13,7 +14,10 @@ import { Bundle } from '../entities/bundle.entity';
 export class BundleAdminResolver {
     private static readonly loggerCtx = 'BundleAdminResolver';
 
-    constructor(private bundleService: BundleService) {}
+    constructor(
+        private bundleService: BundleService,
+        private bundleConfigService: BundleConfigService
+    ) {}
 
     @Query()
     @Allow(Permission.ReadCatalog)
@@ -102,6 +106,36 @@ export class BundleAdminResolver {
                 result: 'NOT_DELETED' as any,
                 message: error instanceof Error ? error.message : 'Failed to delete bundle',
             };
+        }
+    }
+
+    /**
+     * Get current bundle configuration settings
+     */
+    @Query()
+    @Allow(Permission.ReadSettings)
+    async bundleConfig(@Ctx() ctx: RequestContext): Promise<any> {
+        return this.bundleConfigService.getConfig(ctx);
+    }
+
+    /**
+     * Update bundle configuration settings (runtime configurable)
+     */
+    @Mutation()
+    @Transaction()
+    @Allow(Permission.UpdateSettings)
+    async updateBundleConfig(
+        @Ctx() ctx: RequestContext,
+        @Args() args: { input: any }
+    ): Promise<any> {
+        try {
+            return await this.bundleConfigService.updateConfig(ctx, args.input);
+        } catch (error) {
+            throw new Error(
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to update bundle configuration'
+            );
         }
     }
 

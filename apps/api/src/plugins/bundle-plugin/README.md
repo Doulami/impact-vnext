@@ -26,19 +26,28 @@
 - Promotions system (action, condition, guard)
 - ON DELETE RESTRICT constraint
 - OrderLine customFields (all 11 fields)
+- **Bundle Promotion Guardrails & Coupon System**
+  - Bundle capacity enforcement with availability checks
+  - Bundle-aware promotion actions (percentage & fixed discount)
+  - Coupon code UI (apply/remove functionality)
+  - Promotion display on checkout and thank you pages
+  - Per-bundle allowExternalPromos toggle in Admin UI
+  - Global promotion policy settings with double-guard protection
+  - Configured safe defaults (Exclude mode, 50% max discount)
 
 ### ⚠️ What Needs Testing
 - Pricing calculations (fixed & percent)
 - Event subscribers runtime
 - Job queue execution
 - API mutations end-to-end
+- Coupon code application with bundles
+- Promotion guard enforcement
 
 ### ❌ What's Missing
 - Advanced Admin UI (0%)
   - Product shell inheritance
   - "Used in Bundles" panel
   - Replace wizard
-  - Promotion Policy UI
 - Metrics & monitoring (0%)
 - Tests (0%)
 
@@ -111,6 +120,42 @@ mutation {
 **Current**: ⚠️ **NOT production-ready** (needs testing)  
 **After Testing**: ✅ **MVP-ready** (core features work)  
 **Full Production**: Needs metrics + tests (can add post-launch)
+
+---
+
+## 🔒 Bundle Promotion Guardrails
+
+### Overview
+The Bundle Promotion Guardrails system prevents double-discounting and ensures safe interaction between bundles and external promotions/coupons.
+
+### Configuration (vendure-config.ts)
+```typescript
+BundlePlugin.init({
+  siteWidePromosAffectBundles: 'Exclude',  // 'Exclude' (safe) or 'Allow' (risky)
+  maxCumulativeDiscountPctForBundleChildren: 0.50,  // 50% max combined discount
+  guardMode: 'strict',
+  logPromotionGuardDecisions: IS_DEV
+})
+```
+
+### Per-Bundle Control
+- Each bundle has an `allowExternalPromos` toggle in Admin UI
+- `false` (default): Prevents double-discounting by blocking external promotions
+- `true`: Allows coupons on top of bundle discount (use with caution)
+
+### Global Policy Admin UI
+Access via **Admin UI > Extensions > Bundles**
+- **Double-guard protection**: Requires "Enable Editing" + confirmation checkbox
+- **Generate instructions**: Shows exact code to update vendure-config.ts
+- **Safe defaults**: Exclude mode, 50% max discount cap
+
+### Coupon System
+- **Frontend**: CouponCodeInput component on checkout page (step 3)
+- **Mutations**: `applyCouponCode`, `removeCouponCode`
+- **Display**: Shows applied coupons, discounts, and updated totals on checkout & thank you pages
+
+### Implementation Details
+See `BUNDLE_PROMOTION_GUARDRAILS_IMPLEMENTATION_PLAN.md` for complete technical documentation.
 
 ---
 

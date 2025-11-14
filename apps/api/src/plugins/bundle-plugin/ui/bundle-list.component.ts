@@ -28,7 +28,7 @@ import gql from 'graphql-tag';
         <div class="alert alert-warning mb-3">
           <clr-icon shape="exclamation-triangle" class="is-warning"></clr-icon>
           <strong>Warning:</strong> This is a critical system configuration that affects ALL bundles and promotions.
-          Changes require manual editing of <code>vendure-config.ts</code> and server restart to take effect.
+          Changes take effect immediately without server restart.
         </div>
         
         <div class="clr-row">
@@ -96,32 +96,27 @@ import gql from 'graphql-tag';
           <button 
             class="btn btn-primary" 
             *ngIf="policyEditEnabled"
-            [disabled]="!confirmUnderstand"
+            [disabled]="!confirmUnderstand || isLoading"
             (click)="saveGlobalPolicy()"
           >
-            <clr-icon shape="floppy"></clr-icon>
-            Generate Configuration Instructions
+            <clr-icon shape="floppy" *ngIf="!isLoading"></clr-icon>
+            <span *ngIf="isLoading" class="spinner spinner-inline"></span>
+            {{ isLoading ? 'Saving...' : 'Save Configuration' }}
           </button>
           
           <button 
             class="btn btn-link" 
             *ngIf="policyEditEnabled"
+            [disabled]="isLoading"
             (click)="cancelPolicyEdit()"
           >
             Cancel
           </button>
         </div>
         
-        <div *ngIf="configInstructions" class="alert alert-info mt-3">
-          <h4>Configuration Instructions:</h4>
-          <p>Edit <code>apps/api/src/vendure-config.ts</code> and update the BundlePlugin.init() configuration:</p>
-          <pre style="background: #f4f4f4; padding: 10px; border-radius: 4px;">BundlePlugin.init({{
-  siteWidePromosAffectBundles: '{{globalPolicy}}',
-  maxCumulativeDiscountPctForBundleChildren: {{maxDiscountPercent / 100}},
-  guardMode: 'strict',
-  logPromotionGuardDecisions: IS_DEV
-}})</pre>
-          <p class="mt-2"><strong>Important:</strong> Restart the server after making these changes.</p>
+        <div *ngIf="policyEditEnabled" class="alert alert-success mt-3">
+          <clr-icon shape="check-circle" class="is-success"></clr-icon>
+          <strong>Live Configuration:</strong> Changes will take effect immediately without server restart.
         </div>
       </vdr-card>
     </vdr-page-block>
@@ -171,7 +166,7 @@ export class BundleListComponent implements OnInit {
   maxDiscountPercent: number = 50;
   policyEditEnabled: boolean = false;
   confirmUnderstand: boolean = false;
-  configInstructions: boolean = false;
+  isLoading: boolean = false;
 
   constructor(
     private dataService: DataService,
@@ -182,6 +177,7 @@ export class BundleListComponent implements OnInit {
 
   ngOnInit() {
     this.loadBundles();
+    this.loadBundleConfig();
   }
 
   loadBundles() {
@@ -258,10 +254,30 @@ export class BundleListComponent implements OnInit {
     }
   }
 
+  loadBundleConfig() {
+    const query = gql`
+      query GetBundleConfig {
+        bundleConfig {
+          siteWidePromosAffectBundles
+          maxCumulativeDiscountPctForBundleChildren
+        }
+      }
+    `;
+
+    this.dataService.query(query).single$.subscribe({
+      next: (data: any) => {
+        this.globalPolicy = data.bundleConfig.siteWidePromosAffectBundles;
+        this.maxDiscountPercent = data.bundleConfig.maxCumulativeDiscountPctForBundleChildren * 100;
+      },
+      error: (err) => {
+        console.error('Failed to load bundle config:', err);
+      },
+    });
+  }
+
   enablePolicyEdit() {
     this.policyEditEnabled = true;
     this.confirmUnderstand = false;
-    this.configInstructions = false;
     this.notificationService.warning(
       'You are about to modify critical system configuration. Proceed with caution.'
     );
@@ -270,10 +286,7 @@ export class BundleListComponent implements OnInit {
   cancelPolicyEdit() {
     this.policyEditEnabled = false;
     this.confirmUnderstand = false;
-    this.configInstructions = false;
-    // Reset to current config values
-    this.globalPolicy = 'Exclude';
-    this.maxDiscountPercent = 50;
+    this.loadBundleConfig(); // Reset to current database values
   }
 
   saveGlobalPolicy() {
@@ -282,9 +295,39 @@ export class BundleListComponent implements OnInit {
       return;
     }
 
-    this.configInstructions = true;
-    this.notificationService.success(
-      'Configuration instructions generated. Follow the steps below to update your vendure-config.ts file.'
-    );
+    this.isLoading = true;
+
+    const mutation = gql`
+      mutation UpdateBundleConfig($input: UpdateBundleConfigInput!) {
+        updateBundleConfig(input: $input) {
+          siteWidePromosAffectBundles
+          maxCumulativeDiscountPctForBundleChildren
+        }
+      }
+    `;
+
+    this.dataService
+      .mutate(mutation, {
+        input: {
+          siteWidePromosAffectBundles: this.globalPolicy,
+          maxCumulativeDiscountPctForBundleChildren: this.maxDiscountPercent / 100,
+        },
+      })
+      .subscribe({
+        next: (result: any) => {
+          this.isLoading = false;
+          this.policyEditEnabled = false;
+          this.confirmUnderstand = false;
+          this.notificationService.success(
+            'Bundle configuration updated successfully. Changes are now active (no restart required).'
+          );
+          this.loadBundleConfig();
+        },
+        error: (err) => {
+          this.isLoading = false;
+          this.notificationService.error('Failed to update bundle configuration');
+          console.error(err);
+        },
+      });
   }
 }

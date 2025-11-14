@@ -6,6 +6,7 @@ import { BundleItem } from './entities/bundle-item.entity';
 import { BundleService } from './services/bundle.service';
 import { BundleOrderService } from './services/bundle-order.service';
 import { BundlePromotionGuardService } from './services/bundle-promotion-guard.service';
+import { BundleConfigService } from './services/bundle-config.service';
 // import { BundlePromotionInterceptor } from './promotions/bundle-promotion-interceptor'; // Disabled - requires core module access
 import { BundleSafetyService } from './services/bundle-safety.service';
 import { BundleLifecycleService } from './services/bundle-lifecycle.service';
@@ -51,6 +52,7 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
         BundleService, 
         BundleOrderService,
         BundlePromotionGuardService,
+        BundleConfigService,
         // BundlePromotionInterceptor, // Disabled - requires access to PromotionService from core
         BundleSafetyService,
         BundleLifecycleService,
@@ -519,6 +521,24 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
                 updateSearch: Boolean
                 reason: String
             }
+            
+            type BundleConfig {
+                siteWidePromosAffectBundles: String!
+                maxCumulativeDiscountPctForBundleChildren: Float!
+            }
+            
+            input UpdateBundleConfigInput {
+                siteWidePromosAffectBundles: String
+                maxCumulativeDiscountPctForBundleChildren: Float
+            }
+            
+            extend type Query {
+                bundleConfig: BundleConfig!
+            }
+            
+            extend type Mutation {
+                updateBundleConfig(input: UpdateBundleConfigInput!): BundleConfig!
+            }
         `,
     },
 
@@ -643,6 +663,50 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
                 internal: true,
                 nullable: true,
             },
+        ];
+        
+        // Add custom fields to GlobalSettings for runtime configuration
+        config.customFields.GlobalSettings = [
+            ...(config.customFields.GlobalSettings || []),
+            {
+                name: 'bundleSiteWidePromosAffectBundles',
+                type: 'string',
+                options: [
+                    { value: 'Exclude' },
+                    { value: 'Allow' }
+                ],
+                defaultValue: 'Exclude',
+                label: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Site-wide Promotions Affect Bundles'
+                }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Whether external promotions and coupon codes can apply to bundles (Exclude = safe, Allow = risky)'
+                }],
+                public: false,
+                internal: true
+            },
+            {
+                name: 'bundleMaxCumulativeDiscountPct',
+                type: 'float',
+                defaultValue: 0.50,
+                label: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Bundle Max Cumulative Discount (%)'
+                }],
+                description: [{
+                    languageCode: LanguageCode.en,
+                    value: 'Maximum combined discount percentage allowed on bundle child items (e.g., 0.50 = 50%)'
+                }],
+                public: false,
+                internal: true,
+                validate: (value: number) => {
+                    if (value < 0 || value > 1) {
+                        return 'Must be between 0 and 1 (e.g., 0.50 for 50%)';
+                    }
+                }
+            }
         ];
         
         // Add custom fields to Promotion for bundle promotion policies

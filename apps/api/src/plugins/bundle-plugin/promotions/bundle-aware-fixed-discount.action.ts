@@ -3,8 +3,10 @@ import {
     PromotionOrderAction,
 } from '@vendure/core';
 import { BundlePromotionGuardService } from '../services/bundle-promotion-guard.service';
+import { BundleConfigService } from '../services/bundle-config.service';
 
 let guardService: BundlePromotionGuardService;
+let configService: BundleConfigService;
 
 export const bundleAwareFixedDiscount = new PromotionOrderAction({
     code: 'bundle_aware_fixed_discount',
@@ -24,10 +26,14 @@ export const bundleAwareFixedDiscount = new PromotionOrderAction({
     
     init(injector) {
         guardService = injector.get(BundlePromotionGuardService);
+        configService = injector.get(BundleConfigService);
     },
     
     async execute(ctx, order, args) {
-        // Filter out bundle lines that shouldn't receive external promotions
+        // Get current configuration from database
+        const config = await configService.getConfig(ctx);
+        
+        // Filter out bundle lines based on global policy
         const eligibleLines = order.lines.filter(line => {
             const customFields = (line as any).customFields;
             
@@ -36,8 +42,12 @@ export const bundleAwareFixedDiscount = new PromotionOrderAction({
                 return true;
             }
             
-            // For bundle lines, check if external promos are allowed
-            // For now, we'll be conservative and exclude bundle lines by default
+            // Check global policy setting
+            if (config.siteWidePromosAffectBundles === 'Allow') {
+                return true; // Allow all bundle lines if policy is 'Allow'
+            }
+            
+            // If policy is 'Exclude' (default), exclude bundle lines
             return false;
         });
         
