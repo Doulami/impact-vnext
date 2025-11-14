@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
 import { APPLY_COUPON_CODE, REMOVE_COUPON_CODE } from '@/lib/graphql/checkout';
 import Button from './Button';
 import { X } from 'lucide-react';
