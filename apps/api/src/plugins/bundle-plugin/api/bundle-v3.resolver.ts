@@ -186,7 +186,7 @@ export class ShopApiBundleResolver {
                     );
                     
                     if (newLine && childLine.customFields) {
-                        Logger.log(
+                        Logger.verbose(
                             `Updating OrderLine ${newLine.id} with customFields: ${JSON.stringify(childLine.customFields)}`,
                             ShopApiBundleResolver.loggerCtx
                         );
@@ -195,7 +195,7 @@ export class ShopApiBundleResolver {
                             newLine.id,
                             { customFields: childLine.customFields as any }
                         );
-                        Logger.log(`OrderLine ${newLine.id} customFields updated successfully`, ShopApiBundleResolver.loggerCtx);
+                        Logger.verbose(`OrderLine ${newLine.id} customFields updated successfully`, ShopApiBundleResolver.loggerCtx);
                     } else {
                         Logger.warn(
                             `Could not update customFields: newLine=${!!newLine}, hasCustomFields=${!!childLine.customFields}`,
