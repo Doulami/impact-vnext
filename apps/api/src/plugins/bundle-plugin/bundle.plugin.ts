@@ -802,5 +802,4 @@ export * from './promotions/bundle-promotion-interceptor';
 export * from './types/bundle-config.types';
 export * from './ui/bundle-ui-extension';
 
-// Type declarations are automatically loaded by TypeScript
-import './types/custom-fields';
+// Type declarations in types/custom-fields.d.ts are automatically loaded by TypeScript
