@@ -402,3 +402,35 @@ export const GET_COLLECTION = gql`
     }
   }
 `;
+
+// Get products with Bundle facet (for related products on bundle pages)
+export const GET_BUNDLE_PRODUCTS = gql`
+  query GetBundleProducts($facetValueIds: [String!]!, $take: Int) {
+    search(input: {
+      facetValueIds: $facetValueIds,
+      take: $take,
+      groupByProduct: true
+    }) {
+      items {
+        productId
+        productName
+        slug
+        description
+        priceWithTax {
+          ... on SinglePrice {
+            value
+          }
+          ... on PriceRange {
+            min
+            max
+          }
+        }
+        productAsset {
+          id
+          preview
+        }
+        inStock
+      }
+    }
+  }
+`;

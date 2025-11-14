@@ -874,8 +874,11 @@ export class BundleService {
             }
             
             // Prepare asset updates for shell product
-            const assetIds = bundle.assets?.map(a => a.id) || [];
             const featuredAssetId = bundle.featuredAsset?.id;
+            // Exclude featured asset from assetIds to prevent duplication
+            const assetIds = (bundle.assets || [])
+                .filter(a => a.id !== featuredAssetId)
+                .map(a => a.id);
             
             // Update shell product with bundle assets
             await this.productService.update(ctx, {

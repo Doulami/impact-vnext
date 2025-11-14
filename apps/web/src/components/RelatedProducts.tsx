@@ -1,36 +1,45 @@
 'use client';
 
-import { useQuery, useLazyQuery, useMutation } from '@apollo/client/react';
-import { GET_RELATED_PRODUCTS, GET_PRODUCT_BY_SLUG } from '@/lib/graphql/queries';
-import { ADD_BUNDLE_TO_ORDER } from '@/lib/graphql/checkout';
-import { Star, ChevronLeft, ChevronRight, Package } from 'lucide-react';
+import { useQuery } from '@apollo/client/react';
+import { GET_RELATED_PRODUCTS, GET_BUNDLES } from '@/lib/graphql/queries';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useRef } from 'react';
-import { useCart } from '@/lib/hooks/useCart';
+import { ProductCard } from './ProductCard';
 
 interface RelatedProductsProps {
   currentProductId: string;
   collections?: Array<{ id: string; name: string; slug: string }>;
+  isCurrentProductBundle?: boolean;
 }
 
-export function RelatedProducts({ currentProductId, collections }: RelatedProductsProps) {
+export function RelatedProducts({ currentProductId, collections, isCurrentProductBundle }: RelatedProductsProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { addItem, openCart } = useCart();
-  const [getProductBySlug] = useLazyQuery(GET_PRODUCT_BY_SLUG);
-  const [addBundleToOrder] = useMutation(ADD_BUNDLE_TO_ORDER);
   
-  // Determine which collection to query:
-  // - If product is in "featured" collection, show featured products
-  // - Otherwise, show products from the first non-featured collection
+  // If current product is a bundle, query other bundle products via facet
+  // Otherwise, use collection-based related products
   const isFeatured = collections?.some(c => c.slug === 'featured');
   const collectionSlug = isFeatured 
     ? 'featured'
     : collections?.find(c => c.slug !== 'featured')?.slug;
   
-  console.log('[RelatedProducts] Props:', { currentProductId, collections, isFeatured, collectionSlug });
+  console.log('[RelatedProducts] Props:', { currentProductId, collections, isFeatured, collectionSlug, isCurrentProductBundle });
   
-  // Query products from the determined collection
-  const { data, loading, error } = useQuery<{
+  // Query bundle products if current is a bundle (same as bundles listing page)
+  const { data: bundleData, loading: bundleLoading, error: bundleError } = useQuery(GET_BUNDLES, {
+    variables: {
+      options: {
+        take: 9, // Take 9 to exclude current and show 8
+        filter: {
+          status: { eq: 'ACTIVE' } // Only show active bundles
+        }
+      }
+    },
+    skip: !isCurrentProductBundle
+  });
+  
+  // Query products from collection if NOT a bundle
+  const { data: collectionData, loading: collectionLoading, error: collectionError } = useQuery<{
     collection: {
       id: string;
       name: string;
@@ -67,36 +76,65 @@ export function RelatedProducts({ currentProductId, collections }: RelatedProduc
     variables: {
       collectionSlug: collectionSlug || 'all-products'
     },
-    skip: !collectionSlug // Don't query if no collection provided
+    skip: isCurrentProductBundle || !collectionSlug // Skip if bundle or no collection
   });
 
-  console.log('[RelatedProducts] Query result:', { data, loading, error, skip: !collectionSlug });
+  const data = isCurrentProductBundle ? bundleData : collectionData;
+  const loading = isCurrentProductBundle ? bundleLoading : collectionLoading;
+  const error = isCurrentProductBundle ? bundleError : collectionError;
   
-  // Convert collection variants to product cards, excluding current product
-  const variants = (data?.collection?.productVariants?.items || []);
-  const relatedProducts = variants
-    .filter((v: any) => v.product.id !== currentProductId) // Exclude current product
-    .slice(0, 8) // Limit to 8 products
-    .map((v: any) => {
-      // Check if product is a bundle via customFields
-      const isBundle = v.product?.customFields?.isBundle === true;
-      const bundleId = v.product?.customFields?.bundleId;
-      
-      return {
-        id: v.id,
-        productId: v.product.id,
-        name: v.product.name,
-        slug: v.product.slug,
-        description: v.product.description,
-        image: v.product.featuredAsset?.preview,
-        priceWithTax: v.priceWithTax,
-        inStock: v.stockLevel !== 'OUT_OF_STOCK',
-        rating: 4.5,
-        reviews: 0,
-        isBundle,
-        bundleId
-      };
-    });
+  console.log('[RelatedProducts] Query result:', { data, loading, error, isCurrentProductBundle });
+  
+  // Convert data to product cards based on query type
+  let relatedProducts: any[] = [];
+  
+  if (isCurrentProductBundle && data?.bundles?.items) {
+    // Handle bundles query results (same structure as bundles listing)
+    relatedProducts = data.bundles.items
+      .filter((bundle: any) => bundle.id !== currentProductId)
+      .slice(0, 8)
+      .map((bundle: any) => {
+        return {
+          id: bundle.shellProduct?.id || bundle.id,
+          productId: bundle.shellProduct?.id || bundle.id,
+          name: bundle.name,
+          slug: bundle.shellProduct?.slug || bundle.slug,
+          description: bundle.description,
+          image: bundle.featuredAsset?.preview,
+          priceWithTax: bundle.effectivePrice, // Bundle price in cents
+          inStock: bundle.status === 'ACTIVE',
+          rating: 4.5,
+          reviews: 0,
+          isBundle: true,
+          bundleId: bundle.id
+        };
+      });
+  } else if (data?.collection?.productVariants?.items) {
+    // Handle collection results
+    const variants = data.collection.productVariants.items;
+    relatedProducts = variants
+      .filter((v: any) => v.product.id !== currentProductId)
+      .slice(0, 8)
+      .map((v: any) => {
+        const isBundle = v.product?.customFields?.isBundle === true;
+        const bundleId = v.product?.customFields?.bundleId;
+        
+        return {
+          id: v.id,
+          productId: v.product.id,
+          name: v.product.name,
+          slug: v.product.slug,
+          description: v.product.description,
+          image: v.product.featuredAsset?.preview,
+          priceWithTax: v.priceWithTax,
+          inStock: v.stockLevel !== 'OUT_OF_STOCK',
+          rating: 4.5,
+          reviews: 0,
+          isBundle,
+          bundleId
+        };
+      });
+  }
 
   const scrollLeft = () => {
     if (scrollRef.current) {
@@ -162,106 +200,7 @@ export function RelatedProducts({ currentProductId, collections }: RelatedProduc
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {relatedProducts.map((product) => (
-          <Link
-            key={product.id}
-            href={`/products/${product.slug}`}
-            className="flex-shrink-0 w-64 bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow group"
-          >
-            <div className="aspect-square bg-gray-50 relative overflow-hidden">
-              {product.image ? (
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-4xl">
-                  🏋️
-                </div>
-              )}
-              {/* Bundle Badge */}
-              {product.isBundle && (
-                <div className="absolute top-2 left-2 bg-[var(--brand-primary)] text-white px-2 py-1 rounded text-xs font-medium flex items-center gap-1">
-                  <Package className="w-3 h-3" />
-                  Bundle
-                </div>
-              )}
-              {!product.inStock && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  <span className="bg-white px-3 py-1 text-xs font-bold rounded">
-                    OUT OF STOCK
-                  </span>
-                </div>
-              )}
-            </div>
-            
-            <div className="p-4">
-              <h3 className="font-semibold text-sm mb-2 line-clamp-2 group-hover:text-blue-600">
-                {product.name}
-              </h3>
-              
-              <div className="flex items-center gap-1 mb-3">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-3 h-3 ${
-                      i < Math.floor(product.rating || 4.5)
-                        ? 'text-yellow-400 fill-current'
-                        : 'text-gray-300'
-                    }`}
-                  />
-                ))}
-                <span className="text-xs text-gray-500 ml-1">
-                  ({product.reviews || 0})
-                </span>
-              </div>
-              
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-sm">
-                  ${(product.priceWithTax / 100).toFixed(2)}
-                </span>
-                
-                {product.inStock && (
-                  <button
-                    onClick={async (e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      
-                      if (product.isBundle && product.bundleId) {
-                        // Add bundle via proper mutation
-                        try {
-                          await addBundleToOrder({
-                            variables: {
-                              bundleId: product.bundleId,
-                              quantity: 1
-                            }
-                          });
-                          openCart();
-                        } catch (err) {
-                          console.error('Error adding bundle to cart:', err);
-                        }
-                      } else {
-                        // Add regular product to cart
-                        addItem({
-                          id: product.id,
-                          variantId: product.id,
-                          productName: product.name,
-                          price: product.priceWithTax,
-                          image: product.image,
-                          slug: product.slug,
-                          inStock: product.inStock,
-                        });
-                        openCart();
-                      }
-                    }}
-                    className="bg-black text-white px-3 py-1 text-xs font-medium hover:bg-gray-800 transition-colors"
-                  >
-                    {product.isBundle ? 'Add Bundle' : 'Quick Add'}
-                  </button>
-                )}
-              </div>
-            </div>
-          </Link>
+          <ProductCard key={product.id} product={product} />
         ))}
       </div>
       

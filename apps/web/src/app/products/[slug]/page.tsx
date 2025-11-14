@@ -102,11 +102,14 @@ export default function ProductDetailPage() {
   }
 
   // Get images from product (works for both regular products and bundle shells)
-  const images = [
+  const allImages = [
     product?.featuredAsset?.preview,
     ...(product?.assets?.map(a => a.preview) || []),
     ...(product?.variants.map(v => v.featuredAsset?.preview).filter(Boolean) || [])
   ].filter(Boolean) as string[];
+  
+  // Deduplicate images by URL
+  const images = Array.from(new Set(allImages));
 
   const handleQuantityChange = (delta: number) => {
     setQuantity(Math.max(1, quantity + delta));
@@ -527,12 +530,13 @@ export default function ProductDetailPage() {
           />
         </div>
 
-        {/* Related Products - automatically shows featured or collection-based products */}
-        {!isBundle && product && (
+        {/* Related Products - shows collection-based for products, bundle facet for bundles */}
+        {product && (
           <div className="mt-16">
             <RelatedProducts 
               currentProductId={product.id}
               collections={product.collections}
+              isCurrentProductBundle={isBundle}
             />
           </div>
         )}
