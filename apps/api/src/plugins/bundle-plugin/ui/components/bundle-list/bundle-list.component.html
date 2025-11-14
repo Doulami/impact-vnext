@@ -21,6 +21,81 @@
     </vdr-ab-right>
 </vdr-action-bar>
 
+<!-- Global Bundle Promotion Settings -->
+<vdr-card class="mb-4">
+    <div class="clr-row">
+        <div class="clr-col-12">
+            <h3 class="mb-3">Global Promotion Policy</h3>
+            <p class="text-muted small mb-3">
+                Control how external promotions and coupon codes interact with bundles site-wide.
+            </p>
+        </div>
+    </div>
+    
+    <div class="clr-row">
+        <div class="clr-col-md-6">
+            <vdr-form-field 
+                label="Site-wide Promotion Policy" 
+                for="siteWidePromosAffectBundles"
+                tooltip="Default behavior for external promotions on bundles">
+                <select 
+                    clrSelect
+                    id="siteWidePromosAffectBundles"
+                    [(ngModel)]="globalPolicy"
+                    (change)="onGlobalPolicyChange()"
+                >
+                    <option value="Exclude">Exclude (Safe - Prevents double-discounting)</option>
+                    <option value="Allow">Allow (Risky - May cause double-discounting)</option>
+                </select>
+                <div class="help-text mt-2">
+                    <p *ngIf="globalPolicy === 'Exclude'" class="text-success mb-0">
+                        <clr-icon shape="shield-check"></clr-icon>
+                        <strong>Recommended:</strong> External promotions will NOT apply to bundles by default.
+                    </p>
+                    <p *ngIf="globalPolicy === 'Allow'" class="text-warning mb-0">
+                        <clr-icon shape="exclamation-triangle"></clr-icon>
+                        <strong>Warning:</strong> May cause double-discounting. Use per-bundle controls to prevent issues.
+                    </p>
+                </div>
+            </vdr-form-field>
+        </div>
+        
+        <div class="clr-col-md-6">
+            <vdr-form-field 
+                label="Maximum Discount Cap" 
+                for="maxCumulativeDiscount"
+                tooltip="Maximum combined discount percentage allowed (bundle + external promos)">
+                <div class="input-group">
+                    <input 
+                        type="number" 
+                        id="maxCumulativeDiscount"
+                        [(ngModel)]="maxDiscountPercent"
+                        (change)="onMaxDiscountChange()"
+                        min="0"
+                        max="100"
+                        step="5"
+                    />
+                    <span class="input-group-text">%</span>
+                </div>
+                <div class="help-text mt-2">
+                    <p class="text-muted small mb-0">
+                        Current: <strong>{{maxDiscountPercent}}%</strong> maximum combined discount
+                    </p>
+                </div>
+            </vdr-form-field>
+        </div>
+    </div>
+    
+    <div class="clr-row mt-3" *ngIf="configDirty">
+        <div class="clr-col-12">
+            <div class="alert alert-warning">
+                <clr-icon shape="info-circle"></clr-icon>
+                <strong>Note:</strong> These settings require server restart to take effect. Changes are saved to configuration file.
+            </div>
+        </div>
+    </div>
+</vdr-card>
+
 <vdr-data-table-2
     id="bundle-list"
     [items]="items$ | async"

@@ -15,12 +15,14 @@ import {
   TRANSITION_TO_ARRANGING_PAYMENT,
   ADD_PAYMENT_TO_ORDER,
   GET_ACTIVE_ORDER_STATE,
+  GET_ACTIVE_ORDER,
   REMOVE_ORDER_LINE
 } from '@/lib/graphql/checkout';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Button from '@/components/Button';
 import BundleCard from '@/components/BundleCard';
+import CouponCodeInput from '@/components/CouponCodeInput';
 import { Package, CreditCard, CheckCircle, AlertCircle, ShoppingCart } from 'lucide-react';
 
 function CheckoutPageContent() {
@@ -59,6 +61,10 @@ function CheckoutPageContent() {
 
   const { data: shippingMethodsData, loading: shippingMethodsLoading, error: shippingMethodsError } = useQuery(GET_ELIGIBLE_SHIPPING_METHODS, {
     skip: currentStep !== 2
+  });
+
+  const { data: activeOrderData, refetch: refetchActiveOrder } = useQuery(GET_ACTIVE_ORDER, {
+    skip: currentStep !== 3
   });
 
   const [selectedShippingMethod, setSelectedShippingMethod] = useState('');
@@ -492,7 +498,7 @@ function CheckoutPageContent() {
                   <ShoppingCart className="w-5 h-5" />
                   Order Summary
                 </h2>
-                <div className="space-y-4">
+                <div className="space-y-4 mb-6">
                   {items.map((item) => (
                     <div key={item.variantId} className="pb-4 border-b last:border-b-0">
                       {item.isBundle ? (
@@ -539,6 +545,15 @@ function CheckoutPageContent() {
                     </div>
                   ))}
                 </div>
+                
+                {/* Coupon Code Section */}
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-semibold mb-3">Have a Coupon Code?</h3>
+                  <CouponCodeInput
+                    appliedCoupons={activeOrderData?.activeOrder?.couponCodes || []}
+                    onSuccess={() => refetchActiveOrder()}
+                  />
+                </div>
               </div>
 
               {/* Payment Method */}
@@ -560,12 +575,21 @@ function CheckoutPageContent() {
                 <div className="bg-gray-100 rounded-lg p-4 mb-6">
                   <div className="flex justify-between mb-2 text-sm">
                     <span className="text-gray-600">Subtotal:</span>
-                    <span className="text-gray-900">${(totalPrice / 100).toFixed(2)}</span>
+                    <span className="text-gray-900">${((activeOrderData?.activeOrder?.subTotalWithTax || totalPrice) / 100).toFixed(2)}</span>
                   </div>
+                  
+                  {/* Show discounts if any */}
+                  {activeOrderData?.activeOrder?.discounts?.map((discount: any, idx: number) => (
+                    <div key={idx} className="flex justify-between mb-2 text-sm text-green-600">
+                      <span>{discount.description}</span>
+                      <span>-${(discount.amountWithTax / 100).toFixed(2)}</span>
+                    </div>
+                  ))}
+                  
                   {(() => {
                     const selectedMethod = shippingMethods.find((m: any) => m.id === selectedShippingMethod);
                     const shippingCost = selectedMethod?.priceWithTax || 0;
-                    const total = totalPrice + shippingCost;
+                    const orderTotal = activeOrderData?.activeOrder?.totalWithTax || (totalPrice + shippingCost);
                     return (
                       <>
                         <div className="flex justify-between mb-2 text-sm">
@@ -574,7 +598,7 @@ function CheckoutPageContent() {
                         </div>
                         <div className="flex justify-between font-bold text-lg border-t pt-2">
                           <span>Total:</span>
-                          <span>${(total / 100).toFixed(2)}</span>
+                          <span>${(orderTotal / 100).toFixed(2)}</span>
                         </div>
                       </>
                     );

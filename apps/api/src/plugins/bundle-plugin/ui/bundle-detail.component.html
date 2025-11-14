@@ -192,6 +192,29 @@
                         step="1"
                     />
                 </vdr-form-field>
+                
+                <!-- Promotion Policy Section -->
+                <vdr-form-field 
+                    [label]="'Allow external promotions' | translate" 
+                    for="allowExternalPromos"
+                    tooltip="Allow external promotion codes/coupons to be applied to this bundle">
+                    <clr-toggle-wrapper>
+                        <input 
+                            type="checkbox" 
+                            clrToggle 
+                            id="allowExternalPromos"
+                            formControlName="allowExternalPromos"
+                        />
+                    </clr-toggle-wrapper>
+                    <div class="help-text" style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">
+                        <p style="margin: 0.25rem 0;">
+                            <strong>OFF:</strong> Promotion codes and coupons will NOT apply to this bundle (prevents double-discounting).
+                        </p>
+                        <p style="margin: 0.25rem 0;">
+                            <strong>ON:</strong> External promotions can apply (bundle discount + promo discount).
+                        </p>
+                    </div>
+                </vdr-form-field>
 
                 <!-- Phase 2 v3: Reservation System Display (Read-only) -->
                 <vdr-form-field 

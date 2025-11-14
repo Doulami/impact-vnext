@@ -9,7 +9,13 @@ export const GET_ACTIVE_ORDER = gql`
       state
       total
       totalWithTax
+      subTotalWithTax
       currencyCode
+      couponCodes
+      discounts {
+        description
+        amountWithTax
+      }
       lines {
         id
         quantity
@@ -328,6 +334,59 @@ export const ADD_PAYMENT_TO_ORDER = gql`
   }
 `;
 
+// Coupon code mutations
+export const APPLY_COUPON_CODE = gql`
+  mutation ApplyCouponCode($couponCode: String!) {
+    applyCouponCode(couponCode: $couponCode) {
+      ... on Order {
+        id
+        code
+        couponCodes
+        discounts {
+          description
+          amountWithTax
+        }
+        subTotalWithTax
+        totalWithTax
+      }
+      ... on CouponCodeInvalidError {
+        errorCode
+        message
+        couponCode
+      }
+      ... on CouponCodeExpiredError {
+        errorCode
+        message
+        couponCode
+      }
+      ... on CouponCodeLimitError {
+        errorCode
+        message
+        couponCode
+        limit
+      }
+    }
+  }
+`;
+
+export const REMOVE_COUPON_CODE = gql`
+  mutation RemoveCouponCode($couponCode: String!) {
+    removeCouponCode(couponCode: $couponCode) {
+      ... on Order {
+        id
+        code
+        couponCodes
+        discounts {
+          description
+          amountWithTax
+        }
+        subTotalWithTax
+        totalWithTax
+      }
+    }
+  }
+`;
+
 // Bundle Plugin v2 mutations
 // Bundles explode into header line (shell) + child lines (components) at checkout
 
@@ -362,6 +421,12 @@ export const GET_ORDER_FOR_CHECKOUT = gql`
       orderPlacedAt
       total
       totalWithTax
+      subTotalWithTax
+      couponCodes
+      discounts {
+        description
+        amountWithTax
+      }
       currencyCode
       customer {
         firstName

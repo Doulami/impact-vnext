@@ -155,8 +155,20 @@ export const config: VendureConfig = {
         }),
         // Custom plugin for manual customer verification
         CustomerAdminVerificationPlugin,
-        // Bundle Plugin for product bundles
-        BundlePlugin,
+        // Bundle Plugin for product bundles with promotion guardrails
+        BundlePlugin.init({
+            // GLOBAL POLICY: Prevent double-discounting by default
+            siteWidePromosAffectBundles: 'Exclude',
+            
+            // Optional: Set discount cap (50% max total discount)
+            maxCumulativeDiscountPctForBundleChildren: 0.50,
+            
+            // Enable logging for debugging (set to false in production)
+            logPromotionGuardDecisions: IS_DEV,
+            
+            // Guard mode: strict prevents double-discounting
+            guardMode: 'strict',
+        }),
         // Auto-create Featured collection
         FeaturedCollectionPlugin,
     ],

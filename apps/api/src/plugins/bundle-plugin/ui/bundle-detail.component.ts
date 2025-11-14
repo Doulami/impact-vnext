@@ -45,6 +45,7 @@ const GET_BUNDLE = gql`
             validFrom
             validTo
             bundleCap
+            allowExternalPromos
             bundleReservedOpen
             bundleVirtualStock
             shellProductId
@@ -209,6 +210,7 @@ export class BundleDetailComponent implements OnInit {
             validFrom: [null],
             validTo: [null],
             bundleCap: [null],
+            allowExternalPromos: [false],
             items: this.formBuilder.array([]),
         });
     }
@@ -319,6 +321,7 @@ export class BundleDetailComponent implements OnInit {
                 validFrom: bundle.validFrom ? new Date(bundle.validFrom).toISOString().slice(0, 16) : null,
                 validTo: bundle.validTo ? new Date(bundle.validTo).toISOString().slice(0, 16) : null,
                 bundleCap: bundle.bundleCap || null,
+                allowExternalPromos: bundle.allowExternalPromos ?? false,
             });
             
             // Load assets - always set to ensure proper binding
@@ -421,6 +424,7 @@ export class BundleDetailComponent implements OnInit {
                 validFrom: formValue.validFrom ? new Date(formValue.validFrom).toISOString() : undefined,
                 validTo: formValue.validTo ? new Date(formValue.validTo).toISOString() : undefined,
                 bundleCap: formValue.bundleCap ? parseInt(formValue.bundleCap, 10) : undefined,
+                allowExternalPromos: formValue.allowExternalPromos ?? false,
                 items,
             };
             
@@ -456,6 +460,7 @@ export class BundleDetailComponent implements OnInit {
                 validFrom: formValue.validFrom ? new Date(formValue.validFrom).toISOString() : undefined,
                 validTo: formValue.validTo ? new Date(formValue.validTo).toISOString() : undefined,
                 bundleCap: formValue.bundleCap ? parseInt(formValue.bundleCap, 10) : undefined,
+                allowExternalPromos: formValue.allowExternalPromos ?? false,
                 items,
             };
             

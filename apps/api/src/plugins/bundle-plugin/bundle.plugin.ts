@@ -6,7 +6,7 @@ import { BundleItem } from './entities/bundle-item.entity';
 import { BundleService } from './services/bundle.service';
 import { BundleOrderService } from './services/bundle-order.service';
 import { BundlePromotionGuardService } from './services/bundle-promotion-guard.service';
-// import { BundlePromotionInterceptor } from './promotions/bundle-promotion-interceptor'; // Temporarily disabled
+// import { BundlePromotionInterceptor } from './promotions/bundle-promotion-interceptor'; // Disabled - requires core module access
 import { BundleSafetyService } from './services/bundle-safety.service';
 import { BundleLifecycleService } from './services/bundle-lifecycle.service';
 import { BundleReservationService } from './services/bundle-reservation.service';
@@ -14,8 +14,11 @@ import { BundlePromotionSetupService } from './services/bundle-promotion-setup.s
 import { ShopApiBundleResolver, AdminApiBundleResolver } from './api/bundle-v3.resolver';
 import { BundleAdminResolver } from './api/bundle-admin.resolver';
 import { applyBundleLineAdjustments } from './promotions/bundle-line-adjustment.action';
-// import { hasBundleLines } from './promotions/has-bundle-lines.condition'; // Removed - confusing and unnecessary
+import { hasBundleLines } from './promotions/has-bundle-lines.condition';
+import { bundleAwarePercentageDiscount } from './promotions/bundle-aware-percentage-discount.action';
+import { bundleAwareFixedDiscount } from './promotions/bundle-aware-fixed-discount.action';
 import { BundleJobQueueService } from './services/bundle-job-queue.service';
+import { BundlePluginConfig, defaultBundlePluginConfig } from './types/bundle-config.types';
 import { BundleSchedulerService } from './services/bundle-scheduler.service';
 import { BundleEventHandlersService } from './services/bundle-event-handlers.service';
 import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
@@ -48,7 +51,7 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
         BundleService, 
         BundleOrderService,
         BundlePromotionGuardService,
-        // BundlePromotionInterceptor, // Temporarily disabled
+        // BundlePromotionInterceptor, // Disabled - requires access to PromotionService from core
         BundleSafetyService,
         BundleLifecycleService,
         // Phase 4.3: Background jobs and consistency
@@ -682,17 +685,48 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
         config.promotionOptions = config.promotionOptions || {};
         config.promotionOptions.promotionActions = [
             ...(config.promotionOptions.promotionActions || []),
-            applyBundleLineAdjustments
+            applyBundleLineAdjustments,
+            bundleAwarePercentageDiscount,
+            bundleAwareFixedDiscount,
         ];
-        // Removed hasBundleLines condition - unnecessary since action handles filtering internally
         config.promotionOptions.promotionConditions = [
-            ...(config.promotionOptions.promotionConditions || [])
+            ...(config.promotionOptions.promotionConditions || []),
+            hasBundleLines,
         ];
         
         return config;
     },
 })
-export class BundlePlugin {}
+export class BundlePlugin {
+    private static config: BundlePluginConfig = defaultBundlePluginConfig;
+    
+    /**
+     * Initialize the Bundle Plugin with custom configuration
+     * 
+     * @example
+     * ```typescript
+     * BundlePlugin.init({
+     *   siteWidePromosAffectBundles: 'Exclude',
+     *   maxCumulativeDiscountPctForBundleChildren: 0.50,
+     *   guardMode: 'strict',
+     *   logPromotionGuardDecisions: true
+     * })
+     * ```
+     */
+    static init(config?: Partial<BundlePluginConfig>): typeof BundlePlugin {
+        if (config) {
+            BundlePlugin.config = { ...defaultBundlePluginConfig, ...config };
+        }
+        return BundlePlugin;
+    }
+    
+    /**
+     * Get the current plugin configuration
+     */
+    static getConfig(): BundlePluginConfig {
+        return BundlePlugin.config;
+    }
+}
 
 export * from './entities/bundle.entity';
 export * from './entities/bundle-item.entity';

@@ -222,8 +222,31 @@ function ThankYouContent() {
             <div className="border-t pt-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Subtotal:</span>
-                <span className="text-gray-900">${subtotal}</span>
+                <span className="text-gray-900">${((order.subTotalWithTax || subtotalWithTax) / 100).toFixed(2)}</span>
               </div>
+              
+              {/* Applied Coupons */}
+              {order.couponCodes && order.couponCodes.length > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600 flex items-center gap-2">
+                    Coupons:
+                    {order.couponCodes.map((code: string) => (
+                      <span key={code} className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs">
+                        {code}
+                      </span>
+                    ))}
+                  </span>
+                </div>
+              )}
+              
+              {/* Discounts */}
+              {order.discounts && order.discounts.length > 0 && order.discounts.map((discount: any, idx: number) => (
+                <div key={idx} className="flex justify-between text-sm text-green-600">
+                  <span>{discount.description}</span>
+                  <span>-${(discount.amountWithTax / 100).toFixed(2)}</span>
+                </div>
+              ))}
+              
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Shipping ({shippingMethod}):</span>
                 <span className="text-gray-900">${shippingCost}</span>

@@ -434,3 +434,15 @@ export const GET_BUNDLE_PRODUCTS = gql`
     }
   }
 `;
+
+// Get bundle availability for capacity enforcement
+export const GET_BUNDLE_AVAILABILITY = gql`
+  query GetBundleAvailability($bundleId: ID!) {
+    bundleAvailability(bundleId: $bundleId) {
+      isAvailable
+      maxQuantity
+      status
+      reason
+    }
+  }
+`;

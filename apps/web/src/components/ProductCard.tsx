@@ -110,6 +110,7 @@ export function ProductCard({ product }: ProductCardProps) {
                   })
                   .catch(err => {
                     console.error('[ProductCard] Error adding bundle:', err);
+                    alert(err.message || 'Failed to add bundle to cart');
                   });
               } else {
                 // Add single variant product to cart

@@ -37,6 +37,8 @@ export interface CartItem {
   bundleId?: string;
   bundleComponents?: BundleComponent[];
   originalPrice?: number; // For showing savings
+  maxQuantity?: number; // Bundle capacity limit
+  availabilityStatus?: string; // Bundle availability status
 }
 
 export interface CartState {
@@ -77,14 +79,25 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       
       if (existingItemIndex > -1) {
         // Update existing item quantity
+        const existingItem = state.items[existingItemIndex];
+        const newQuantity = existingItem.quantity + (action.payload.quantity || 1);
+        
+        // Enforce maxQuantity for bundles
+        const maxQuantity = action.payload.maxQuantity ?? existingItem.maxQuantity;
+        const finalQuantity = maxQuantity ? Math.min(newQuantity, maxQuantity) : newQuantity;
+        
         newItems = state.items.map((item, index) => 
           index === existingItemIndex 
-            ? { ...item, quantity: item.quantity + (action.payload.quantity || 1) }
+            ? { ...item, quantity: finalQuantity, maxQuantity: maxQuantity ?? item.maxQuantity }
             : item
         );
       } else {
         // Add new item
-        newItems = [...state.items, { ...action.payload, quantity: action.payload.quantity || 1 }];
+        const quantity = action.payload.quantity || 1;
+        const maxQuantity = action.payload.maxQuantity;
+        const finalQuantity = maxQuantity ? Math.min(quantity, maxQuantity) : quantity;
+        
+        newItems = [...state.items, { ...action.payload, quantity: finalQuantity }];
       }
 
       const totalItems = newItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -117,11 +130,16 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         return cartReducer(state, { type: 'REMOVE_ITEM', payload: { variantId: action.payload.variantId } });
       }
 
-      const newItems = state.items.map(item =>
-        item.variantId === action.payload.variantId
-          ? { ...item, quantity: action.payload.quantity }
-          : item
-      );
+      const newItems = state.items.map(item => {
+        if (item.variantId === action.payload.variantId) {
+          // Enforce maxQuantity for bundles
+          const finalQuantity = item.maxQuantity 
+            ? Math.min(action.payload.quantity, item.maxQuantity)
+            : action.payload.quantity;
+          return { ...item, quantity: finalQuantity };
+        }
+        return item;
+      });
 
       const totalItems = newItems.reduce((sum, item) => sum + item.quantity, 0);
       const totalPrice = newItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);

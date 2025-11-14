@@ -94,34 +94,43 @@ export default function BundleCard({
 
         {/* Quantity Controls */}
         {showQuantityControls && onUpdateQuantity && (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center border rounded">
-              <button
-                onClick={() => onUpdateQuantity(item.variantId, item.quantity - 1)}
-                className={`${compact ? 'p-1' : 'p-2'} hover:bg-gray-100 transition-colors`}
-                disabled={item.quantity <= 1}
-              >
-                <Minus className={`${compact ? 'w-3 h-3' : 'w-4 h-4'}`} />
-              </button>
-              <span className={`${compact ? 'px-2 py-1 text-sm min-w-[40px]' : 'px-4 py-2 min-w-[60px]'} text-center`}>
-                {item.quantity}
-              </span>
-              <button
-                onClick={() => onUpdateQuantity(item.variantId, item.quantity + 1)}
-                className={`${compact ? 'p-1' : 'p-2'} hover:bg-gray-100 transition-colors`}
-              >
-                <Plus className={`${compact ? 'w-3 h-3' : 'w-4 h-4'}`} />
-              </button>
-            </div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center border rounded">
+                <button
+                  onClick={() => onUpdateQuantity(item.variantId, item.quantity - 1)}
+                  className={`${compact ? 'p-1' : 'p-2'} hover:bg-gray-100 transition-colors`}
+                  disabled={item.quantity <= 1}
+                >
+                  <Minus className={`${compact ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                </button>
+                <span className={`${compact ? 'px-2 py-1 text-sm min-w-[40px]' : 'px-4 py-2 min-w-[60px]'} text-center`}>
+                  {item.quantity}
+                </span>
+                <button
+                  onClick={() => onUpdateQuantity(item.variantId, item.quantity + 1)}
+                  className={`${compact ? 'p-1' : 'p-2'} hover:bg-gray-100 transition-colors`}
+                  disabled={item.maxQuantity !== undefined && item.quantity >= item.maxQuantity}
+                >
+                  <Plus className={`${compact ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                </button>
+              </div>
 
-            {showRemoveButton && onRemove && (
-              <button
-                onClick={() => onRemove(item.variantId)}
-                className="text-red-500 hover:text-red-700 transition-colors flex items-center gap-1"
-              >
-                <Trash2 className={`${compact ? 'w-3 h-3' : 'w-4 h-4'}`} />
-                {!compact && 'Remove'}
-              </button>
+              {showRemoveButton && onRemove && (
+                <button
+                  onClick={() => onRemove(item.variantId)}
+                  className="text-red-500 hover:text-red-700 transition-colors flex items-center gap-1"
+                >
+                  <Trash2 className={`${compact ? 'w-3 h-3' : 'w-4 h-4'}`} />
+                  {!compact && 'Remove'}
+                </button>
+              )}
+            </div>
+            {/* Max quantity warning */}
+            {item.maxQuantity !== undefined && item.quantity >= item.maxQuantity && (
+              <p className="text-xs text-amber-600">
+                Only {item.maxQuantity} bundle{item.maxQuantity !== 1 ? 's' : ''} available
+              </p>
             )}
           </div>
         )}

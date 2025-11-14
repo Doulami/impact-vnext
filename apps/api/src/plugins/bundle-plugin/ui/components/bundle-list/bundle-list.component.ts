@@ -34,6 +34,11 @@ import { BundleDataService } from '../../providers/bundle-data.service';
 })
 export class BundleListComponent extends BaseListComponent<Bundle, BundleFilterParameter, BundleSortParameter> implements OnInit {
     
+    // Global promotion policy settings
+    globalPolicy: 'Exclude' | 'Allow' = 'Exclude';
+    maxDiscountPercent: number = 50;
+    configDirty: boolean = false;
+    
     readonly filters = [
         {
             name: 'status',
@@ -302,5 +307,26 @@ export class BundleListComponent extends BaseListComponent<Bundle, BundleFilterP
             this.refresh();
             this.selection.clear();
         }
+    }
+    
+    // Global promotion policy handlers
+    
+    onGlobalPolicyChange() {
+        this.configDirty = true;
+        this.notificationService.info(
+            `Global policy changed to: ${this.globalPolicy}. ` +
+            'This setting will take effect after server restart. ' +
+            'Edit apps/api/src/vendure-config.ts to persist this change.'
+        );
+    }
+    
+    onMaxDiscountChange() {
+        this.configDirty = true;
+        const decimalValue = this.maxDiscountPercent / 100;
+        this.notificationService.info(
+            `Maximum discount cap set to: ${this.maxDiscountPercent}%. ` +
+            'This setting will take effect after server restart. ' +
+            `Edit vendure-config.ts and set maxCumulativeDiscountPctForBundleChildren: ${decimalValue.toFixed(2)}`
+        );
     }
 }

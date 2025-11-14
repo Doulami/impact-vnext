@@ -4,7 +4,7 @@
  */
 
 import { ApolloClient } from '@apollo/client';
-import { GET_PRODUCT_BY_SLUG, GET_BUNDLE } from '../graphql/queries';
+import { GET_PRODUCT_BY_SLUG, GET_BUNDLE, GET_BUNDLE_AVAILABILITY } from '../graphql/queries';
 
 export interface AddBundleToCartParams {
   slug: string;
@@ -47,6 +47,25 @@ export async function addBundleToCart(params: AddBundleToCartParams) {
       throw new Error('Bundle not found');
     }
     
+    // 2.5. Check bundle availability (capacity enforcement)
+    const { data: availabilityData } = await apolloClient.query({
+      query: GET_BUNDLE_AVAILABILITY,
+      variables: { bundleId }
+    });
+    
+    const availability = availabilityData?.bundleAvailability;
+    
+    if (!availability?.isAvailable) {
+      throw new Error(availability?.reason || 'Bundle is not available');
+    }
+    
+    // Validate requested quantity against maxQuantity
+    if (quantity > availability.maxQuantity) {
+      throw new Error(
+        `Only ${availability.maxQuantity} bundle${availability.maxQuantity !== 1 ? 's' : ''} available. Requested: ${quantity}`
+      );
+    }
+    
     // 3. Calculate component total for savings
     const componentTotal = bundle.items.reduce(
       (sum: number, item: any) => sum + (item.productVariant?.priceWithTax || 0) * item.quantity,
@@ -66,7 +85,9 @@ export async function addBundleToCart(params: AddBundleToCartParams) {
       quantity: quantity,
       isBundle: true,
       bundleId: bundleId,
-      bundleComponents: bundle.items
+      bundleComponents: bundle.items,
+      maxQuantity: availability.maxQuantity, // NEW: Store for cart UI
+      availabilityStatus: availability.status
     };
   } catch (error) {
     console.error('[addBundleToCart] Error:', error);

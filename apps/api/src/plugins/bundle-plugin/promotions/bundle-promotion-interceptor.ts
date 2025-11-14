@@ -10,7 +10,7 @@ import {
 } from '@vendure/core';
 import { ModuleRef } from '@nestjs/core';
 import { BundlePromotionGuardService } from '../services/bundle-promotion-guard.service';
-import { BundlePluginConfig, defaultBundlePluginConfig } from '../types/bundle-config.types';
+import { BundlePluginConfig } from '../types/bundle-config.types';
 
 /**
  * Bundle Promotion Interceptor
@@ -33,30 +33,52 @@ export class BundlePromotionInterceptor implements OnModuleInit {
     private promotionService: PromotionService;
     private originalCalculatePromotions: any;
     private guardService: BundlePromotionGuardService;
+    private config: BundlePluginConfig;
     
     constructor(
         private moduleRef: ModuleRef,
-        private eventBus: EventBus,
-        private config: BundlePluginConfig = defaultBundlePluginConfig
+        private eventBus: EventBus
     ) {
         this.guardService = new BundlePromotionGuardService();
-        this.guardService.setConfig(this.config);
     }
     
     async onModuleInit() {
+        // Use require to avoid ESM module resolution issues
+        // This is safe because we only need to read static config
+        try {
+            const bundlePluginModule = require('../bundle.plugin');
+            const BundlePlugin = bundlePluginModule.BundlePlugin;
+            this.config = BundlePlugin.getConfig();
+            this.guardService.setConfig(this.config);
+        } catch (error) {
+            // Fallback to default config if plugin not available yet
+            const { defaultBundlePluginConfig } = require('../types/bundle-config.types');
+            this.config = defaultBundlePluginConfig;
+            this.guardService.setConfig(this.config);
+            Logger.warn(
+                'Could not load BundlePlugin config, using defaults',
+                BundlePromotionInterceptor.loggerCtx
+            );
+        }
+        
         // Get the PromotionService after module initialization
         this.promotionService = this.moduleRef.get(PromotionService);
         
         // Intercept the promotion calculation method
         await this.interceptPromotionCalculation();
         
-        Logger.debug('Bundle promotion interceptor initialized', BundlePromotionInterceptor.loggerCtx);
+        Logger.debug(
+            `Bundle promotion interceptor initialized with policy: ${this.config.siteWidePromosAffectBundles}`,
+            BundlePromotionInterceptor.loggerCtx
+        );
     }
     
     /**
      * Set the bundle plugin configuration
      */
     setConfig(config: Partial<BundlePluginConfig>) {
+        // Import at runtime to avoid circular dependency
+        const { defaultBundlePluginConfig } = require('../types/bundle-config.types');
         this.config = { ...defaultBundlePluginConfig, ...config };
         this.guardService.setConfig(this.config);
     }

@@ -149,23 +149,32 @@ export default function CartDrawer() {
 
                               {/* Quantity Controls */}
                               <div className="flex items-center justify-between">
-                                <div className="flex items-center border rounded">
-                                  <button
-                                    onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
-                                    className="p-1 hover:bg-gray-100 transition-colors"
-                                    disabled={item.quantity <= 1}
-                                  >
-                                    <Minus className="w-3 h-3" />
-                                  </button>
-                                  <span className="px-3 py-1 text-sm min-w-[40px] text-center">
-                                    {item.quantity}
-                                  </span>
-                                  <button
-                                    onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                                    className="p-1 hover:bg-gray-100 transition-colors"
-                                  >
-                                    <Plus className="w-3 h-3" />
-                                  </button>
+                                <div className="flex-1">
+                                  <div className="flex items-center border rounded">
+                                    <button
+                                      onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
+                                      className="p-1 hover:bg-gray-100 transition-colors"
+                                      disabled={item.quantity <= 1}
+                                    >
+                                      <Minus className="w-3 h-3" />
+                                    </button>
+                                    <span className="px-3 py-1 text-sm min-w-[40px] text-center">
+                                      {item.quantity}
+                                    </span>
+                                    <button
+                                      onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+                                      className="p-1 hover:bg-gray-100 transition-colors"
+                                      disabled={item.maxQuantity !== undefined && item.quantity >= item.maxQuantity}
+                                    >
+                                      <Plus className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                  {/* Max quantity warning */}
+                                  {item.maxQuantity !== undefined && item.quantity >= item.maxQuantity && (
+                                    <p className="text-xs text-amber-600 mt-1">
+                                      Max {item.maxQuantity} available
+                                    </p>
+                                  )}
                                 </div>
 
                                 <button
