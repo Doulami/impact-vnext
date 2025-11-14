@@ -363,6 +363,11 @@ export const GET_ORDER_FOR_CHECKOUT = gql`
           id
           name
           sku
+          product {
+            id
+            name
+            slug
+          }
         }
         featuredAsset {
           id

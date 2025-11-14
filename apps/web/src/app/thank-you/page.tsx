@@ -156,7 +156,13 @@ function ThankYouContent() {
                         )}
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-medium text-gray-900">{item.productName}</h3>
+                        {item.slug ? (
+                          <Link href={`/products/${item.slug}`}>
+                            <h3 className="font-medium text-gray-900 hover:text-[var(--brand-primary)] transition-colors cursor-pointer">{item.productName}</h3>
+                          </Link>
+                        ) : (
+                          <h3 className="font-medium text-gray-900">{item.productName}</h3>
+                        )}
                         <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
                       </div>
                       <div className="text-right">

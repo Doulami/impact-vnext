@@ -169,7 +169,13 @@ export default function OrderDetailsPage() {
                             )}
                           </div>
                           <div className="flex-1">
-                            <h3 className="font-semibold text-gray-900 mb-1">{item.productName}</h3>
+                            {item.slug ? (
+                              <Link href={`/products/${item.slug}`}>
+                                <h3 className="font-semibold text-gray-900 mb-1 hover:text-[var(--brand-primary)] transition-colors cursor-pointer">{item.productName}</h3>
+                              </Link>
+                            ) : (
+                              <h3 className="font-semibold text-gray-900 mb-1">{item.productName}</h3>
+                            )}
                             <p className="text-sm text-gray-600 mb-2">SKU: {item.variantName}</p>
                             <div className="flex items-center justify-between">
                               <span className="text-sm text-gray-600">Quantity: {item.quantity}</span>

@@ -2,6 +2,7 @@
 
 import { CartItem } from '@/lib/hooks/useCart';
 import { Plus, Minus, Trash2 } from 'lucide-react';
+import Link from 'next/link';
 
 interface BundleCardProps {
   item: CartItem;
@@ -45,9 +46,17 @@ export default function BundleCard({
 
       {/* Bundle Info */}
       <div className="flex-1 min-w-0">
-        <h4 className={`font-semibold ${compact ? 'text-sm' : 'text-lg'} line-clamp-2 mb-1`}>
-          {item.productName}
-        </h4>
+        {item.slug ? (
+          <Link href={`/products/${item.slug}`}>
+            <h4 className={`font-semibold ${compact ? 'text-sm' : 'text-lg'} line-clamp-2 mb-1 hover:text-[var(--brand-primary)] transition-colors cursor-pointer`}>
+              {item.productName}
+            </h4>
+          </Link>
+        ) : (
+          <h4 className={`font-semibold ${compact ? 'text-sm' : 'text-lg'} line-clamp-2 mb-1`}>
+            {item.productName}
+          </h4>
+        )}
         
         {/* Bundle item count */}
         {item.bundleComponents && (
@@ -78,9 +87,17 @@ export default function BundleCard({
                 const qtyPerBundle = component.quantity || 1;
                 // Show TOTAL quantity (component qty × bundle qty) for better UX
                 const totalQty = qtyPerBundle * item.quantity;
+                const componentSlug = component.productVariant?.product?.slug;
+                
                 return (
                   <div key={component.id} className={`${compact ? 'text-xs' : 'text-sm'} text-gray-600 py-0.5`}>
-                    • {name} (x{totalQty})
+                    {componentSlug ? (
+                      <Link href={`/products/${componentSlug}`} className="hover:text-[var(--brand-primary)] transition-colors">
+                        • {name} (x{totalQty})
+                      </Link>
+                    ) : (
+                      <span>• {name} (x{totalQty})</span>
+                    )}
                   </div>
                 );
               })}

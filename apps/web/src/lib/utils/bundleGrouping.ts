@@ -39,6 +39,7 @@ export function groupOrderLinesByBundle(
         price: line.linePriceWithTax / line.quantity, // Unit price
         quantity: line.quantity,
         image: line.featuredAsset?.preview || null,
+        slug: line.productVariant.product?.slug || '',
         inStock: true,
         isBundle: false,
       });
@@ -76,6 +77,11 @@ export function groupOrderLinesByBundle(
           name: line.productVariant.name,
           sku: line.productVariant.sku,
           price: line.linePriceWithTax / line.quantity,
+          product: {
+            id: line.productVariant.product?.id || '',
+            name: line.productVariant.product?.name || line.productVariant.name,
+            slug: line.productVariant.product?.slug || '',
+          },
         },
         unitPrice: (line.linePriceWithTax / line.quantity) / 100, // Convert to dollars
       }));
@@ -83,7 +89,8 @@ export function groupOrderLinesByBundle(
     // Get shell product image if available
     const shellImage = shellProductImages?.get(bundleMetadata?.bundleId) || null;
     
-    // Create bundle CartItem
+    // Create bundle CartItem  
+    // TODO: Fetch bundle slug from bundleId for proper linking
     bundleItems.push({
       variantId: `bundle-${bundleKey}`,
       productName: bundleMetadata?.bundleName || 'Bundle',
@@ -91,6 +98,7 @@ export function groupOrderLinesByBundle(
       price: totalBundlePrice / bundleQuantity, // Unit bundle price
       quantity: bundleQuantity,
       image: shellImage || lines[0].featuredAsset?.preview || null, // Use shell image if available
+      slug: '', // Bundle slug - needs to be fetched separately via bundleId
       inStock: true,
       isBundle: true,
       bundleId: bundleMetadata?.bundleId,
