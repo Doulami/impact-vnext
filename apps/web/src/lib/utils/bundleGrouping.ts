@@ -10,8 +10,13 @@ import { CartItem, BundleComponent } from '@/lib/hooks/useCart';
  * - bundleComponentQty: Quantity of this component per bundle
  * 
  * Returns array of items ready for BundleCard or regular display
+ * 
+ * Note: To get shell product images, pass shellProductImages map fetched from GraphQL
  */
-export function groupOrderLinesByBundle(orderLines: any[]): CartItem[] {
+export function groupOrderLinesByBundle(
+  orderLines: any[], 
+  shellProductImages?: Map<string, string>
+): CartItem[] {
   const bundleGroups = new Map<string, any[]>();
   const regularItems: CartItem[] = [];
 
@@ -75,6 +80,9 @@ export function groupOrderLinesByBundle(orderLines: any[]): CartItem[] {
         unitPrice: (line.linePriceWithTax / line.quantity) / 100, // Convert to dollars
       }));
 
+    // Get shell product image if available
+    const shellImage = shellProductImages?.get(bundleMetadata?.bundleId) || null;
+    
     // Create bundle CartItem
     bundleItems.push({
       variantId: `bundle-${bundleKey}`,
@@ -82,7 +90,7 @@ export function groupOrderLinesByBundle(orderLines: any[]): CartItem[] {
       variantName: null,
       price: totalBundlePrice / bundleQuantity, // Unit bundle price
       quantity: bundleQuantity,
-      image: lines[0].featuredAsset?.preview || null,
+      image: shellImage || lines[0].featuredAsset?.preview || null, // Use shell image if available
       inStock: true,
       isBundle: true,
       bundleId: bundleMetadata?.bundleId,
