@@ -18,6 +18,7 @@ import {
 import { GlobalFlag } from '@vendure/common/lib/generated-types';
 import { Bundle, BundleStatus, BundleDiscountType } from '../entities/bundle.entity';
 import { BundleItem } from '../entities/bundle-item.entity';
+import { BundleTranslationService } from './bundle-translation.service';
 
 // Bundle Plugin v2 Input Interfaces
 export interface CreateBundleInput {
@@ -115,6 +116,7 @@ export class BundleService {
         private productVariantService: ProductVariantService,
         private productService: ProductService,
         private orderService: OrderService,
+        private translationService: BundleTranslationService,
     ) {}
 
     /**
@@ -123,15 +125,15 @@ export class BundleService {
     async create(ctx: RequestContext, input: CreateBundleInput): Promise<Bundle> {
         // Validate input
         if (!input.discountType) {
-            throw new Error('Discount type is required');
+            throw new Error(this.translationService.discountTypeRequired(ctx));
         }
         
         if (input.discountType === BundleDiscountType.FIXED && !input.fixedPrice) {
-            throw new Error('Fixed price is required for fixed-price bundles');
+            throw new Error(this.translationService.fixedPriceRequired(ctx));
         }
         
         if (input.discountType === BundleDiscountType.PERCENT && !input.percentOff) {
-            throw new Error('Percentage off is required for percentage bundles');
+            throw new Error(this.translationService.percentOffRequired(ctx));
         }
         
         // Validate and fetch component variants
@@ -276,13 +278,13 @@ export class BundleService {
         const enrichedItems = [];
         
         for (const itemInput of items) {
-            const variant = await this.productVariantService.findOne(ctx, itemInput.productVariantId);
+        const variant = await this.productVariantService.findOne(ctx, itemInput.productVariantId);
             if (!variant) {
-                throw new Error(`ProductVariant with id ${itemInput.productVariantId} not found`);
+                throw new Error(this.translationService.variantNotFound(ctx, String(itemInput.productVariantId)));
             }
             
             if (variant.deletedAt) {
-                throw new Error(`ProductVariant ${variant.name} is deleted and cannot be used in bundles`);
+                throw new Error(this.translationService.deletedComponent(ctx, variant.name));
             }
             
             // Warn about inventory tracking
@@ -325,7 +327,7 @@ export class BundleService {
     async update(ctx: RequestContext, input: UpdateBundleInput): Promise<Bundle> {
         const bundle = await this.findOne(ctx, input.id);
         if (!bundle) {
-            throw new Error(`Bundle with id ${input.id} not found`);
+            throw new Error(this.translationService.bundleNotFound(ctx, String(input.id)));
         }
 
         // Update assets if provided
