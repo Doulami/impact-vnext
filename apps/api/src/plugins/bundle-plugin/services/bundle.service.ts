@@ -754,7 +754,7 @@ export class BundleService {
         const bundle = await this.findOne(ctx, bundleId);
         
         if (!bundle) {
-            throw new Error(`Bundle ${bundleId} not found for recomputation`);
+            throw new Error(this.translationService.bundleNotFound(ctx, String(bundleId)));
         }
         
         Logger.debug(`Recomputing bundle ${bundleId} (${bundle.name})`, 'BundleService');
@@ -1009,7 +1009,7 @@ export class BundleService {
     async publishBundle(ctx: RequestContext, bundleId: ID): Promise<Bundle> {
         const bundle = await this.findOne(ctx, bundleId);
         if (!bundle) {
-            throw new Error(`Bundle with id ${bundleId} not found`);
+            throw new Error(this.translationService.bundleNotFound(ctx, String(bundleId)));
         }
         
         // Validate bundle can be published
@@ -1031,7 +1031,7 @@ export class BundleService {
     async archiveBundle(ctx: RequestContext, bundleId: ID): Promise<Bundle> {
         const bundle = await this.findOne(ctx, bundleId);
         if (!bundle) {
-            throw new Error(`Bundle with id ${bundleId} not found`);
+            throw new Error(this.translationService.bundleNotFound(ctx, String(bundleId)));
         }
         
         bundle.archive();
@@ -1048,7 +1048,7 @@ export class BundleService {
     async markBundleBroken(ctx: RequestContext, bundleId: ID, reason?: string): Promise<Bundle> {
         const bundle = await this.findOne(ctx, bundleId);
         if (!bundle) {
-            throw new Error(`Bundle with id ${bundleId} not found`);
+            throw new Error(this.translationService.bundleNotFound(ctx, String(bundleId)));
         }
         
         bundle.markBroken(reason);
@@ -1065,7 +1065,7 @@ export class BundleService {
     async restoreBundle(ctx: RequestContext, bundleId: ID): Promise<Bundle> {
         const bundle = await this.findOne(ctx, bundleId);
         if (!bundle) {
-            throw new Error(`Bundle with id ${bundleId} not found`);
+            throw new Error(this.translationService.bundleNotFound(ctx, String(bundleId)));
         }
         
         if (bundle.restore()) {
@@ -1125,7 +1125,7 @@ export class BundleService {
     }> {
         const bundle = await this.findOne(ctx, bundleId);
         if (!bundle) {
-            throw new Error(`Bundle with id ${bundleId} not found`);
+            throw new Error(this.translationService.bundleNotFound(ctx, String(bundleId)));
         }
 
         // Generate unique bundle key for grouping
@@ -1262,7 +1262,7 @@ export class BundleService {
         for (const item of bundle.items) {
             const variant = await this.productVariantService.findOne(ctx, item.productVariantId);
             if (!variant) {
-                throw new Error(`ProductVariant with id ${item.productVariantId} not found`);
+                throw new Error(this.translationService.variantNotFound(ctx, String(item.productVariantId)));
             }
             
             const baseUnitPrice = variant.priceWithTax; // Use tax-inclusive price
@@ -1480,7 +1480,7 @@ export class BundleService {
     }> {
         const bundle = await this.findOne(ctx, bundleId);
         if (!bundle) {
-            throw new Error(`Bundle with id ${bundleId} not found`);
+            throw new Error(this.translationService.bundleNotFound(ctx, String(bundleId)));
         }
 
         // Validate stock availability
@@ -1489,7 +1489,7 @@ export class BundleService {
             const errorMessage = stockValidation.insufficientItems
                 .map(item => `${item.productName}: need ${item.required}, have ${item.available}`)
                 .join(', ');
-            throw new Error(`Insufficient stock for bundle components: ${errorMessage}`);
+            throw new Error(this.translationService.insufficientStock(ctx));
         }
 
         const parentLineId = `bundle-${bundleId}-${Date.now()}`;
@@ -1752,7 +1752,7 @@ export class BundleService {
     }> {
         const bundle = await this.findOne(ctx, bundleId);
         if (!bundle) {
-            throw new Error(`Bundle with id ${bundleId} not found`);
+            throw new Error(this.translationService.bundleNotFound(ctx, String(bundleId)));
         }
         
         const pricingData = await this.calculateExplodedBundlePricing(ctx, bundle, quantity);
@@ -1804,7 +1804,7 @@ export class BundleService {
     }> {
         const bundle = await this.findOne(ctx, bundleId);
         if (!bundle) {
-            throw new Error(`Bundle with id ${bundleId} not found`);
+            throw new Error(this.translationService.bundleNotFound(ctx, String(bundleId)));
         }
         
         // Calculate current pricing based on latest component prices
@@ -1854,7 +1854,7 @@ export class BundleService {
     }> {
         const bundle = await this.findOne(ctx, bundleId);
         if (!bundle) {
-            throw new Error(`Bundle with id ${bundleId} not found`);
+            throw new Error(this.translationService.bundleNotFound(ctx, String(bundleId)));
         }
         
         const bundleKey = `bundle-${bundleId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -1869,7 +1869,7 @@ export class BundleService {
         for (const item of bundle.items) {
             const variant = await this.productVariantService.findOne(ctx, item.productVariantId);
             if (!variant) {
-                throw new Error(`ProductVariant with id ${item.productVariantId} not found`);
+                throw new Error(this.translationService.variantNotFound(ctx, String(item.productVariantId)));
             }
             
             const currentPrice = variant.priceWithTax;
