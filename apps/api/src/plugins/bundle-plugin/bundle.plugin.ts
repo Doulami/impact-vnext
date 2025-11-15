@@ -23,6 +23,7 @@ import { BundlePluginConfig, defaultBundlePluginConfig } from './types/bundle-co
 import { BundleSchedulerService } from './services/bundle-scheduler.service';
 import { BundleEventHandlersService } from './services/bundle-event-handlers.service';
 import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
+import { BundleTranslationService } from './services/bundle-translation.service';
 
 /**
  * Bundle Plugin for Vendure
@@ -63,7 +64,9 @@ import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
         // Phase 2 v3: Reservation system
         BundleReservationService,
         // Automatic bundle discount promotion setup
-        BundlePromotionSetupService
+        BundlePromotionSetupService,
+        // Internationalization
+        BundleTranslationService
     ],
     
     // Register GraphQL resolvers
