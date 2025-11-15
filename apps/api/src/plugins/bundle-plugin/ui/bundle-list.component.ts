@@ -10,12 +10,12 @@ import gql from 'graphql-tag';
     <vdr-page-block>
       <vdr-action-bar>
         <vdr-ab-left>
-          <vdr-page-title [title]="'Bundles'" icon="layers"></vdr-page-title>
+          <vdr-page-title [title]="'bundle-plugin.bundles' | translate" icon="layers"></vdr-page-title>
         </vdr-ab-left>
         <vdr-ab-right>
           <button class="btn btn-primary" (click)="createBundle()">
             <clr-icon shape="plus"></clr-icon>
-            Create Bundle
+            {{ 'bundle-plugin.create-bundle' | translate }}
           </button>
         </vdr-ab-right>
       </vdr-action-bar>
@@ -24,16 +24,15 @@ import gql from 'graphql-tag';
     <!-- Global Promotion Policy Settings -->
     <vdr-page-block>
       <vdr-card>
-        <h3 class="mb-3">Global Promotion Policy</h3>
+        <h3 class="mb-3">{{ 'bundle-plugin.global-promotion-policy' | translate }}</h3>
         <div class="alert alert-warning mb-3">
           <clr-icon shape="exclamation-triangle" class="is-warning"></clr-icon>
-          <strong>Warning:</strong> This is a critical system configuration that affects ALL bundles and promotions.
-          Changes take effect immediately without server restart.
+          <strong>{{ 'bundle-plugin.warning' | translate }}:</strong> {{ 'bundle-plugin.global-policy-warning' | translate }}
         </div>
         
         <div class="clr-row">
           <div class="clr-col-md-6">
-            <label for="globalPolicy" class="clr-control-label">Site-wide Promotion Policy</label>
+            <label for="globalPolicy" class="clr-control-label">{{ 'bundle-plugin.site-wide-promotion-policy' | translate }}</label>
             <select 
               clrSelect
               id="globalPolicy"
@@ -41,19 +40,19 @@ import gql from 'graphql-tag';
               [disabled]="!policyEditEnabled"
               class="clr-select"
             >
-              <option value="Exclude">Exclude (Safe - Prevents double-discounting)</option>
-              <option value="Allow">Allow (Risky - May cause double-discounting)</option>
+              <option value="Exclude">{{ 'bundle-plugin.policy-exclude' | translate }}</option>
+              <option value="Allow">{{ 'bundle-plugin.policy-allow' | translate }}</option>
             </select>
             <div class="help-text mt-2" *ngIf="globalPolicy === 'Exclude'" style="color: #28a745;">
-              ✓ <strong>Recommended:</strong> External promotions will NOT apply to bundles by default.
+              ✓ <strong>{{ 'bundle-plugin.recommended' | translate }}:</strong> {{ 'bundle-plugin.policy-exclude-help' | translate }}
             </div>
             <div class="help-text mt-2" *ngIf="globalPolicy === 'Allow'" style="color: #ff9800;">
-              ⚠ <strong>Warning:</strong> May cause double-discounting. Use per-bundle controls to prevent issues.
+              ⚠ <strong>{{ 'bundle-plugin.warning' | translate }}:</strong> {{ 'bundle-plugin.policy-allow-help' | translate }}
             </div>
           </div>
           
           <div class="clr-col-md-6">
-            <label for="maxDiscount" class="clr-control-label">Maximum Discount Cap (%)</label>
+            <label for="maxDiscount" class="clr-control-label">{{ 'bundle-plugin.maximum-discount-cap' | translate }}</label>
             <input 
               type="number" 
               id="maxDiscount"
@@ -66,7 +65,7 @@ import gql from 'graphql-tag';
               style="width: 150px;"
             />
             <div class="help-text mt-2 text-muted small">
-              Current: <strong>{{maxDiscountPercent}}%</strong> maximum combined discount
+              {{ 'bundle-plugin.current-max-discount' | translate:{percent: maxDiscountPercent} }}
             </div>
           </div>
         </div>
@@ -79,7 +78,7 @@ import gql from 'graphql-tag';
               [(ngModel)]="confirmUnderstand"
               [disabled]="!policyEditEnabled"
             />
-            I understand this is a critical configuration that requires manual code changes to persist
+            {{ 'bundle-plugin.i-understand-critical-config' | translate }}
           </label>
         </div>
         
@@ -90,7 +89,7 @@ import gql from 'graphql-tag';
             (click)="enablePolicyEdit()"
           >
             <clr-icon shape="unlock"></clr-icon>
-            Enable Editing
+            {{ 'bundle-plugin.enable-editing' | translate }}
           </button>
           
           <button 
@@ -101,7 +100,7 @@ import gql from 'graphql-tag';
           >
             <clr-icon shape="floppy" *ngIf="!isLoading"></clr-icon>
             <span *ngIf="isLoading" class="spinner spinner-inline"></span>
-            {{ isLoading ? 'Saving...' : 'Save Configuration' }}
+            {{ isLoading ? ('bundle-plugin.saving' | translate) : ('bundle-plugin.save-configuration' | translate) }}
           </button>
           
           <button 
@@ -110,13 +109,13 @@ import gql from 'graphql-tag';
             [disabled]="isLoading"
             (click)="cancelPolicyEdit()"
           >
-            Cancel
+            {{ 'bundle-plugin.cancel' | translate }}
           </button>
         </div>
         
         <div *ngIf="policyEditEnabled" class="alert alert-success mt-3">
           <clr-icon shape="check-circle" class="is-success"></clr-icon>
-          <strong>Live Configuration:</strong> Changes will take effect immediately without server restart.
+          <strong>{{ 'bundle-plugin.live-configuration' | translate }}</strong>
         </div>
       </vdr-card>
     </vdr-page-block>
@@ -129,10 +128,10 @@ import gql from 'graphql-tag';
         [currentPage]="currentPage"
         (pageChange)="setPage($event)"
       >
-        <vdr-dt-column>Name</vdr-dt-column>
-        <vdr-dt-column>Price</vdr-dt-column>
-        <vdr-dt-column>Status</vdr-dt-column>
-        <vdr-dt-column>Items</vdr-dt-column>
+        <vdr-dt-column>{{ 'bundle-plugin.name' | translate }}</vdr-dt-column>
+        <vdr-dt-column>{{ 'bundle-plugin.price' | translate }}</vdr-dt-column>
+        <vdr-dt-column>{{ 'bundle-plugin.status' | translate }}</vdr-dt-column>
+        <vdr-dt-column>{{ 'bundle-plugin.items' | translate }}</vdr-dt-column>
 
         <ng-template let-bundle="item">
           <td class="left align-middle">
@@ -146,10 +145,10 @@ import gql from 'graphql-tag';
               {{ bundle.status }}
             </vdr-chip>
             <div *ngIf="isExpired(bundle) && bundle.status !== 'EXPIRED'" style="color: #ff9800; font-size: 0.85em; margin-top: 4px;">
-              ⚠️ Expired: {{ bundle.validTo | date:'short' }}
+              ⚠️ {{ 'bundle-plugin.expired' | translate }}: {{ bundle.validTo | date:'short' }}
             </div>
           </td>
-          <td class="left align-middle">{{ bundle.items?.length || 0 }} items</td>
+          <td class="left align-middle">{{ bundle.items?.length || 0 }} {{ 'bundle-plugin.items' | translate }}</td>
         </ng-template>
       </vdr-data-table>
     </vdr-page-block>

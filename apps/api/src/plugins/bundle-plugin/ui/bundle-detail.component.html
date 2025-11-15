@@ -2,28 +2,28 @@
     <vdr-action-bar>
         <vdr-ab-left>
             <div class="page-title">
-                <h1>{{ isNew ? ('Create bundle' | translate) : (bundle?.name || 'Bundle') }}</h1>
+                <h1>{{ isNew ? ('bundle-plugin.create-bundle' | translate) : (bundle?.name || 'Bundle') }}</h1>
             </div>
         </vdr-ab-left>
         <vdr-ab-right>
             <vdr-action-bar-items locationId="bundle-detail"></vdr-action-bar-items>
             <button class="btn btn-secondary" (click)="cancel()">
                 <clr-icon shape="times"></clr-icon>
-                Cancel
+                {{ 'bundle-plugin.cancel' | translate }}
             </button>
             <button 
                 class="btn btn-primary" 
                 (click)="save()" 
                 [disabled]="bundleForm.invalid || bundleForm.pristine">
                 <clr-icon shape="check"></clr-icon>
-                {{ isNew ? 'Create bundle' : 'Update' }}
+                {{ isNew ? ('bundle-plugin.create-bundle' | translate) : ('bundle-plugin.update-bundle' | translate) }}
             </button>
             <button 
                 *ngIf="!isNew && canPublish()" 
                 class="btn btn-success" 
                 (click)="publish()">
                 <clr-icon shape="play"></clr-icon>
-                Publish
+                {{ 'bundle-plugin.publish' | translate }}
             </button>
         </vdr-ab-right>
     </vdr-action-bar>
@@ -32,8 +32,8 @@
 <vdr-page-detail-layout>
     <vdr-page-detail-sidebar>
         <!-- Visibility Card -->
-        <vdr-card [title]="'Visibility' | translate">
-            <vdr-form-field [label]="'Status'" for="status">
+        <vdr-card [title]="'bundle-plugin.visibility' | translate">
+            <vdr-form-field [label]="'bundle-plugin.status' | translate" for="status">
                 <div class="status-badge">
                     <vdr-chip
                         *ngIf="!isNew"
@@ -42,44 +42,44 @@
                     >
                         {{ bundle?.status || 'DRAFT' }}
                     </vdr-chip>
-                    <span *ngIf="isNew" class="text-muted">Draft</span>
+                    <span *ngIf="isNew" class="text-muted">{{ 'bundle-plugin.draft' | translate }}</span>
                 </div>
             </vdr-form-field>
 
-            <vdr-form-field *ngIf="!isNew" [label]="'Version'" for="version">
+            <vdr-form-field *ngIf="!isNew" [label]="'bundle-plugin.version' | translate" for="version">
                 <span class="version-badge">v{{ bundle?.version || 1 }}</span>
             </vdr-form-field>
         </vdr-card>
 
         <!-- Facets Card (placeholder for future) -->
-        <vdr-card [title]="'Facets' | translate">
-            <p class="text-muted">Facet assignment coming soon</p>
+        <vdr-card [title]="'bundle-plugin.facets' | translate">
+            <p class="text-muted">{{ 'bundle-plugin.facet-assignment-coming-soon' | translate }}</p>
         </vdr-card>
 
         <!-- IDs & Metadata Card -->
-        <vdr-card *ngIf="!isNew" [title]="'IDs & Timestamps' | translate">
-            <vdr-labeled-data [label]="'ID'">
+        <vdr-card *ngIf="!isNew" [title]="'bundle-plugin.ids-timestamps' | translate">
+            <vdr-labeled-data [label]="'bundle-plugin.id' | translate">
                 <code>{{ bundle?.id }}</code>
             </vdr-labeled-data>
-            <vdr-labeled-data [label]="'Created at'">
+            <vdr-labeled-data [label]="'bundle-plugin.created-at' | translate">
                 {{ bundle?.createdAt | date:'medium' }}
             </vdr-labeled-data>
-            <vdr-labeled-data [label]="'Updated at'">
+            <vdr-labeled-data [label]="'bundle-plugin.updated-at' | translate">
                 {{ bundle?.updatedAt | date:'medium' }}
             </vdr-labeled-data>
-            <vdr-labeled-data *ngIf="bundle?.lastRecomputedAt" [label]="'Last recomputed'">
+            <vdr-labeled-data *ngIf="bundle?.lastRecomputedAt" [label]="'bundle-plugin.last-recomputed' | translate">
                 {{ bundle?.lastRecomputedAt | date:'medium' }}
             </vdr-labeled-data>
         </vdr-card>
 
         <!-- Component Health -->
-        <vdr-card *ngIf="!isNew && analytics" [title]="'Component Health' | translate">
-            <vdr-labeled-data [label]="'Max available'">
+        <vdr-card *ngIf="!isNew && analytics" [title]="'bundle-plugin.component-health' | translate">
+            <vdr-labeled-data [label]="'bundle-plugin.max-available' | translate">
                 <span [style.color]="analytics.availabilityStatus?.valid ? '#22c55e' : '#c92100'">
                     {{ analytics.availabilityStatus?.maxQuantityAvailable || 0 }} bundles
                 </span>
             </vdr-labeled-data>
-            <vdr-labeled-data [label]="'Total savings'">
+            <vdr-labeled-data [label]="'bundle-plugin.total-savings' | translate">
                 <span style="color: #22c55e;">
                     {{ analytics.totalSavings | currency }} ({{ analytics.savingsPercentage | number:'1.1-1' }}%)
                 </span>
@@ -90,8 +90,8 @@
     <vdr-page-block>
         <form [formGroup]="bundleForm">
             <!-- Bundle Details Section -->
-            <vdr-card [title]="'Bundle Details' | translate">
-                <vdr-form-field [label]="'Name' | translate" for="name">
+            <vdr-card [title]="'bundle-plugin.bundle-details' | translate">
+                <vdr-form-field [label]="'bundle-plugin.name' | translate" for="name">
                     <input 
                         id="name"
                         type="text" 
@@ -100,7 +100,7 @@
                     />
                 </vdr-form-field>
 
-                <vdr-form-field [label]="'Slug' | translate" for="slug" tooltip="URL-friendly identifier">
+                <vdr-form-field [label]="'bundle-plugin.slug' | translate" for="slug" [tooltip]="'bundle-plugin.url-friendly-identifier' | translate">
                     <input 
                         id="slug"
                         type="text" 
@@ -108,7 +108,7 @@
                     />
                 </vdr-form-field>
 
-                <vdr-form-field [label]="'Description' | translate" for="description">
+                <vdr-form-field [label]="'bundle-plugin.description' | translate" for="description">
                     <textarea 
                         id="description"
                         formControlName="description" 
@@ -116,7 +116,7 @@
                     ></textarea>
                 </vdr-form-field>
 
-                <vdr-form-field [label]="'Category' | translate" for="category" tooltip="e.g. seasonal, gift-sets">
+                <vdr-form-field [label]="'bundle-plugin.category' | translate" for="category" [tooltip]="'bundle-plugin.eg-seasonal-gift-sets' | translate">
                     <input 
                         id="category"
                         type="text" 
@@ -126,24 +126,24 @@
             </vdr-card>
 
             <!-- Pricing & Discount Section -->
-            <vdr-card [title]="'Pricing & Discount' | translate">
-                <vdr-form-field [label]="'Discount type' | translate" for="discountType">
+            <vdr-card [title]="'bundle-plugin.pricing-discount' | translate">
+                <vdr-form-field [label]="'bundle-plugin.discount-type' | translate" for="discountType">
                     <select 
                         clrSelect
                         id="discountType"
                         formControlName="discountType"
                         (change)="onDiscountTypeChange($event.target.value)"
                     >
-                        <option value="fixed">Fixed price</option>
-                        <option value="percent">Percentage off</option>
+                        <option value="fixed">{{ 'bundle-plugin.fixed-price' | translate }}</option>
+                        <option value="percent">{{ 'bundle-plugin.percentage-off' | translate }}</option>
                     </select>
                 </vdr-form-field>
 
                 <vdr-form-field
                     *ngIf="bundleForm.get('discountType')?.value === 'fixed'"
-                    [label]="'Bundle fixed price' | translate" 
+                    [label]="'bundle-plugin.bundle-fixed-price' | translate" 
                     for="fixedPrice"
-                    tooltip="Price applied at order; item prices prorated">
+                    [tooltip]="'bundle-plugin.price-applied-at-order' | translate">
                     <vdr-currency-input
                         id="fixedPrice"
                         formControlName="fixedPrice"
@@ -153,9 +153,9 @@
 
                 <vdr-form-field
                     *ngIf="bundleForm.get('discountType')?.value === 'percent'"
-                    [label]="'Percentage off' | translate" 
+                    [label]="'bundle-plugin.percentage-off' | translate" 
                     for="percentOff"
-                    tooltip="Discount percentage (0-100)">
+                    [tooltip]="'bundle-plugin.discount-percentage-0-100' | translate">
                     <input 
                         id="percentOff"
                         type="number" 
@@ -168,22 +168,22 @@
             </vdr-card>
 
             <!-- Availability Section -->
-            <vdr-card [title]="'Availability' | translate">
-                <vdr-form-field [label]="'Available from' | translate" for="validFrom" tooltip="Leave empty for immediate availability">
+            <vdr-card [title]="'bundle-plugin.availability' | translate">
+                <vdr-form-field [label]="'bundle-plugin.available-from' | translate" for="validFrom" [tooltip]="'bundle-plugin.leave-empty-immediate' | translate">
                     <vdr-datetime-picker
                         id="validFrom"
                         formControlName="validFrom"
                     ></vdr-datetime-picker>
                 </vdr-form-field>
 
-                <vdr-form-field [label]="'Available until' | translate" for="validTo" tooltip="Leave empty for permanent availability">
+                <vdr-form-field [label]="'bundle-plugin.available-until' | translate" for="validTo" [tooltip]="'bundle-plugin.leave-empty-permanent' | translate">
                     <vdr-datetime-picker
                         id="validTo"
                         formControlName="validTo"
                     ></vdr-datetime-picker>
                 </vdr-form-field>
 
-                <vdr-form-field [label]="'Bundle cap' | translate" for="bundleCap" tooltip="Maximum bundles that can be sold">
+                <vdr-form-field [label]="'bundle-plugin.bundle-cap' | translate" for="bundleCap" [tooltip]="'bundle-plugin.maximum-bundles-that-can-be-sold' | translate">
                     <input 
                         id="bundleCap"
                         type="number" 
@@ -195,9 +195,9 @@
                 
                 <!-- Promotion Policy Section -->
                 <vdr-form-field 
-                    [label]="'Allow external promotions' | translate" 
+                    [label]="'bundle-plugin.allow-external-promotions' | translate" 
                     for="allowExternalPromos"
-                    tooltip="Allow external promotion codes/coupons to be applied to this bundle">
+                    [tooltip]="'bundle-plugin.allow-external-promos-tooltip' | translate">
                     <clr-toggle-wrapper>
                         <input 
                             type="checkbox" 
@@ -208,10 +208,10 @@
                     </clr-toggle-wrapper>
                     <div class="help-text" style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">
                         <p style="margin: 0.25rem 0;">
-                            <strong>OFF:</strong> Promotion codes and coupons will NOT apply to this bundle (prevents double-discounting).
+                            <strong>OFF:</strong> {{ 'bundle-plugin.allow-external-promos-help-off' | translate }}
                         </p>
                         <p style="margin: 0.25rem 0;">
-                            <strong>ON:</strong> External promotions can apply (bundle discount + promo discount).
+                            <strong>ON:</strong> {{ 'bundle-plugin.allow-external-promos-help-on' | translate }}
                         </p>
                     </div>
                 </vdr-form-field>
@@ -219,20 +219,20 @@
                 <!-- Phase 2 v3: Reservation System Display (Read-only) -->
                 <vdr-form-field 
                     *ngIf="!isNew && bundle?.bundleCap" 
-                    [label]="'Reserved (Open)' | translate" 
+                    [label]="'bundle-plugin.reserved-open' | translate" 
                     for="bundleReservedOpen"
-                    tooltip="Bundles in paid-but-not-shipped orders">
+                    [tooltip]="'bundle-plugin.reserved-open-tooltip' | translate">
                     <div class="reservation-status">
                         <span class="reserved-count">{{ bundle?.bundleReservedOpen || 0 }}</span>
-                        <span class="text-muted ml-2" style="font-size: 0.9em;">(read-only)</span>
+                        <span class="text-muted ml-2" style="font-size: 0.9em;">{{ 'bundle-plugin.read-only' | translate }}</span>
                     </div>
                 </vdr-form-field>
 
                 <vdr-form-field 
                     *ngIf="!isNew && bundle?.bundleCap" 
-                    [label]="'Virtual Stock' | translate" 
+                    [label]="'bundle-plugin.virtual-stock' | translate" 
                     for="bundleVirtualStock"
-                    tooltip="Available capacity: max(0, Cap - Reserved)">
+                    [tooltip]="'bundle-plugin.virtual-stock-tooltip' | translate">
                     <div class="virtual-stock-status">
                         <span 
                             class="virtual-stock-count"
@@ -241,15 +241,15 @@
                             {{ bundle?.bundleVirtualStock ?? 'N/A' }}
                         </span>
                         <span *ngIf="isOverbooked()" style="color: #c92100; margin-left: 0.5rem; font-size: 0.9em;">
-                            ⚠️ OVERBOOKED
+                            ⚠️ {{ 'bundle-plugin.overbooked' | translate }}
                         </span>
-                        <span style="color: #6c757d; margin-left: 0.5rem; font-size: 0.9em;">(computed)</span>
+                        <span style="color: #6c757d; margin-left: 0.5rem; font-size: 0.9em;">{{ 'bundle-plugin.computed' | translate }}</span>
                     </div>
                 </vdr-form-field>
             </vdr-card>
 
         <!-- Assets Section -->
-        <vdr-card [title]="'Assets' | translate">
+        <vdr-card [title]="'bundle-plugin.assets' | translate">
             <vdr-assets
                 [assets]="assetChanges.assets"
                 [featuredAsset]="assetChanges.featuredAsset"
@@ -258,23 +258,23 @@
         </vdr-card>
 
         <!-- Bundle Items Section -->
-        <vdr-card [title]="'Bundle Items' | translate">
+        <vdr-card [title]="'bundle-plugin.bundle-items' | translate">
             <button 
                 type="button" 
                 class="btn btn-sm btn-success mb-3" 
                 (click)="addBundleItem()">
                 <clr-icon shape="plus"></clr-icon>
-                Add item
+                {{ 'bundle-plugin.add-item' | translate }}
             </button>
 
             <table class="table" formArrayName="items">
                 <thead>
                     <tr>
-                        <th>Variant</th>
-                        <th>Quantity</th>
-                        <th>Unit price</th>
-                        <th>Weight</th>
-                        <th>Display order</th>
+                        <th>{{ 'bundle-plugin.variant' | translate }}</th>
+                        <th>{{ 'bundle-plugin.quantity' | translate }}</th>
+                        <th>{{ 'bundle-plugin.unit-price' | translate }}</th>
+                        <th>{{ 'bundle-plugin.weight' | translate }}</th>
+                        <th>{{ 'bundle-plugin.display-order' | translate }}</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -286,7 +286,7 @@
                                     #variantInput
                                     type="text"
                                     class="form-control form-control-sm"
-                                    placeholder="Search variant..."
+                                    [placeholder]="'bundle-plugin.search-variant' | translate"
                                     [value]="item.get('productVariantName')?.value"
                                     (input)="searchVariants(($any($event).target).value, i)"
                                     (focus)="activeSearchIndex = i"
@@ -358,15 +358,15 @@
                 >
                     <strong>{{ variant.productVariantName }}</strong>
                     <br>
-                    <small class="text-muted">SKU: {{ variant.sku }}</small>
+                    <small class="text-muted">{{ 'bundle-plugin.sku' | translate }}: {{ variant.sku }}</small>
                     <small class="text-muted ml-2">{{ variant.price.value / 100 | currency }}</small>
                 </button>
             </div>
         </vdr-card>
 
         <!-- Custom Fields (Read-only computed) -->
-        <vdr-card *ngIf="!isNew" [title]="'Computed Fields' | translate">
-            <vdr-form-field [label]="'Bundle price (computed)'" for="computedPrice">
+        <vdr-card *ngIf="!isNew" [title]="'bundle-plugin.computed-fields' | translate">
+            <vdr-form-field [label]="'bundle-plugin.bundle-price-computed' | translate" for="computedPrice">
                 <input 
                     id="computedPrice"
                     type="text" 
@@ -377,11 +377,11 @@
                 />
             </vdr-form-field>
 
-            <vdr-form-field [label]="'Shell product ID'" for="shellProductId">
+            <vdr-form-field [label]="'bundle-plugin.shell-product-id' | translate" for="shellProductId">
                 <input 
                     id="shellProductId"
                     type="text" 
-                    [value]="bundle?.shellProductId || 'Not created'"
+                    [value]="bundle?.shellProductId || ('bundle-plugin.not-created' | translate)"
                     readonly
                     disabled
                     class="text-muted"
