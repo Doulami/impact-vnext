@@ -9,6 +9,7 @@ import {
 import { Bundle, BundleStatus } from '../entities/bundle.entity';
 import { BundleService } from './bundle.service';
 import { BundleSafetyService } from './bundle-safety.service';
+import { BundleTranslationService } from './bundle-translation.service';
 
 /**
  * Bundle Lifecycle Service
@@ -35,7 +36,8 @@ export class BundleLifecycleService {
         private connection: TransactionalConnection,
         private bundleService: BundleService,
         private bundleSafetyService: BundleSafetyService,
-        private eventBus: EventBus
+        private eventBus: EventBus,
+        private translationService: BundleTranslationService
     ) {}
     
     /**
@@ -46,24 +48,23 @@ export class BundleLifecycleService {
         const bundle = await this.bundleService.findOne(ctx, bundleId);
         
         if (!bundle) {
-            throw new Error(`Bundle ${bundleId} not found`);
+            throw new Error(this.translationService.bundleNotFound(ctx, String(bundleId)));
         }
         
         if (bundle.status !== BundleStatus.DRAFT) {
-            throw new Error(`Cannot publish bundle: current status is ${bundle.status}, must be DRAFT`);
+            throw new Error(this.translationService.cannotPublishDraft(ctx));
         }
         
         // Validate bundle configuration
         const errors = bundle.validate();
         if (errors.length > 0) {
-            throw new Error(`Cannot publish bundle due to validation errors: ${errors.join(', ')}`);
+            throw new Error(this.translationService.cannotPublishDraft(ctx));
         }
         
         // Validate bundle integrity (all components available)
         const integrityCheck = await this.bundleSafetyService.validateBundleIntegrity(ctx, bundleId);
         if (!integrityCheck.isValid) {
-            const issues = integrityCheck.issues.map(i => i.message).join(', ');
-            throw new Error(`Cannot publish bundle due to integrity issues: ${issues}`);
+            throw new Error(this.translationService.cannotPublishBroken(ctx));
         }
         
         Logger.info(`Publishing bundle ${bundleId} (${bundle.name})`, BundleLifecycleService.loggerCtx);
@@ -99,11 +100,11 @@ export class BundleLifecycleService {
         const bundle = await this.bundleService.findOne(ctx, bundleId);
         
         if (!bundle) {
-            throw new Error(`Bundle ${bundleId} not found`);
+            throw new Error(this.translationService.bundleNotFound(ctx, String(bundleId)));
         }
         
         if (bundle.status !== BundleStatus.ACTIVE) {
-            throw new Error(`Cannot archive bundle: current status is ${bundle.status}, must be ACTIVE`);
+            throw new Error(this.translationService.alreadyArchived(ctx));
         }
         
         Logger.info(`Archiving bundle ${bundleId} (${bundle.name})`, BundleLifecycleService.loggerCtx);
@@ -133,7 +134,7 @@ export class BundleLifecycleService {
         const bundle = await this.bundleService.findOne(ctx, bundleId);
         
         if (!bundle) {
-            throw new Error(`Bundle ${bundleId} not found`);
+            throw new Error(this.translationService.bundleNotFound(ctx, String(bundleId)));
         }
         
         if (bundle.status !== BundleStatus.ACTIVE) {
@@ -169,18 +170,17 @@ export class BundleLifecycleService {
         const bundle = await this.bundleService.findOne(ctx, bundleId);
         
         if (!bundle) {
-            throw new Error(`Bundle ${bundleId} not found`);
+            throw new Error(this.translationService.bundleNotFound(ctx, String(bundleId)));
         }
         
         if (bundle.status !== BundleStatus.BROKEN) {
-            throw new Error(`Cannot restore bundle: current status is ${bundle.status}, must be BROKEN`);
+            throw new Error(this.translationService.cannotPublishBroken(ctx));
         }
         
         // Validate bundle integrity before restoring
         const integrityCheck = await this.bundleSafetyService.validateBundleIntegrity(ctx, bundleId);
         if (!integrityCheck.isValid) {
-            const issues = integrityCheck.issues.map(i => i.message).join(', ');
-            throw new Error(`Cannot restore bundle due to integrity issues: ${issues}`);
+            throw new Error(this.translationService.cannotPublishBroken(ctx));
         }
         
         Logger.info(`Restoring bundle ${bundleId} (${bundle.name})`, BundleLifecycleService.loggerCtx);
