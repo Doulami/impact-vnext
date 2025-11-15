@@ -24,7 +24,7 @@
     "lint:web": "cd apps/web && npm run lint",
     "clean": "npm run clean:deps && npm run clean:build",
     "clean:deps": "rm -rf node_modules apps/*/node_modules packages/*/node_modules",
-    "clean:build": "rm -rf apps/web/.next apps/cms/build apps/cms/.tmp",
+    "clean:build": "rm -rf apps/web/.next apps/cms/build apps/cms/.tmp apps/api/dist apps/api/admin-ui",
     "install:all": "npm install && npm run install:apps",
     "install:apps": "cd apps/web && npm install && cd ../cms && npm install && cd ../api && npm install"
   },

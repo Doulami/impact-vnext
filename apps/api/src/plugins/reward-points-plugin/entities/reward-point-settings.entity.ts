@@ -24,10 +24,10 @@ export class RewardPointSettings extends VendureEntity {
     @Column({ default: false })
     enabled: boolean;
 
-    @Column('decimal', { precision: 10, scale: 4, default: '1' })
+    @Column('numeric', { precision: 10, scale: 4, default: 1 })
     earnRate: number; // Points per currency unit (e.g., 1.0 = 1 point per $1)
 
-    @Column('decimal', { precision: 10, scale: 4, default: '0.01' })
+    @Column('numeric', { precision: 10, scale: 4, default: () => '0.01' })
     redeemRate: number; // Currency per point in cents (e.g., 0.01 = $0.01 per point)
 
     @Column('int', { default: 100 })

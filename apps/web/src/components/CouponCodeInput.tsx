@@ -27,7 +27,7 @@ export default function CouponCodeInput({ appliedCoupons, onSuccess }: CouponCod
     
     try {
       const result = await applyCoupon({
-        variables: { couponCode: couponCode.trim().toUpperCase() }
+        variables: { couponCode: couponCode.trim() }
       });
       
       if (result.data?.applyCouponCode.__typename === 'Order') {

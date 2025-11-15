@@ -5,7 +5,8 @@
   "scripts": {
     "dev:server": "ts-node ./src/index.ts",
     "dev:worker": "ts-node ./src/index-worker.ts",
-    "dev": "concurrently npm:dev:*",
+    "dev": "npm run clean && concurrently npm:dev:*",
+    "clean": "rm -rf dist admin-ui",
     "migrate": "ts-node ./run-migration.ts",
     "seed:bundles": "ts-node ./scripts/seed-demo-bundles.ts",
     "seed:products": "ts-node ./scripts/seed-demo-products.ts",

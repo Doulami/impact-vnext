@@ -644,13 +644,15 @@ function CheckoutPageContent() {
                     <span className="text-gray-900">${((activeOrderData?.activeOrder?.subTotalWithTax || totalPrice) / 100).toFixed(2)}</span>
                   </div>
                   
-                  {/* Show discounts if any */}
-                  {activeOrderData?.activeOrder?.discounts?.map((discount: any, idx: number) => (
-                    <div key={idx} className="flex justify-between mb-2 text-sm text-green-600">
-                      <span>{discount.description}</span>
-                      <span>-${(discount.amountWithTax / 100).toFixed(2)}</span>
-                    </div>
-                  ))}
+                  {/* Show discounts if any (exclude system bundle discount) */}
+                  {activeOrderData?.activeOrder?.discounts
+                    ?.filter((discount: any) => !discount.description.includes('System Bundle Discount') && !discount.description.includes('bundle discount'))
+                    ?.map((discount: any, idx: number) => (
+                      <div key={idx} className="flex justify-between mb-2 text-sm text-green-600">
+                        <span>{discount.description}</span>
+                        <span>-${(discount.amountWithTax / 100).toFixed(2)}</span>
+                      </div>
+                    ))}
                   
                   {/* Show reward points discount */}
                   {pointsDiscount > 0 && (
