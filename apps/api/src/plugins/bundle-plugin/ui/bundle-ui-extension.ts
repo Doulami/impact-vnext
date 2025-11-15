@@ -3,6 +3,7 @@ import { AdminUiExtension } from '@vendure/ui-devkit/compiler';
 
 export const bundleUiExtension: AdminUiExtension = {
   extensionPath: path.join(__dirname),
+  providers: ['providers.ts'],
   ngModules: [
     {
       type: 'shared',
