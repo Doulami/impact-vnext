@@ -3,6 +3,7 @@ import { Transaction, Allow, Permission, RequestContext, ID, Logger, Ctx } from 
 import { BundleService } from '../services/bundle.service';
 import { BundleConfigService } from '../services/bundle-config.service';
 import { Bundle } from '../entities/bundle.entity';
+import { BundleTranslationService } from '../services/bundle-translation.service';
 
 /**
  * Bundle Admin API Resolver (Clean Version)
@@ -16,7 +17,8 @@ export class BundleAdminResolver {
 
     constructor(
         private bundleService: BundleService,
-        private bundleConfigService: BundleConfigService
+        private bundleConfigService: BundleConfigService,
+        private translationService: BundleTranslationService
     ) {}
 
     @Query()
