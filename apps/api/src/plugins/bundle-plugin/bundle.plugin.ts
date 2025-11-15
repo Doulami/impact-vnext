@@ -23,7 +23,6 @@ import { BundlePluginConfig, defaultBundlePluginConfig } from './types/bundle-co
 import { BundleSchedulerService } from './services/bundle-scheduler.service';
 import { BundleEventHandlersService } from './services/bundle-event-handlers.service';
 import { BundleJobQueueResolver } from './api/bundle-job-queue.resolver';
-import { bundlePermission } from './permissions/bundle-permission';
 
 /**
  * Bundle Plugin for Vendure
@@ -545,9 +544,6 @@ import { bundlePermission } from './permissions/bundle-permission';
 
     // Add custom fields to OrderLine for bundle grouping and register promotion components
     configuration: config => {
-        // Register bundle custom permissions
-        config.authOptions.customPermissions.push(bundlePermission);
-        
         config.customFields.OrderLine = [
             // Bundle identification fields (exposed for frontend grouping)
             {
