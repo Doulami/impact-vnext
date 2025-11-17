@@ -1,108 +1,52 @@
 {
-  "reward-points-plugin": {
-    "reward-points": "Points de Récompense",
-    "settings": "Paramètres",
-    "customers": "Clients",
-    "transactions": "Transactions",
-    
-    "settings-management": "Gestion des Paramètres",
-    "customer-management": "Gestion des Clients",
-    "transaction-history": "Historique des Transactions",
-    
-    "enabled": "Activé",
-    "disabled": "Désactivé",
-    "enable-reward-points": "Activer les Points de Récompense",
-    "disable-reward-points": "Désactiver les Points de Récompense",
-    
-    "earn-rate": "Taux de Gain",
-    "earn-rate-description": "Points gagnés par unité monétaire (ex: 1 point par 1€)",
-    "redeem-rate": "Taux de Rachat",
-    "redeem-rate-description": "Valeur monétaire par point (ex: 0,01€ par point)",
-    "min-redeem-amount": "Montant Minimum de Rachat",
-    "min-redeem-amount-description": "Points minimum requis pour racheter",
-    "max-redeem-per-order": "Maximum de Rachat par Commande",
-    "max-redeem-per-order-description": "Points maximum pouvant être rachetés dans une commande",
-    
-    "customer-balance": "Solde Client",
-    "customer-email": "Email du Client",
-    "customer-name": "Nom du Client",
-    "balance": "Solde",
-    "lifetime-earned": "Total Gagné",
-    "lifetime-redeemed": "Total Racheté",
-    "created-at": "Créé le",
-    "updated-at": "Mis à jour le",
-    
-    "transaction-type": "Type de Transaction",
-    "points": "Points",
-    "order-total": "Total de la Commande",
-    "description": "Description",
-    "order-id": "ID de la Commande",
-    
-    "transaction-types": {
-      "EARNED": "Gagné",
-      "REDEEMED": "Racheté",
-      "EXPIRED": "Expiré",
-      "ADJUSTED": "Ajusté"
-    },
-    
-    "actions": {
-      "save": "Enregistrer",
-      "cancel": "Annuler",
-      "edit": "Modifier",
-      "view": "Voir",
-      "delete": "Supprimer",
-      "adjust-points": "Ajuster les Points",
-      "view-history": "Voir l'Historique",
-      "export": "Exporter"
-    },
-    
-    "adjust-customer-points": "Ajuster les Points du Client",
-    "add-points": "Ajouter des Points",
-    "subtract-points": "Soustraire des Points",
-    "adjustment-reason": "Raison de l'Ajustement",
-    "adjustment-reason-placeholder": "Entrez la raison de l'ajustement...",
-    "points-to-adjust": "Points à Ajuster",
-    
-    "messages": {
-      "settings-saved": "Paramètres enregistrés avec succès",
-      "settings-save-error": "Erreur lors de l'enregistrement des paramètres",
-      "points-adjusted": "Points du client ajustés avec succès",
-      "points-adjust-error": "Erreur lors de l'ajustement des points du client",
-      "loading": "Chargement...",
-      "no-data": "Aucune donnée disponible",
-      "confirm-adjustment": "Êtes-vous sûr de vouloir ajuster les points de ce client ?",
-      "invalid-input": "Veuillez entrer des valeurs valides",
-      "feature-enabled": "La fonctionnalité de points de récompense a été activée",
-      "feature-disabled": "La fonctionnalité de points de récompense a été désactivée"
-    },
-    
-    "search-placeholder": "Rechercher des clients...",
-    "filter-by-type": "Filtrer par type",
-    "all-types": "Tous les types",
-    "date-range": "Plage de Dates",
-    "from": "De",
-    "to": "À",
-    
-    "pagination": {
-      "items-per-page": "Éléments par page",
-      "showing": "Affichage de {start} à {end} sur {total} éléments",
-      "previous": "Précédent",
-      "next": "Suivant"
-    },
-    
-    "validation": {
-      "required": "Ce champ est requis",
-      "min-value": "La valeur doit être au minimum de {min}",
-      "max-value": "La valeur doit être au maximum de {max}",
-      "positive-number": "La valeur doit être un nombre positif",
-      "invalid-email": "Format d'email invalide"
-    },
-    
-    "tooltips": {
-      "earn-rate": "Combien de points les clients gagnent par unité monétaire dépensée",
-      "redeem-rate": "Quelle valeur monétaire chaque point vaut lors du rachat",
-      "min-redeem": "Nombre minimum de points requis avant que les clients puissent racheter",
-      "max-redeem": "Points maximum qui peuvent être rachetés dans une seule commande"
-    }
-  }
+  "reward-points.page-title": "Points de Récompense",
+  "reward-points.page-subtitle": "Gérer les récompenses de fidélité et les points des clients",
+  "reward-points.config.basic.title": "Configuration de Base",
+  "reward-points.config.basic.enable-feature": "Activer la fonctionnalité de points de récompense",
+  "reward-points.config.basic.enable-tooltip": "Basculer pour activer/désactiver tout le système de points de récompense",
+  "reward-points.config.basic.enable-reward-points": "Activer les Points de Récompense",
+  "reward-points.config.basic.disabled-warning": "Les points de récompense sont actuellement désactivés. Les clients ne peuvent ni gagner ni racheter des points.",
+  "reward-points.config.earning.title": "Règles de Gain de Points",
+  "reward-points.config.earning.earn-rate": "Points par euro",
+  "reward-points.config.earning.earn-rate-tooltip": "Combien de points les clients gagnent par unité monétaire dépensée",
+  "reward-points.config.earning.points-per-dollar": "points par euro",
+  "reward-points.config.earning.example": "Exemple: Gain",
+  "reward-points.config.earning.example-text": "Le client gagne {{points}} points pour une commande de 100€",
+  "reward-points.config.redemption.title": "Règles de Rachat de Points",
+  "reward-points.config.redemption.redeem-rate": "Valeur par point",
+  "reward-points.config.redemption.redeem-rate-tooltip": "Combien de valeur monétaire chaque point vaut lors du rachat",
+  "reward-points.config.redemption.per-point": "par point",
+  "reward-points.config.redemption.min-redeem": "Rachat minimum",
+  "reward-points.config.redemption.min-redeem-tooltip": "Nombre minimum de points requis avant que les clients puissent racheter",
+  "reward-points.config.redemption.max-redeem": "Maximum par commande",
+  "reward-points.config.redemption.max-redeem-tooltip": "Points maximum qui peuvent être rachetés dans une seule commande",
+  "reward-points.config.redemption.example": "Exemple: Rachat",
+  "reward-points.config.redemption.example-text": "1000 points = {{value}}€ de remise",
+  "reward-points.status.title": "État du Système",
+  "reward-points.status.current-status": "État Actuel",
+  "reward-points.status.enabled": "Activé",
+  "reward-points.status.disabled": "Désactivé",
+  "reward-points.status.total-customers": "Total clients avec des points",
+  "reward-points.status.customers": "clients",
+  "reward-points.calculator.title": "Calculateur de Taux",
+  "reward-points.calculator.example-earning": "Exemple: Gain (pour une commande de 100€)",
+  "reward-points.calculator.earning-description": "Points gagnés sur un achat de 100€",
+  "reward-points.calculator.example-redemption": "Exemple: Rachat (1000 points)",
+  "reward-points.calculator.redemption-description": "Valeur de remise de 1000 points",
+  "reward-points.help.title": "Comment ça marche",
+  "reward-points.help.description": "Configurer comment les clients gagnent et rachètent des points",
+  "reward-points.help.tip-1": "Définir le taux de gain: combien de points par euro dépensé",
+  "reward-points.help.tip-2": "Définir le taux de rachat: valeur de remise par point",
+  "reward-points.help.tip-3": "Configurer les limites de rachat minimum et maximum",
+  "reward-points.points": "points",
+  "reward-points.validation.earn-rate-required": "Le taux de gain est requis et doit être supérieur à 0",
+  "reward-points.validation.redeem-rate-required": "Le taux de rachat est requis et doit être supérieur à 0",
+  "reward-points.validation.min-redeem-required": "Le montant minimum de rachat est requis",
+  "reward-points.validation.max-redeem-required": "Le montant maximum de rachat est requis",
+  "reward-points.warning.high-rate-combination": "Attention: Cette combinaison de taux peut permettre aux clients d'obtenir plus de valeur qu'ils n'en dépensent",
+  "reward-points.info.max-adjusted-to-min": "Montant maximum de rachat ajusté pour correspondre au minimum",
+  "reward-points.info.min-adjusted-to-max": "Montant minimum de rachat ajusté pour correspondre au maximum",
+  "common.save": "Enregistrer",
+  "common.reset": "Réinitialiser",
+  "common.cancel": "Annuler"
 }

@@ -16,7 +16,12 @@ export default function CouponCodeInput({ appliedCoupons, onSuccess }: CouponCod
   const [error, setError] = useState('');
   const [isApplying, setIsApplying] = useState(false);
 
-  const [applyCoupon] = useMutation(APPLY_COUPON_CODE);
+  const [applyCoupon] = useMutation<{
+    applyCouponCode: {
+      __typename: string;
+      message?: string;
+    };
+  }>(APPLY_COUPON_CODE);
   const [removeCoupon] = useMutation(REMOVE_COUPON_CODE);
 
   const handleApply = async () => {

@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { EventBus, Logger, OrderStateTransitionEvent, RequestContext } from '@vendure/core';
+import { EventBus, Logger, OrderStateTransitionEvent, RequestContext, EntityHydrator } from '@vendure/core';
 import { RewardPointsSettingsService } from './reward-points-settings.service';
 import { RewardPointsService } from './reward-points.service';
 import { RewardPointsTranslationService } from './reward-points-translation.service';
@@ -27,7 +27,8 @@ export class RewardPointsEventHandlersService implements OnModuleInit {
         private eventBus: EventBus,
         private rewardPointsSettingsService: RewardPointsSettingsService,
         private rewardPointsService: RewardPointsService,
-        private translationService: RewardPointsTranslationService
+        private translationService: RewardPointsTranslationService,
+        private entityHydrator: EntityHydrator
     ) {}
 
     async onModuleInit() {
@@ -66,21 +67,26 @@ export class RewardPointsEventHandlersService implements OnModuleInit {
                 RewardPointsEventHandlersService.loggerCtx
             );
 
+            // Hydrate the order with necessary relations for tax calculations
+            const hydratedOrder = await this.entityHydrator.hydrate(event.ctx, event.order, {
+                relations: ['surcharges', 'shippingLines', 'lines']
+            });
+
             // Check if reward points plugin is enabled
             const settings = await this.rewardPointsSettingsService.getSettings(event.ctx);
             if (!settings.enabled) {
                 Logger.debug(
-                    `Reward points disabled, skipping point award for order ${event.order.code}`,
+                    `Reward points disabled, skipping point award for order ${hydratedOrder.code}`,
                     RewardPointsEventHandlersService.loggerCtx
                 );
                 return;
             }
 
             // Check if customer exists
-            const customerId = event.order.customer?.id;
+            const customerId = hydratedOrder.customer?.id;
             if (!customerId) {
                 Logger.warn(
-                    `No customer found for order ${event.order.code}, skipping point award`,
+                    `No customer found for order ${hydratedOrder.code}, skipping point award`,
                     RewardPointsEventHandlersService.loggerCtx
                 );
                 return;
@@ -99,45 +105,93 @@ export class RewardPointsEventHandlersService implements OnModuleInit {
 
             // Check if any recent transaction is for this order and of type EARNED
             const existingTransaction = recentTransactions.items.find(
-                t => t.orderId === event.order.id && t.type === 'EARNED'
+                t => t.orderId === hydratedOrder.id && t.type === 'EARNED'
             );
 
             if (existingTransaction) {
                 Logger.debug(
-                    `Points already awarded for order ${event.order.code}, skipping`,
+                    `Points already awarded for order ${hydratedOrder.code}, skipping`,
                     RewardPointsEventHandlersService.loggerCtx
                 );
                 return;
             }
 
-            // Calculate points to award based on order total
-            const orderTotal = this.calculateOrderTotalForPoints(event.order);
+            // STEP 1: Convert reserved points → redeemed points
+            const orderCustomFields = (hydratedOrder as any).customFields || {};
+            const pointsReserved = orderCustomFields.pointsReserved || 0;
+            
+            if (pointsReserved > 0) {
+                const balanceBefore = (await this.rewardPointsService.getCustomerBalance(event.ctx, customerId)).balance;
+                
+                Logger.info(
+                    `[PAYMENT_SETTLED] Converting reserved points to redeemed for order ${hydratedOrder.code}`,
+                    RewardPointsEventHandlersService.loggerCtx
+                );
+                
+                try {
+                    // Actually redeem the reserved points from customer balance
+                    await this.rewardPointsService.redeemPoints(
+                        event.ctx,
+                        customerId,
+                        pointsReserved,
+                        hydratedOrder.id,
+                        `Points redeemed for order ${hydratedOrder.code}`
+                    );
+                    
+                    const balanceAfter = (await this.rewardPointsService.getCustomerBalance(event.ctx, customerId)).balance;
+                    
+                    // Update order to mark points as redeemed (not just reserved)
+                    orderCustomFields.pointsRedeemed = pointsReserved;
+                    orderCustomFields.pointsReserved = 0; // Clear reservation
+                    
+                    Logger.info(
+                        `[PAYMENT_SETTLED] Redeemed points for order ${hydratedOrder.code}: ` +
+                        `customerId=${customerId}, pointsRedeemed=${pointsReserved}, ` +
+                        `balanceBefore=${balanceBefore}, balanceAfter=${balanceAfter}`,
+                        RewardPointsEventHandlersService.loggerCtx
+                    );
+                } catch (error) {
+                    Logger.error(
+                        `[PAYMENT_SETTLED] Failed to redeem reserved points for order ${hydratedOrder.code}: ${error instanceof Error ? error.message : String(error)}`,
+                        RewardPointsEventHandlersService.loggerCtx
+                    );
+                }
+            }
+
+            // STEP 2: Calculate and award earned points
+            const orderTotal = this.calculateOrderTotalForPoints(hydratedOrder);
             const pointsToAward = this.rewardPointsService.calculatePointsToEarn(orderTotal, settings.earnRate);
 
             // Skip if no points to award
             if (pointsToAward <= 0) {
                 Logger.debug(
-                    `No points to award for order ${event.order.code} (total: ${orderTotal})`,
+                    `[PAYMENT_SETTLED] No points to award for order ${hydratedOrder.code} (total: ${orderTotal})`,
                     RewardPointsEventHandlersService.loggerCtx
                 );
                 return;
             }
+
+            const balanceBeforeEarning = (await this.rewardPointsService.getCustomerBalance(event.ctx, customerId)).balance;
 
             // Award points to customer
             await this.rewardPointsService.awardPoints(
                 event.ctx,
                 customerId,
                 pointsToAward,
-                event.order.id,
-                this.translationService.pointsEarnedFromOrder(event.ctx, event.order.code)
+                hydratedOrder.id,
+                this.translationService.pointsEarnedFromOrder(event.ctx, hydratedOrder.code),
+                orderTotal
             );
 
+            const balanceAfterEarning = (await this.rewardPointsService.getCustomerBalance(event.ctx, customerId)).balance;
+
             // Update order custom fields to track points earned
-            const customFields = (event.order as any).customFields || {};
-            customFields.pointsEarned = pointsToAward;
+            orderCustomFields.pointsEarned = pointsToAward;
 
             Logger.info(
-                `Awarded ${pointsToAward} points to customer ${customerId} for order ${event.order.code} (total: ${orderTotal})`,
+                `[PAYMENT_SETTLED] Earned points for order ${hydratedOrder.code}: ` +
+                `customerId=${customerId}, pointsEarned=${pointsToAward}, ` +
+                `orderTotal=${orderTotal}, balanceBefore=${balanceBeforeEarning}, balanceAfter=${balanceAfterEarning}`,
                 RewardPointsEventHandlersService.loggerCtx
             );
 
@@ -151,19 +205,23 @@ export class RewardPointsEventHandlersService implements OnModuleInit {
 
     /**
      * Calculate the order total that should be used for points calculation
-     * Excludes any reward points redemption discounts to avoid circular point earning
+     * Excludes shipping costs, shipping tax, and any reward points redemption discounts
      */
     private calculateOrderTotalForPoints(order: any): number {
         // Start with the base order total
         let orderTotal = order.totalWithTax || order.total || 0;
 
-        // Subtract any points redemption discount from custom fields
-        const pointsRedeemed = order.customFields?.pointsRedeemed || 0;
-        if (pointsRedeemed > 0) {
-            // Points redeemed represents the discount amount already applied
-            // We don't need to subtract it again as it's already reflected in the order total
+        // Subtract shipping cost and shipping tax (points should not be earned/redeemed on shipping)
+        const shippingWithTax = order.shippingWithTax || 0;
+        orderTotal -= shippingWithTax;
+
+        // Subtract any points redemption discount that was already applied
+        const pointsDiscountValue = order.customFields?.pointsDiscountValue || 0;
+        if (pointsDiscountValue > 0) {
+            // Remove the points discount from the calculation to avoid circular point earning
+            orderTotal += pointsDiscountValue; // Add back the discount since we want to calculate points on the pre-discount amount
             Logger.debug(
-                `Order ${order.code} used ${pointsRedeemed} points, but total already reflects discount`,
+                `Order ${order.code} had ${pointsDiscountValue} cents points discount, calculating points on pre-discount amount`,
                 RewardPointsEventHandlersService.loggerCtx
             );
         }
@@ -172,7 +230,7 @@ export class RewardPointsEventHandlersService implements OnModuleInit {
         orderTotal = Math.max(0, orderTotal);
 
         Logger.debug(
-            `Calculated order total for points: ${orderTotal} (original: ${order.totalWithTax || order.total})`,
+            `Calculated order total for points: ${orderTotal} (original: ${order.totalWithTax || order.total}, shipping: ${shippingWithTax}, points discount: ${pointsDiscountValue})`,
             RewardPointsEventHandlersService.loggerCtx
         );
 

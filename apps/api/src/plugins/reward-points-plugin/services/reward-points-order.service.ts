@@ -7,6 +7,7 @@ import {
     OrderService,
     Logger,
     ID,
+    EntityHydrator,
 } from '@vendure/core';
 import { RewardPointsService } from './reward-points.service';
 import { RewardPointsSettingsService } from './reward-points-settings.service';
@@ -17,7 +18,7 @@ import { RewardPointsSettingsService } from './reward-points-settings.service';
  * Handles order integration for reward points:
  * - Validate redeem requests
  * - Store points redemption in order custom fields
- * - Store points redemption value in order line custom fields (for promotion)
+ * - Store points redemption value at order level (for PromotionOrderAction)
  */
 @Injectable()
 export class RewardPointsOrderService {
@@ -28,6 +29,7 @@ export class RewardPointsOrderService {
         private orderService: OrderService,
         private rewardPointsService: RewardPointsService,
         private settingsService: RewardPointsSettingsService,
+        private entityHydrator: EntityHydrator,
     ) {}
 
     /**
@@ -73,13 +75,13 @@ export class RewardPointsOrderService {
             };
         }
 
-        // Check customer balance
-        const customerPoints = await this.rewardPointsService.getCustomerBalance(ctx, customerId);
+        // Check available points (balance minus reserved in other pending orders)
+        const availablePoints = await this.rewardPointsService.getAvailablePoints(ctx, customerId);
         
-        if (customerPoints.balance < pointsToRedeem) {
+        if (availablePoints < pointsToRedeem) {
             return {
                 valid: false,
-                error: `Insufficient points balance. Available: ${customerPoints.balance}, Requested: ${pointsToRedeem}`,
+                error: `Insufficient available points. Available: ${availablePoints}, Requested: ${pointsToRedeem}`,
             };
         }
 
@@ -97,7 +99,7 @@ export class RewardPointsOrderService {
 
     /**
      * Apply points redemption to order
-     * Stores redemption info in order custom fields and creates order line for promotion
+     * Stores redemption info as order-level discount data for PromotionOrderAction
      */
     async applyPointsRedemptionToOrder(
         ctx: RequestContext,
@@ -116,36 +118,58 @@ export class RewardPointsOrderService {
         }
 
         const redeemValue = validation.redeemValue!;
-        const settings = await this.settingsService.getSettings(ctx);
 
-        // Update order custom fields
-        const orderCustomFields = (order.customFields || {}) as any;
-        orderCustomFields.pointsRedeemed = pointsToRedeem;
-        order.customFields = orderCustomFields;
-
-        // Create a special order line for points redemption discount
-        // This line will be used by the promotion action to apply the discount
-        // The line itself has zero price, but customFields.pointsRedeemValue stores the discount amount
-        const redemptionLine = new OrderLine({
-            productVariant: null as any, // No variant for points redemption
-            quantity: 1,
-            unitPrice: 0, // Zero price line
-            unitPriceWithTax: 0,
-            linePrice: 0,
-            linePriceWithTax: 0,
-            customFields: {
-                pointsRedeemValue: -redeemValue, // Negative value for discount (in cents)
-            } as any,
+        // Hydrate the order with necessary relations for tax calculations
+        const hydratedOrder = await this.entityHydrator.hydrate(ctx, order, {
+            relations: ['surcharges', 'shippingLines']
         });
 
-        // Add line to order (this will be handled by order mutations in Phase 4)
-        // For now, we just store the redemption info in order custom fields
+        // Calculate the maximum discount based on order total excluding shipping
+        const maxDiscountableAmount = this.calculateOrderTotalExcludingShipping(hydratedOrder);
+        const actualDiscountValue = Math.min(redeemValue, maxDiscountableAmount);
+
+        // Store redemption info in order custom fields (order-level data)
+        const orderCustomFields = (hydratedOrder.customFields || {}) as any;
+        orderCustomFields.pointsReserved = pointsToRedeem; // Reserve points, don't redeem yet
+        orderCustomFields.pointsDiscountValue = actualDiscountValue; // Store order-level discount value
+        orderCustomFields.pointsRedeemed = 0; // No points actually redeemed until payment confirmed
         
-        // Save order
-        const updatedOrder = await this.connection.getRepository(ctx, Order).save(order);
+        // Preserve existing earned points
+        const orderEarned = orderCustomFields.pointsEarned || 0;
+        orderCustomFields.pointsEarned = orderEarned;
+        
+        hydratedOrder.customFields = orderCustomFields;
+
+        // Clear any existing line-level points redemption data to avoid conflicts
+        if (hydratedOrder.lines && hydratedOrder.lines.length > 0) {
+            for (const line of hydratedOrder.lines) {
+                const lineCustomFields = (line.customFields || {}) as any;
+                // Remove old line-level discount data if it exists
+                if (lineCustomFields.pointsRedeemValue) {
+                    delete lineCustomFields.pointsRedeemValue;
+                    line.customFields = lineCustomFields;
+                }
+            }
+            
+            // Save all lines with cleared custom fields
+            await this.connection.getRepository(ctx, OrderLine).save(hydratedOrder.lines);
+        }
+
+        // Save the order with updated custom fields
+        const updatedOrder = await this.connection.getRepository(ctx, Order).save(hydratedOrder);
 
         Logger.info(
-            `Applied ${pointsToRedeem} points redemption (${redeemValue} cents discount) to order ${order.id}`,
+            `Reserved ${pointsToRedeem} points (${actualDiscountValue} cents order-level discount) for order ${hydratedOrder.id}. ` +
+            `Triggering order recalculation to apply promotion discount...`,
+            RewardPointsOrderService.loggerCtx
+        );
+
+        // CRITICAL: Trigger order recalculation to apply the promotion discount
+        // This recalculates all promotions now that custom fields are set
+        await this.orderService.applyPriceAdjustments(ctx, updatedOrder);
+        
+        Logger.info(
+            `Order ${updatedOrder.code || updatedOrder.id} recalculated. Promotion should now apply ${actualDiscountValue} cent discount.`,
             RewardPointsOrderService.loggerCtx
         );
 
@@ -153,7 +177,7 @@ export class RewardPointsOrderService {
     }
 
     /**
-     * Get points redemption value from order
+     * Get points redemption value from order (updated for order-level discount)
      */
     getPointsRedemptionFromOrder(order: Order): { points: number; value: number } | null {
         const customFields = (order.customFields || {}) as any;
@@ -163,22 +187,29 @@ export class RewardPointsOrderService {
             return null;
         }
 
-        // Find redemption value from order lines
-        let redeemValue = 0;
-        if (order.lines) {
-            for (const line of order.lines) {
-                const lineCustomFields = (line.customFields || {}) as any;
-                if (lineCustomFields.pointsRedeemValue) {
-                    redeemValue = Math.abs(lineCustomFields.pointsRedeemValue);
-                    break;
-                }
-            }
-        }
+        // Get redemption value from order custom fields (order-level discount)
+        const redeemValue = customFields.pointsDiscountValue || 0;
 
         return {
             points: pointsRedeemed,
             value: redeemValue,
         };
+    }
+
+    /**
+     * Calculate order total excluding shipping and shipping tax
+     * This ensures that shipping costs are not reduced by points redemption
+     */
+    private calculateOrderTotalExcludingShipping(order: Order): number {
+        // Start with total order value
+        let orderTotal = order.totalWithTax || order.total || 0;
+        
+        // Subtract shipping cost and shipping tax
+        const shippingWithTax = order.shippingWithTax || 0;
+        orderTotal -= shippingWithTax;
+        
+        // Ensure we don't go below zero
+        return Math.max(0, orderTotal);
     }
 }
 

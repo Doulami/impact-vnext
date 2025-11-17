@@ -10,6 +10,7 @@ export const GET_CUSTOMER_REWARD_POINTS = gql`
     customerRewardPoints {
       id
       balance
+      availablePoints
       lifetimeEarned
       lifetimeRedeemed
       createdAt
@@ -48,14 +49,10 @@ export const GET_REWARD_TRANSACTION_HISTORY = gql`
 export const REDEEM_POINTS = gql`
   mutation RedeemPoints($points: Int!) {
     redeemPoints(points: $points) {
-      id
-      code
-      state
-      total
-      totalWithTax
-      customFields {
-        pointsRedeemed
-      }
+      success
+      message
+      pointsRedeemed
+      discountValue
     }
   }
 `;

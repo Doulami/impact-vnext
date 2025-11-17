@@ -11,6 +11,7 @@ export interface RewardPointSettings {
 export interface CustomerRewardPoints {
   id: string;
   balance: number;
+  availablePoints: number;
   lifetimeEarned: number;
   lifetimeRedeemed: number;
   createdAt: string;

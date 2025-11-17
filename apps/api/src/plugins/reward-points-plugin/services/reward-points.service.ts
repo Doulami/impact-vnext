@@ -313,5 +313,40 @@ export class RewardPointsService {
         const value = Math.round(points * redeemRate * 100);
         return Math.max(0, value); // Ensure non-negative
     }
+
+    /**
+     * Get available points for a customer (balance - reserved in pending orders)
+     * This ensures customers cannot over-spend points across multiple pending orders
+     */
+    async getAvailablePoints(ctx: RequestContext, customerId: ID): Promise<number> {
+        // Get customer balance
+        const customerPoints = await this.getCustomerBalance(ctx, customerId);
+        const balance = customerPoints.balance;
+
+        // Query all pending orders with reserved points for this customer
+        const orderRepo = this.connection.getRepository(ctx, 'Order');
+        const pendingOrders = await orderRepo
+            .createQueryBuilder('order')
+            .where('order.customerId = :customerId', { customerId: String(customerId) })
+            .andWhere('order.state NOT IN (:...settledStates)', {
+                settledStates: ['PaymentSettled', 'Delivered', 'Cancelled']
+            })
+            .getMany();
+
+        // Sum up all reserved points from pending orders
+        const totalReserved = pendingOrders.reduce((sum, order: any) => {
+            const reserved = order.customFields?.pointsReserved || 0;
+            return sum + reserved;
+        }, 0);
+
+        const available = balance - totalReserved;
+
+        Logger.debug(
+            `Customer ${customerId}: balance=${balance}, reserved=${totalReserved}, available=${available}`,
+            RewardPointsService.loggerCtx
+        );
+
+        return Math.max(0, available);
+    }
 }
 

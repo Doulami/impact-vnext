@@ -18,14 +18,16 @@ export default function RewardPointsRedemption({
   onRedemptionSuccess,
   onRedemptionError
 }: RewardPointsRedemptionProps) {
-  const { rewardPoints, settings, isEnabled, loading } = useRewardPoints();
+  const { rewardPoints, settings, isEnabled, loading, refetch } = useRewardPoints();
   const [pointsToRedeem, setPointsToRedeem] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isRedeeming, setIsRedeeming] = useState(false);
   const [redemptionError, setRedemptionError] = useState('');
   const [redemptionSuccess, setRedemptionSuccess] = useState(false);
 
-  const [redeemPoints] = useMutation(REDEEM_POINTS);
+  const [redeemPoints] = useMutation<{
+    redeemPoints: boolean;
+  }>(REDEEM_POINTS);
 
   // Calculate discount (assuming 1 point = 1 cent discount)
   const discountAmount = pointsToRedeem;
@@ -43,7 +45,7 @@ export default function RewardPointsRedemption({
   }
 
   const maxRedeemablePoints = Math.min(
-    rewardPoints.balance,
+    rewardPoints.availablePoints,
     settings?.maxRedeemPerOrder || Infinity,
     orderTotal // Can't redeem more than order total
   );
@@ -72,6 +74,8 @@ export default function RewardPointsRedemption({
       if (data?.redeemPoints) {
         setRedemptionSuccess(true);
         onRedemptionSuccess?.(newTotal, pointsToRedeem);
+        // Refetch reward points to update availablePoints display
+        await refetch();
       }
     } catch (error: any) {
       const errorMessage = error.graphQLErrors?.[0]?.message || error.message || 'Failed to redeem points';
@@ -107,7 +111,7 @@ export default function RewardPointsRedemption({
           <Star className="w-5 h-5 text-yellow-500" />
           Use Reward Points
           <span className="text-sm font-normal text-gray-600">
-            ({rewardPoints.balance} available)
+            ({rewardPoints.availablePoints} available)
           </span>
         </h3>
         <button
@@ -184,14 +188,10 @@ export default function RewardPointsRedemption({
             </div>
 
             {pointsToRedeem > 0 && (
-              <div className="bg-blue-50 rounded-lg p-3 space-y-2">
+              <div className="bg-blue-50 rounded-lg p-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-700">Discount:</span>
                   <span className="text-green-600 font-medium">-${(discountAmount / 100).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm font-semibold">
-                  <span>New Total:</span>
-                  <span>${(newTotal / 100).toFixed(2)}</span>
                 </div>
               </div>
             )}

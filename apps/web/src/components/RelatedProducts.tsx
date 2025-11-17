@@ -26,7 +26,27 @@ export function RelatedProducts({ currentProductId, collections, isCurrentProduc
   console.log('[RelatedProducts] Props:', { currentProductId, collections, isFeatured, collectionSlug, isCurrentProductBundle });
   
   // Query bundle products if current is a bundle (same as bundles listing page)
-  const { data: bundleData, loading: bundleLoading, error: bundleError } = useQuery(GET_BUNDLES, {
+  const { data: bundleData, loading: bundleLoading, error: bundleError } = useQuery<{
+    bundles: {
+      items: Array<{
+        id: string;
+        name: string;
+        slug: string;
+        description?: string;
+        status: string;
+        effectivePrice: number;
+        featuredAsset?: {
+          id: string;
+          preview: string;
+        };
+        shellProduct?: {
+          id: string;
+          name: string;
+          slug: string;
+        };
+      }>;
+    };
+  }>(GET_BUNDLES, {
     variables: {
       options: {
         take: 9, // Take 9 to exclude current and show 8
@@ -79,18 +99,17 @@ export function RelatedProducts({ currentProductId, collections, isCurrentProduc
     skip: isCurrentProductBundle || !collectionSlug // Skip if bundle or no collection
   });
 
-  const data = isCurrentProductBundle ? bundleData : collectionData;
   const loading = isCurrentProductBundle ? bundleLoading : collectionLoading;
   const error = isCurrentProductBundle ? bundleError : collectionError;
   
-  console.log('[RelatedProducts] Query result:', { data, loading, error, isCurrentProductBundle });
+  console.log('[RelatedProducts] Query result:', { bundleData, collectionData, loading, error, isCurrentProductBundle });
   
   // Convert data to product cards based on query type
   let relatedProducts: any[] = [];
   
-  if (isCurrentProductBundle && data?.bundles?.items) {
+  if (isCurrentProductBundle && bundleData?.bundles?.items) {
     // Handle bundles query results (same structure as bundles listing)
-    relatedProducts = data.bundles.items
+    relatedProducts = bundleData.bundles.items
       .filter((bundle: any) => bundle.id !== currentProductId)
       .slice(0, 8)
       .map((bundle: any) => {
@@ -109,9 +128,9 @@ export function RelatedProducts({ currentProductId, collections, isCurrentProduc
           bundleId: bundle.id
         };
       });
-  } else if (data?.collection?.productVariants?.items) {
+  } else if (collectionData?.collection?.productVariants?.items) {
     // Handle collection results
-    const variants = data.collection.productVariants.items;
+    const variants = collectionData.collection.productVariants.items;
     relatedProducts = variants
       .filter((v: any) => v.product.id !== currentProductId)
       .slice(0, 8)

@@ -22,15 +22,20 @@ export class RewardPointsPromotionSetupService implements OnModuleInit {
     ) {}
 
     async onModuleInit() {
-        // Create the reward points promotion after a short delay to ensure system is ready
-        setTimeout(() => {
-            this.ensureRewardPointsPromotion().catch(err => {
-                Logger.error(
-                    `Failed to create reward points promotion: ${err.message}`,
-                    RewardPointsPromotionSetupService.loggerCtx
-                );
-            });
-        }, 5000);
+        // Only create promotions on the main server process, not worker processes
+        if (process.env.VENDURE_WORKER !== 'true') {
+            // Create the reward points promotion after a short delay to ensure system is ready
+            setTimeout(() => {
+                this.ensureRewardPointsPromotion().catch(err => {
+                    Logger.error(
+                        `Failed to create reward points promotion: ${err.message}`,
+                        RewardPointsPromotionSetupService.loggerCtx
+                    );
+                });
+            }, 5000);
+        } else {
+            Logger.debug('Skipping promotion setup on worker process', RewardPointsPromotionSetupService.loggerCtx);
+        }
     }
 
     /**
@@ -40,15 +45,53 @@ export class RewardPointsPromotionSetupService implements OnModuleInit {
         const ctx = await this.createSuperAdminContext();
 
         try {
-            // Check if promotion already exists by name
+            // Check for ALL existing reward points promotions by name
             const promotions = await this.promotionService.findAll(ctx, {
                 filter: { name: { eq: 'System Reward Points Discount' } }
             });
-            const existingPromotion = promotions.items[0];
-
-            if (existingPromotion) {
+            
+            // Check for existing valid promotions
+            let validPromotion = null;
+            let invalidPromotions = [];
+            
+            for (const existingPromotion of promotions.items) {
+                const hasCorrectAction = existingPromotion.actions.some(
+                    action => action.code === 'apply_reward_points_order_discount'
+                );
+                
+                if (hasCorrectAction && !validPromotion) {
+                    validPromotion = existingPromotion;
+                    Logger.info(
+                        `Found valid reward points promotion (ID: ${existingPromotion.id})`,
+                        RewardPointsPromotionSetupService.loggerCtx
+                    );
+                } else {
+                    invalidPromotions.push(existingPromotion);
+                }
+            }
+            
+            // Delete invalid promotions (wrong action or duplicates)
+            for (const invalidPromotion of invalidPromotions) {
                 Logger.info(
-                    `Reward points discount promotion already exists (ID: ${existingPromotion.id})`,
+                    `Deleting invalid/duplicate promotion (ID: ${invalidPromotion.id})...`,
+                    RewardPointsPromotionSetupService.loggerCtx
+                );
+                
+                try {
+                    await this.promotionService.softDeletePromotion(ctx, invalidPromotion.id);
+                    Logger.info(`Deleted promotion (ID: ${invalidPromotion.id})`, RewardPointsPromotionSetupService.loggerCtx);
+                } catch (error) {
+                    Logger.warn(
+                        `Failed to delete promotion (ID: ${invalidPromotion.id}): ${error instanceof Error ? error.message : String(error)}`,
+                        RewardPointsPromotionSetupService.loggerCtx
+                    );
+                }
+            }
+            
+            // If we have a valid promotion, we're done
+            if (validPromotion) {
+                Logger.info(
+                    `Using existing valid reward points promotion (ID: ${validPromotion.id})`,
                     RewardPointsPromotionSetupService.loggerCtx
                 );
                 return;
@@ -61,17 +104,17 @@ export class RewardPointsPromotionSetupService implements OnModuleInit {
                 // No coupon required - automatic promotion
                 conditions: [
                     {
-                        // Use minimum order value of 0 - always passes
+                        // Use minimum order value of 0 - always passes  
                         code: 'minimum_order_amount',
                         arguments: [
                             { name: 'amount', value: '0' },
-                            { name: 'taxInclusion', value: 'include' }
+                            { name: 'taxInclusion', value: 'exclude' }
                         ]
                     }
                 ],
                 actions: [
                     {
-                        code: 'apply_reward_points_discount',
+                        code: 'apply_reward_points_order_discount',
                         arguments: []
                     }
                 ],
@@ -87,7 +130,13 @@ export class RewardPointsPromotionSetupService implements OnModuleInit {
             // Check if creation was successful
             if ('id' in promotionResult) {
                 Logger.info(
-                    `Created system reward points discount promotion (ID: ${promotionResult.id})`,
+                    `Created system reward points discount promotion (ID: ${promotionResult.id}) with action: apply_reward_points_order_discount`,
+                    RewardPointsPromotionSetupService.loggerCtx
+                );
+                
+                // Log the promotion details
+                Logger.info(
+                    `Promotion details: enabled=true, conditions=[minimum_order_amount:0], actions=[apply_reward_points_order_discount]`,
                     RewardPointsPromotionSetupService.loggerCtx
                 );
             } else {

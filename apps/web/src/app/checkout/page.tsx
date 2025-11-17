@@ -54,7 +54,14 @@ function CheckoutPageContent() {
   });
 
   // GraphQL queries and mutations
-  const [getActiveOrderState] = useLazyQuery(GET_ACTIVE_ORDER_STATE);
+  const [getActiveOrderState] = useLazyQuery<{
+    activeOrder?: {
+      id: string;
+      code: string;
+      state: string;
+      lines: Array<{ id: string }>;
+    };
+  }>(GET_ACTIVE_ORDER_STATE);
   const [addItemToOrder] = useMutation(ADD_ITEM_TO_ORDER);
   const [addBundleToOrder] = useMutation(ADD_BUNDLE_TO_ORDER);
   const [removeOrderLine] = useMutation(REMOVE_ORDER_LINE);
@@ -67,11 +74,76 @@ function CheckoutPageContent() {
     skip: currentStep !== 2
   });
 
-  const { data: activeOrderData, refetch: refetchActiveOrder } = useQuery(GET_ACTIVE_ORDER, {
+  const { data: activeOrderData, refetch: refetchActiveOrder } = useQuery<{
+    activeOrder?: {
+      id: string;
+      code: string;
+      state: string;
+      total: number;
+      totalWithTax: number;
+      subTotalWithTax: number;
+      couponCodes: string[];
+      discounts: Array<{
+        description: string;
+        amountWithTax: number;
+      }>;
+      currencyCode: string;
+      lines: Array<{
+        id: string;
+        quantity: number;
+        linePrice: number;
+        linePriceWithTax: number;
+        productVariant: {
+          id: string;
+          name: string;
+          sku: string;
+        };
+        featuredAsset?: {
+          id: string;
+          preview: string;
+        };
+      }>;
+      shippingAddress?: {
+        fullName: string;
+        streetLine1: string;
+        streetLine2?: string;
+        city: string;
+        province: string;
+        postalCode: string;
+        country: string;
+        phoneNumber?: string;
+      };
+      billingAddress?: {
+        fullName: string;
+        streetLine1: string;
+        streetLine2?: string;
+        city: string;
+        province: string;
+        postalCode: string;
+        country: string;
+        phoneNumber?: string;
+      };
+      shippingLines: Array<{
+        id: string;
+        shippingMethod: {
+          id: string;
+          name: string;
+          description: string;
+        };
+        priceWithTax: number;
+      }>;
+    };
+  }>(GET_ACTIVE_ORDER, {
     skip: currentStep !== 3
   });
   
-  const { data: countriesData, loading: countriesLoading } = useQuery(GET_AVAILABLE_COUNTRIES, {
+  const { data: countriesData, loading: countriesLoading } = useQuery<{
+    availableCountries: Array<{
+      id: string;
+      code: string;
+      name: string;
+    }>;
+  }>(GET_AVAILABLE_COUNTRIES, {
     skip: currentStep !== 1
   });
 
@@ -644,7 +716,7 @@ function CheckoutPageContent() {
                     <span className="text-gray-900">${((activeOrderData?.activeOrder?.subTotalWithTax || totalPrice) / 100).toFixed(2)}</span>
                   </div>
                   
-                  {/* Show discounts if any (exclude system bundle discount) */}
+                  {/* Show all discounts from Vendure (exclude system bundle discount) */}
                   {activeOrderData?.activeOrder?.discounts
                     ?.filter((discount: any) => !discount.description.includes('System Bundle Discount') && !discount.description.includes('bundle discount'))
                     ?.map((discount: any, idx: number) => (
@@ -653,14 +725,6 @@ function CheckoutPageContent() {
                         <span>-${(discount.amountWithTax / 100).toFixed(2)}</span>
                       </div>
                     ))}
-                  
-                  {/* Show reward points discount */}
-                  {pointsDiscount > 0 && (
-                    <div className="flex justify-between mb-2 text-sm text-green-600">
-                      <span>Reward Points Discount ({pointsRedeemed} points)</span>
-                      <span>-${(pointsDiscount / 100).toFixed(2)}</span>
-                    </div>
-                  )}
                   
                   {(() => {
                     const selectedMethod = shippingMethods.find((m: any) => m.id === selectedShippingMethod);
@@ -674,7 +738,7 @@ function CheckoutPageContent() {
                         </div>
                         <div className="flex justify-between font-bold text-lg border-t pt-2">
                           <span>Total:</span>
-                          <span>${(Math.max(0, orderTotal - pointsDiscount) / 100).toFixed(2)}</span>
+                          <span>${(orderTotal / 100).toFixed(2)}</span>
                         </div>
                       </>
                     );

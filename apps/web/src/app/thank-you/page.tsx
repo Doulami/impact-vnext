@@ -35,7 +35,17 @@ function ThankYouContent() {
   );
 
   // Fetch shell products for bundles
-  const { data: shellData } = useQuery(GET_BUNDLES_SHELL_PRODUCTS, {
+  const { data: shellData } = useQuery<{
+    bundles: {
+      items: Array<{
+        id: string;
+        shellProduct?: {
+          id: string;
+          slug: string;
+        };
+      }>;
+    };
+  }>(GET_BUNDLES_SHELL_PRODUCTS, {
     variables: { ids: bundleIds },
     skip: bundleIds.length === 0,
   });

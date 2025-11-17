@@ -191,10 +191,18 @@ export interface BundleItem {
     sku: string;
     price: number;
     priceWithTax: number;
+    featuredAsset?: {
+      id: string;
+      preview: string;
+    };
     product: {
       id: string;
       name: string;
       slug: string;
+      featuredAsset?: {
+        id: string;
+        preview: string;
+      };
     };
   };
   quantity: number;

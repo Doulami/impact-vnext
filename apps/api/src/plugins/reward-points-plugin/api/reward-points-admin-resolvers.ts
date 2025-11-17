@@ -18,6 +18,8 @@ import {
     PaginatedList,
     TransactionalConnection,
     CustomerService,
+    EntityHydrator,
+    OrderService,
 } from '@vendure/core';
 import { RewardPointsService } from '../services/reward-points.service';
 import { RewardPointsSettingsService } from '../services/reward-points-settings.service';
@@ -199,6 +201,8 @@ export class AdminRewardTransactionResolver {
     constructor(
         private connection: TransactionalConnection,
         private customerService: CustomerService,
+        private entityHydrator: EntityHydrator,
+        private orderService: OrderService,
     ) {}
 
     @Query()
@@ -272,9 +276,14 @@ export class AdminRewardTransactionResolver {
                 return null;
             }
             
-            const order = await this.connection.getRepository(ctx, 'Order').findOne({
-                where: { id: transaction.orderId },
-            });
+            // Use OrderService to get proper order and hydrate it
+            const order = await this.orderService.findOne(ctx, transaction.orderId);
+            if (order) {
+                // Hydrate the order with necessary relations to avoid discounts error
+                await this.entityHydrator.hydrate(ctx, order, { 
+                    relations: ['lines', 'lines.productVariant', 'customer', 'surcharges'] 
+                });
+            }
             return order;
         } catch (error) {
             return null;

@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { marker as _ } from '@biesbjerg/ngx-translate-extract-marker';
 import {
     DataService,
     NotificationService,
@@ -162,7 +161,7 @@ export class RewardPointsSettingsComponent implements OnInit {
         const redeemRate = this.settingsForm.get('redeemRate')?.value;
         
         if (earnRate && redeemRate && (earnRate * redeemRate) > 1) {
-            this.notificationService.warning(_('reward-points.warning.high-rate-combination'));
+            this.notificationService.warning('Warning: This combination of rates may result in customers gaining more value than they spend');
         }
     }
 
@@ -173,7 +172,7 @@ export class RewardPointsSettingsComponent implements OnInit {
         
         if (minAmount && maxAmount && minAmount > maxAmount) {
             this.settingsForm.get('maxRedeemPerOrder')?.setValue(minAmount);
-            this.notificationService.info(_('reward-points.info.max-adjusted-to-min'));
+            this.notificationService.info('Maximum redemption amount adjusted to match minimum');
         }
     }
 
@@ -184,7 +183,7 @@ export class RewardPointsSettingsComponent implements OnInit {
         
         if (minAmount && maxAmount && maxAmount < minAmount) {
             this.settingsForm.get('minRedeemAmount')?.setValue(maxAmount);
-            this.notificationService.info(_('reward-points.info.min-adjusted-to-max'));
+            this.notificationService.info('Minimum redemption amount adjusted to match maximum');
         }
     }
 }

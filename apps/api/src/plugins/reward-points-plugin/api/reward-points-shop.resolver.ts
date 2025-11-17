@@ -15,6 +15,7 @@ import {
     Logger,
     Transaction,
     CustomerService,
+    EntityHydrator,
 } from '@vendure/core';
 import { RewardPointsService } from '../services/reward-points.service';
 import { RewardPointsSettingsService } from '../services/reward-points-settings.service';
@@ -43,6 +44,7 @@ export class ShopApiRewardPointsResolver {
         private orderService: OrderService,
         private activeOrderService: ActiveOrderService,
         private customerService: CustomerService,
+        private entityHydrator: EntityHydrator,
     ) {}
 
     /**
@@ -144,13 +146,14 @@ export class ShopApiRewardPointsResolver {
 
     /**
      * Redeem points during checkout
+     * Returns a result object instead of Order to avoid hydration issues
      */
     @Mutation()
     @Transaction()
     async redeemPoints(
         @Ctx() ctx: RequestContext,
         @Args() args: { points: number }
-    ): Promise<Order> {
+    ): Promise<{ success: boolean; message?: string; pointsRedeemed?: number; discountValue?: number }> {
         if (!ctx.activeUserId) {
             throw new Error('User must be logged in to redeem points');
         }
@@ -166,9 +169,11 @@ export class ShopApiRewardPointsResolver {
             let activeOrder = await this.activeOrderService.getActiveOrder(ctx, {});
             
             if (!activeOrder) {
-                // Create a new order if none exists
-                activeOrder = await this.orderService.create(ctx, ctx.activeUserId);
+                throw new Error('No active order found. Please add items to your cart first.');
             }
+
+            // Hydrate order with lines relation to avoid hydration errors
+            await this.entityHydrator.hydrate(ctx, activeOrder, { relations: ['lines'] });
 
             // Validate redeem request
             const validation = await this.rewardPointsOrderService.validateRedeemRequest(
@@ -181,35 +186,61 @@ export class ShopApiRewardPointsResolver {
                 throw new Error(validation.error || 'Invalid redeem request');
             }
 
-            // Apply redemption to order
-            const updatedOrder = await this.rewardPointsOrderService.applyPointsRedemptionToOrder(
+            // Get current available points for logging
+            const availablePoints = await this.rewardPointsService.getAvailablePoints(ctx, customer.id);
+            const currentBalance = (await this.rewardPointsService.getCustomerBalance(ctx, customer.id)).balance;
+            
+            // Apply points reservation to order (don't deduct from balance yet)
+            await this.rewardPointsOrderService.applyPointsRedemptionToOrder(
                 ctx,
                 activeOrder,
                 args.points
             );
 
-            // Actually redeem the points (deduct from balance)
-            await this.rewardPointsService.redeemPoints(
-                ctx,
-                customer.id,
-                args.points,
-                updatedOrder.id,
-                `Redeemed ${args.points} points for order ${updatedOrder.code}`
+            // Note: Points are RESERVED, not redeemed yet
+            // They will be actually deducted when payment is confirmed (in event handlers)
+            
+            Logger.info(
+                `[CHECKOUT] Reserved points for order ${activeOrder.code}: ` +
+                `customerId=${customer.id}, pointsReserved=${args.points}, ` +
+                `balanceBefore=${currentBalance}, availableBefore=${availablePoints}, ` +
+                `balanceAfter=${currentBalance} (unchanged), discountValue=${validation.redeemValue}`,
+                ShopApiRewardPointsResolver.loggerCtx
             );
 
-            // Return updated order
-            const finalOrder = await this.orderService.findOne(ctx, updatedOrder.id);
-            if (!finalOrder) {
-                throw new Error('Order not found after redemption');
-            }
-
-            return finalOrder;
+            // Return success result - frontend will refetch activeOrder
+            return {
+                success: true,
+                message: `Successfully redeemed ${args.points} points`,
+                pointsRedeemed: args.points,
+                discountValue: validation.redeemValue || 0
+            };
         } catch (error) {
             Logger.error(
                 `Failed to redeem points: ${error instanceof Error ? error.message : String(error)}`,
                 ShopApiRewardPointsResolver.loggerCtx
             );
             throw error;
+        }
+    }
+
+    /**
+     * Resolve availablePoints field (balance - reserved in pending orders)
+     */
+    @ResolveField()
+    async availablePoints(
+        @Ctx() ctx: RequestContext,
+        @Parent() customerRewardPoints: CustomerRewardPoints
+    ): Promise<number> {
+        try {
+            return await this.rewardPointsService.getAvailablePoints(ctx, customerRewardPoints.customerId);
+        } catch (error) {
+            Logger.error(
+                `Failed to calculate available points: ${error instanceof Error ? error.message : String(error)}`,
+                ShopApiRewardPointsResolver.loggerCtx
+            );
+            // Fallback to balance if calculation fails
+            return customerRewardPoints.balance;
         }
     }
 

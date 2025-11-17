@@ -15,7 +15,7 @@ import {
     AdminCustomerRewardPointsResolver,
     AdminRewardTransactionResolver,
 } from './api/reward-points-admin-resolvers';
-import { applyRewardPointsDiscount } from './promotions/reward-points-discount.action';
+import { applyRewardPointsOrderDiscount } from './promotions/reward-points-order-discount.action';
 
 /**
  * Reward Points Plugin for Vendure
@@ -73,6 +73,7 @@ import { applyRewardPointsDiscount } from './promotions/reward-points-discount.a
                 customerId: ID!
                 customer: Customer
                 balance: Int!
+                availablePoints: Int!
                 lifetimeEarned: Int!
                 lifetimeRedeemed: Int!
                 createdAt: DateTime!
@@ -110,8 +111,15 @@ import { applyRewardPointsDiscount } from './promotions/reward-points-discount.a
                 rewardTransactionHistory(options: RewardTransactionListOptions): RewardTransactionList!
             }
 
+            type RedeemPointsResult {
+                success: Boolean!
+                message: String
+                pointsRedeemed: Int
+                discountValue: Int
+            }
+
             extend type Mutation {
-                redeemPoints(points: Int!): Order!
+                redeemPoints(points: Int!): RedeemPointsResult!
             }
         `,
     },
@@ -266,24 +274,52 @@ import { applyRewardPointsDiscount } from './promotions/reward-points-discount.a
                     }
                 ]
             },
-        ];
-
-        // OrderLine custom fields for storing points redemption discount
-        config.customFields.OrderLine = [
-            ...(config.customFields.OrderLine || []),
             {
-                name: 'pointsRedeemValue',
+                name: 'pointsDiscountValue',
                 type: 'int',
+                defaultValue: 0,
                 internal: true,
-                nullable: true,
+                label: [
+                    {
+                        languageCode: LanguageCode.en,
+                        value: 'Points Discount Value'
+                    }
+                ],
+                description: [
+                    {
+                        languageCode: LanguageCode.en,
+                        value: 'Total discount value (in cents) from redeemed points'
+                    }
+                ]
+            },
+            {
+                name: 'pointsReserved',
+                type: 'int',
+                defaultValue: 0,
+                internal: true,
+                label: [
+                    {
+                        languageCode: LanguageCode.en,
+                        value: 'Points Reserved'
+                    }
+                ],
+                description: [
+                    {
+                        languageCode: LanguageCode.en,
+                        value: 'Points reserved for this order (not yet redeemed until payment confirmed)'
+                    }
+                ]
             },
         ];
 
-        // Promotion action registration for reward points discount
+        // OrderLine custom fields are no longer needed for order-level reward points discount
+        // Keeping OrderLine customFields structure intact for future use if needed
+
+        // Promotion action registration for reward points order-level discount
         config.promotionOptions = config.promotionOptions || {};
         config.promotionOptions.promotionActions = [
             ...(config.promotionOptions.promotionActions || []),
-            applyRewardPointsDiscount
+            applyRewardPointsOrderDiscount
         ];
 
         return config;
