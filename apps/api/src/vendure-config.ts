@@ -20,6 +20,7 @@ import { BundlePlugin, bundleUiExtension } from './plugins/bundle-plugin/bundle.
 import { RewardPointsPlugin, rewardPointsUiExtension } from './plugins/reward-points-plugin';
 import { FeaturedCollectionPlugin } from './plugins/featured-collection.plugin';
 import { autoExpireBundlesTask } from './plugins/bundle-plugin/tasks/auto-expire-bundles.task';
+import { NutritionBatchPlugin, nutritionBatchUiExtension } from './plugins/nutrition-batch-plugin/nutrition-batch.plugin';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
 const serverPort = +process.env.PORT || 3000;
@@ -143,6 +144,7 @@ export const config: VendureConfig = {
                     },
                     bundleUiExtension,
                     rewardPointsUiExtension,
+                    nutritionBatchUiExtension,
                 ],
                 devMode: IS_DEV,
             }),
@@ -175,5 +177,7 @@ export const config: VendureConfig = {
         RewardPointsPlugin,
         // Auto-create Featured collection
         FeaturedCollectionPlugin,
+        // Nutrition Batch Plugin for nutrition information management
+        NutritionBatchPlugin.init(),
     ],
 };
