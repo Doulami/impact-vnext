@@ -25,7 +25,9 @@
                 <tr>
                     <th>Customer</th>
                     <th>Email</th>
-                    <th>Balance</th>
+                    <th>Total Balance</th>
+                    <th>Available Points</th>
+                    <th>Reserved Points</th>
                     <th>Lifetime Earned</th>
                     <th>Lifetime Redeemed</th>
                     <th>Actions</th>
@@ -36,6 +38,13 @@
                     <td>{{ getCustomerDisplayName(customer.customer) }}</td>
                     <td>{{ customer.customer?.emailAddress }}</td>
                     <td><strong>{{ customer.balance }} points</strong></td>
+                    <td>
+                        <span style="color: #28a745; font-weight: 600;">{{ customer.availablePoints || 0 }} points</span>
+                    </td>
+                    <td>
+                        <span style="color: #fd7e14; font-weight: 600;">{{ getReservedPoints(customer) }} points</span>
+                        <small style="display: block; color: #6c757d; font-size: 0.85em;">In pending orders</small>
+                    </td>
                     <td>{{ customer.lifetimeEarned }}</td>
                     <td>{{ customer.lifetimeRedeemed }}</td>
                     <td>
@@ -48,7 +57,7 @@
                 </tr>
                 
                 <tr *ngIf="customers.length === 0">
-                    <td colspan="6" class="text-center">
+                    <td colspan="8" class="text-center">
                         <div style="padding: 40px;">
                             <h3>No customers found</h3>
                             <p>No customers with reward points yet.</p>
@@ -65,8 +74,22 @@
     <div class="modal-dialog" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 8px; min-width: 400px; z-index: 1001;">
         <h3>Adjust Points for {{ getCustomerDisplayName(selectedCustomer?.customer) }}</h3>
         
-        <div style="margin: 20px 0;">
-            <p><strong>Current Balance:</strong> {{ selectedCustomer?.balance }} points</p>
+        <div style="margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+            <div style="margin-bottom: 10px;">
+                <strong>Total Balance:</strong> {{ selectedCustomer?.balance }} points
+            </div>
+            <div style="margin-bottom: 10px; color: #28a745;">
+                <strong>Available Points:</strong> {{ selectedCustomer?.availablePoints || 0 }} points
+                <small style="display: block; color: #28a745; margin-top: 4px; font-weight: 600;">
+                    ✓ Can remove up to {{ selectedCustomer?.availablePoints || 0 }} points
+                </small>
+            </div>
+            <div style="color: #fd7e14;">
+                <strong>Reserved Points:</strong> {{ getReservedPoints(selectedCustomer) }} points
+                <small style="display: block; color: #dc3545; margin-top: 4px; font-weight: 600;">
+                    ⚠ Protected - Locked in pending orders
+                </small>
+            </div>
         </div>
         
         <form [formGroup]="adjustForm" (ngSubmit)="adjustCustomerPoints()">
@@ -81,6 +104,14 @@
                 <small style="color: #666; display: block; margin-top: 5px;">
                     Example: 1000 (adds points), -500 (removes points)
                 </small>
+                
+                <!-- Warning when trying to remove more than available -->
+                <div *ngIf="adjustForm.get('points')?.value < 0 && Math.abs(adjustForm.get('points')?.value || 0) > (selectedCustomer?.availablePoints || 0)"
+                     style="margin-top: 8px; padding: 10px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; color: #856404;">
+                    <strong>⚠ Warning:</strong> Cannot remove {{ Math.abs(adjustForm.get('points')?.value || 0) }} points.
+                    Only {{ selectedCustomer?.availablePoints || 0 }} points are available.
+                    {{ getReservedPoints(selectedCustomer) }} points are reserved in pending orders.
+                </div>
             </div>
             
             <div style="margin-bottom: 20px;">
@@ -112,8 +143,8 @@
     </div>
 </div>
 
-<!-- Adjust Points Modal -->
-<vdr-modal *ngIf="selectedCustomer" [title]="'reward-points.customers.adjust-points-modal.title' | translate" (closeModal)="cancelAdjust()">
+<!-- Vendure vdr-modal (not used - we use simple modal above) -->
+<vdr-modal *ngIf="false" [title]="'reward-points.customers.adjust-points-modal.title' | translate" (closeModal)="cancelAdjust()">
     <div class="adjust-modal-content">
         <!-- Customer Info Header -->
         <div class="customer-header">

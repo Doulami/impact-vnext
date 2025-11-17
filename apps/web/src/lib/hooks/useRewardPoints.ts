@@ -11,7 +11,7 @@ export interface RewardPointSettings {
 export interface CustomerRewardPoints {
   id: string;
   balance: number;
-  availablePoints: number;
+  availablePoints: number; // Computed: balance - reserved points in pending orders
   lifetimeEarned: number;
   lifetimeRedeemed: number;
   createdAt: string;

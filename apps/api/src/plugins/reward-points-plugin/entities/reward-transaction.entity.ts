@@ -6,10 +6,13 @@ import { Column, Entity, ManyToOne, JoinColumn, Index } from 'typeorm';
  * Reward Transaction Type Enum
  */
 export enum RewardTransactionType {
-    EARNED = 'EARNED',
-    REDEEMED = 'REDEEMED',
-    EXPIRED = 'EXPIRED',
-    ADJUSTED = 'ADJUSTED'
+    EARNED = 'EARNED',       // Points earned from order
+    REDEEMED = 'REDEEMED',   // Points spent on order
+    EXPIRED = 'EXPIRED',     // Points expired (not implemented yet)
+    ADJUSTED = 'ADJUSTED',   // Manual admin adjustment
+    RELEASED = 'RELEASED',   // Reserved points released (cancel/decline)
+    REFUNDED = 'REFUNDED',   // Redeemed points refunded (cancel after payment)
+    REMOVED = 'REMOVED'      // Earned points removed (cancel after earning)
 }
 
 /**

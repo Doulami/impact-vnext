@@ -19,6 +19,7 @@ const GET_ALL_CUSTOMER_REWARD_POINTS = gql`
                     emailAddress
                 }
                 balance
+                availablePoints
                 lifetimeEarned
                 lifetimeRedeemed
                 updatedAt
@@ -33,6 +34,7 @@ const ADJUST_CUSTOMER_POINTS = gql`
         adjustCustomerPoints(input: $input) {
             id
             balance
+            availablePoints
             lifetimeEarned
             lifetimeRedeemed
         }
@@ -53,6 +55,9 @@ export class CustomerPointsManagementComponent implements OnInit {
     adjustForm: FormGroup;
     selectedCustomer: any = null;
     showAdjustModal = false;
+    
+    // Expose Math to template
+    Math = Math;
     
     constructor(
         private formBuilder: FormBuilder,
@@ -102,36 +107,49 @@ export class CustomerPointsManagementComponent implements OnInit {
     }
 
     adjustCustomerPoints() {
-        if (this.adjustForm.valid) {
-            const input = this.adjustForm.value;
-            
-            this.dataService.mutate(ADJUST_CUSTOMER_POINTS, { input }).subscribe({
-                next: (result: any) => {
-                    const data = result.adjustCustomerPoints || result.data?.adjustCustomerPoints;
-                    if (data) {
-                        // Update the customer in the list
-                        const customerIndex = this.customers.findIndex(c => c.customerId === input.customerId);
-                        if (customerIndex >= 0) {
-                            this.customers[customerIndex] = {
-                                ...this.customers[customerIndex],
-                                balance: data.balance,
-                                lifetimeEarned: data.lifetimeEarned,
-                                lifetimeRedeemed: data.lifetimeRedeemed,
-                            };
-                        }
-                        
-                        this.cancelAdjust();
-                        const operation = input.points > 0 ? 'credited' : 'debited';
-                        this.notificationService.success(`${Math.abs(input.points)} points ${operation} successfully`);
-                        this.changeDetector.markForCheck();
-                    }
-                },
-                error: (error) => {
-                    console.error('Failed to adjust customer points:', error);
-                    this.notificationService.error('Failed to adjust customer points');
-                }
-            });
+        if (!this.adjustForm.valid) {
+            this.notificationService.error('Please fill in all required fields correctly');
+            return;
         }
+
+        const input = this.adjustForm.value;
+        const pointsToAdjust = input.points;
+        
+        // Client-side validation: prevent removing more than available points
+        if (pointsToAdjust < 0) {
+            const availablePoints = this.selectedCustomer?.availablePoints || 0;
+            const pointsToRemove = Math.abs(pointsToAdjust);
+            const reservedPoints = this.getReservedPoints(this.selectedCustomer);
+            
+            if (pointsToRemove > availablePoints) {
+                this.notificationService.error(
+                    `Cannot remove ${pointsToRemove} points. Only ${availablePoints} points are available. ` +
+                    `${reservedPoints} points are reserved in pending orders and cannot be removed.`
+                );
+                return;
+            }
+        }
+        
+        this.dataService.mutate(ADJUST_CUSTOMER_POINTS, { input }).subscribe({
+            next: (result: any) => {
+                console.log('Adjust points mutation result:', result);
+                
+                const operation = input.points > 0 ? 'credited' : 'debited';
+                this.notificationService.success(`${Math.abs(input.points)} points ${operation} successfully`);
+                
+                // Close modal first
+                this.cancelAdjust();
+                
+                // Reload all customers to get fresh data with updated availablePoints
+                this.loadCustomers();
+            },
+            error: (error) => {
+                console.error('Failed to adjust customer points:', error);
+                const errorMessage = error?.message || error?.graphQLErrors?.[0]?.message || 'Failed to adjust customer points';
+                this.notificationService.error(errorMessage);
+                this.changeDetector.markForCheck();
+            }
+        });
     }
 
     cancelAdjust() {
@@ -146,5 +164,9 @@ export class CustomerPointsManagementComponent implements OnInit {
             return `${customer.firstName} ${customer.lastName}`;
         }
         return customer.emailAddress || `Customer ${customer.id}`;
+    }
+
+    getReservedPoints(customer: any): number {
+        return (customer.balance || 0) - (customer.availablePoints || 0);
     }
 }

@@ -11,7 +11,6 @@ import Footer from '@/components/Footer';
 import { 
   ArrowLeft, 
   Star, 
-  Gift, 
   TrendingUp, 
   Calendar,
   Plus,
@@ -19,7 +18,9 @@ import {
   Package,
   Filter,
   Search,
-  RefreshCw
+  RefreshCw,
+  Lock,
+  Wallet
 } from 'lucide-react';
 
 interface RewardTransaction {
@@ -38,6 +39,7 @@ interface RewardTransaction {
 interface CustomerRewardPoints {
   id: string;
   balance: number;
+  availablePoints: number;
   lifetimeEarned: number;
   lifetimeRedeemed: number;
   createdAt: string;
@@ -141,6 +143,9 @@ export default function RewardPointsDashboard() {
   const transactions: RewardTransaction[] = historyData?.rewardTransactionHistory?.items || [];
   const totalTransactions = historyData?.rewardTransactionHistory?.totalItems || 0;
 
+  // Calculate reserved points (points locked in pending orders)
+  const reservedPoints = rewardPoints ? rewardPoints.balance - rewardPoints.availablePoints : 0;
+
   // Filter and sort transactions
   const filteredTransactions = transactions
     .filter(transaction => {
@@ -220,17 +225,17 @@ export default function RewardPointsDashboard() {
           )}
 
           {/* Points Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center">
                 <div className="bg-blue-100 rounded-full p-3">
-                  <Star className="h-8 w-8 text-blue-600" />
+                  <Wallet className="h-8 w-8 text-blue-600" />
                 </div>
                 <div className="ml-4">
                   <p className="text-2xl font-bold text-gray-900">
                     {rewardPoints?.balance || 0}
                   </p>
-                  <p className="text-sm text-gray-600">Available Points</p>
+                  <p className="text-sm text-gray-600">Total Balance</p>
                 </div>
               </div>
             </div>
@@ -238,31 +243,84 @@ export default function RewardPointsDashboard() {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center">
                 <div className="bg-green-100 rounded-full p-3">
-                  <TrendingUp className="h-8 w-8 text-green-600" />
+                  <Star className="h-8 w-8 text-green-600" />
                 </div>
                 <div className="ml-4">
                   <p className="text-2xl font-bold text-gray-900">
-                    {rewardPoints?.lifetimeEarned || 0}
+                    {rewardPoints?.availablePoints || 0}
                   </p>
-                  <p className="text-sm text-gray-600">Total Earned</p>
+                  <p className="text-sm text-gray-600">Available Points</p>
                 </div>
               </div>
+              <p className="text-xs text-gray-500 mt-2">Points you can use now</p>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center">
+                <div className="bg-orange-100 rounded-full p-3">
+                  <Lock className="h-8 w-8 text-orange-600" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-2xl font-bold text-gray-900">
+                    {reservedPoints}
+                  </p>
+                  <p className="text-sm text-gray-600">Reserved Points</p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">Locked in pending orders</p>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center">
                 <div className="bg-purple-100 rounded-full p-3">
-                  <Gift className="h-8 w-8 text-purple-600" />
+                  <TrendingUp className="h-8 w-8 text-purple-600" />
                 </div>
                 <div className="ml-4">
                   <p className="text-2xl font-bold text-gray-900">
-                    {rewardPoints?.lifetimeRedeemed || 0}
+                    {rewardPoints?.lifetimeEarned || 0}
                   </p>
-                  <p className="text-sm text-gray-600">Total Redeemed</p>
+                  <p className="text-sm text-gray-600">Lifetime Earned</p>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Points Breakdown Section */}
+          {rewardPoints && (
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Points Breakdown</h2>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <span className="text-gray-700">Total Balance</span>
+                  <span className="font-semibold text-gray-900">{rewardPoints.balance} points</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                  <span className="text-gray-700 flex items-center gap-2">
+                    <Lock className="h-4 w-4 text-orange-600" />
+                    Reserved (in pending orders)
+                  </span>
+                  <span className="font-semibold text-orange-600">-{reservedPoints} points</span>
+                </div>
+                <div className="flex justify-between items-center py-2 bg-green-50 px-3 rounded-md">
+                  <span className="text-green-800 font-medium flex items-center gap-2">
+                    <Star className="h-4 w-4" />
+                    Available to Use
+                  </span>
+                  <span className="font-bold text-green-800 text-lg">{rewardPoints.availablePoints} points</span>
+                </div>
+                <div className="pt-3 mt-3 border-t border-gray-200">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">Lifetime Earned</span>
+                    <span className="text-gray-900 font-medium">{rewardPoints.lifetimeEarned} points</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm mt-2">
+                    <span className="text-gray-600">Lifetime Redeemed</span>
+                    <span className="text-gray-900 font-medium">{rewardPoints.lifetimeRedeemed} points</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Redemption Info */}
           {settings && (

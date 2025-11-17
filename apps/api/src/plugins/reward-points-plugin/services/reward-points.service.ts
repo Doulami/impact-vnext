@@ -228,6 +228,20 @@ export class RewardPointsService {
         // Get or create customer points
         const customerPoints = await this.getOrCreateCustomerPoints(ctx, customerId);
         
+        // If removing points (negative), check available points to protect reserved points
+        if (points < 0) {
+            const availablePoints = await this.getAvailablePoints(ctx, customerId);
+            const pointsToRemove = Math.abs(points);
+            
+            if (pointsToRemove > availablePoints) {
+                const reservedPoints = customerPoints.balance - availablePoints;
+                throw new Error(
+                    `Cannot remove ${pointsToRemove} points. Only ${availablePoints} points are available. ` +
+                    `${reservedPoints} points are reserved in pending orders and cannot be removed.`
+                );
+            }
+        }
+        
         // Update balance
         customerPoints.balance += points;
         
@@ -237,7 +251,7 @@ export class RewardPointsService {
             customerPoints.lifetimeRedeemed += Math.abs(points);
         }
         
-        // Ensure balance doesn't go negative (unless explicitly allowed by admin)
+        // Ensure balance doesn't go negative
         if (customerPoints.balance < 0) {
             Logger.warn(
                 `Customer ${customerId} balance would go negative (${customerPoints.balance}). Setting to 0.`,
@@ -312,6 +326,31 @@ export class RewardPointsService {
         // Return value in cents
         const value = Math.round(points * redeemRate * 100);
         return Math.max(0, value); // Ensure non-negative
+    }
+
+    /**
+     * Create a transaction record (for audit trail)
+     * Helper method for creating RELEASED, REFUNDED, REMOVED transactions
+     */
+    async createTransaction(
+        ctx: RequestContext,
+        customerId: ID,
+        type: RewardTransactionType,
+        points: number,
+        description: string,
+        orderId?: ID
+    ): Promise<RewardTransaction> {
+        const transactionRepo = this.connection.getRepository(ctx, RewardTransaction);
+        
+        const transaction = new RewardTransaction({
+            customerId: String(customerId),
+            orderId: orderId ? String(orderId) : undefined,
+            type: type,
+            points: points,
+            description: description,
+        });
+        
+        return await transactionRepo.save(transaction);
     }
 
     /**

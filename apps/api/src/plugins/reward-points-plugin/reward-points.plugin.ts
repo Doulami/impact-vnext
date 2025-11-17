@@ -145,6 +145,7 @@ import { applyRewardPointsOrderDiscount } from './promotions/reward-points-order
                 customerId: ID!
                 customer: Customer
                 balance: Int!
+                availablePoints: Int!
                 lifetimeEarned: Int!
                 lifetimeRedeemed: Int!
                 createdAt: DateTime!
@@ -307,6 +308,60 @@ import { applyRewardPointsOrderDiscount } from './promotions/reward-points-order
                     {
                         languageCode: LanguageCode.en,
                         value: 'Points reserved for this order (not yet redeemed until payment confirmed)'
+                    }
+                ]
+            },
+            {
+                name: 'pointsReleased',
+                type: 'int',
+                defaultValue: 0,
+                internal: true,
+                label: [
+                    {
+                        languageCode: LanguageCode.en,
+                        value: 'Points Released'
+                    }
+                ],
+                description: [
+                    {
+                        languageCode: LanguageCode.en,
+                        value: 'Reserved points released back to available (order cancelled/payment declined)'
+                    }
+                ]
+            },
+            {
+                name: 'pointsRefunded',
+                type: 'int',
+                defaultValue: 0,
+                internal: true,
+                label: [
+                    {
+                        languageCode: LanguageCode.en,
+                        value: 'Points Refunded'
+                    }
+                ],
+                description: [
+                    {
+                        languageCode: LanguageCode.en,
+                        value: 'Redeemed points refunded to customer (order cancelled after payment)'
+                    }
+                ]
+            },
+            {
+                name: 'pointsRemoved',
+                type: 'int',
+                defaultValue: 0,
+                internal: true,
+                label: [
+                    {
+                        languageCode: LanguageCode.en,
+                        value: 'Points Removed'
+                    }
+                ],
+                description: [
+                    {
+                        languageCode: LanguageCode.en,
+                        value: 'Earned points removed from customer (order cancelled after earning)'
                     }
                 ]
             },

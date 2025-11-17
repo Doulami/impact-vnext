@@ -189,6 +189,26 @@ export class AdminCustomerRewardPointsResolver {
             return null;
         }
     }
+
+    /**
+     * Resolve availablePoints field (balance - reserved in pending orders)
+     */
+    @ResolveField()
+    async availablePoints(
+        @Ctx() ctx: RequestContext,
+        @Parent() customerRewardPoints: CustomerRewardPoints
+    ): Promise<number> {
+        try {
+            return await this.rewardPointsService.getAvailablePoints(ctx, customerRewardPoints.customerId);
+        } catch (error) {
+            Logger.error(
+                `Failed to calculate available points: ${error instanceof Error ? error.message : String(error)}`,
+                AdminCustomerRewardPointsResolver.loggerCtx
+            );
+            // Fallback to balance if calculation fails
+            return customerRewardPoints.balance;
+        }
+    }
 }
 
 /**
