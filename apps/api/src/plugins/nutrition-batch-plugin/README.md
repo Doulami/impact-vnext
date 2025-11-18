@@ -56,8 +56,8 @@ The plugin is already registered in `vendure-config.ts`. To use it:
 #### Queries
 
 ```graphql
-# Get all batches for a variant
-nutritionBatches(variantId: ID!): [NutritionBatch!]!
+# Get all batches for a variant (with pagination, sorting, filtering)
+nutritionBatches(options: NutritionBatchListOptions, variantId: ID!): NutritionBatchList!
 
 # Get a specific batch
 nutritionBatch(id: ID!): NutritionBatch
@@ -188,25 +188,33 @@ mutation {
 }
 ```
 
-## Next Steps
+## Implementation Status
 
-### Phase 2-3: Backend Complete
+### Phase 2-3: Backend ✅
 - ✅ Entities and database schema
 - ✅ Service layer with business logic
 - ✅ GraphQL API (Admin + Shop)
-- ⏳ Database migration generation
+- ✅ Database migrations
 
-### Phase 4-7: Admin UI
-- Angular components for batch management
-- Batch list view
-- Batch editor (basic info, nutrition table, text blocks)
-- LocaleString input components
+### Phase 4-8: Admin UI ✅
+- ✅ Angular components for batch management
+- ✅ Batch list view with TypedBaseListComponent
+- ✅ Batch editor (basic info, nutrition table, text blocks)
+- ✅ LocaleString input components
+- ✅ CRUD operations (create, edit, duplicate, delete, set current)
 
-### Phase 8-9: Frontend
-- Shop API field resolvers
-- Next.js components for nutrition display
-- Responsive nutrition table
-- Regulatory text blocks
+### Phase 9: List View Upgrade ✅
+- ✅ Upgraded to vdr-data-table-2 with pagination
+- ✅ Server-side sorting by batch code, production/expiry dates
+- ✅ Search by batch code filter
+- ✅ PaginatedList support in resolver
+- ✅ Professional column layout with Actions column
+
+### Next: Shop API Integration
+- ⏳ Expose nutrition data in Shop API
+- ⏳ Next.js components for nutrition display
+- ⏳ Responsive nutrition table for storefront
+- ⏳ Regulatory text blocks display
 
 ## Development
 
