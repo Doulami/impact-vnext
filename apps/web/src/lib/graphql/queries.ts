@@ -68,6 +68,37 @@ export const GET_REWARD_POINTS_SETTINGS = gql`
   }
 `;
 
+// Nutrition Batch fragment for Shop API
+export const NUTRITION_BATCH_FRAGMENT = gql`
+  fragment NutritionBatchFields on NutritionBatch {
+    id
+    batchCode
+    productionDate
+    expiryDate
+    servingSizeValue
+    servingSizeUnit
+    servingLabel
+    servingsPerContainer
+    shortLabelDescription
+    ingredientsText
+    allergyAdviceText
+    recommendedUseText
+    storageAdviceText
+    warningsText
+    referenceIntakeFootnoteText
+    rows {
+      id
+      name
+      group
+      unit
+      valuePerServing
+      valuePer100g
+      referenceIntakePercentPerServing
+      displayOrder
+    }
+  }
+`;
+
 // Product fragment for PDP
 export const PRODUCT_FRAGMENT = gql`
   fragment ProductFields on Product {
@@ -158,6 +189,7 @@ export const SEARCH_PRODUCTS = gql`
 
 // Get single product by slug (supports both products and bundle shells)
 export const GET_PRODUCT_BY_SLUG = gql`
+  ${NUTRITION_BATCH_FRAGMENT}
   query GetProductBySlug($slug: String!) {
     product(slug: $slug) {
       id
@@ -196,6 +228,9 @@ export const GET_PRODUCT_BY_SLUG = gql`
         featuredAsset {
           id
           preview
+        }
+        currentNutritionBatch {
+          ...NutritionBatchFields
         }
       }
     }
@@ -332,6 +367,7 @@ export const GET_FACETS = gql`
 
 // Bundle queries
 export const BUNDLE_FRAGMENT = gql`
+  ${NUTRITION_BATCH_FRAGMENT}
   fragment BundleFields on Bundle {
     id
     name
@@ -380,6 +416,9 @@ export const BUNDLE_FRAGMENT = gql`
             id
             preview
           }
+        }
+        currentNutritionBatch {
+          ...NutritionBatchFields
         }
       }
       quantity

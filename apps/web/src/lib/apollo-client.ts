@@ -1,5 +1,6 @@
-import { ApolloClient, InMemoryCache, HttpLink, from } from '@apollo/client';
+import { ApolloClient, InMemoryCache, HttpLink, from, ApolloLink } from '@apollo/client';
 import { onError } from '@apollo/client/link/error';
+import { setContext } from '@apollo/client/link/context';
 
 // Error handling link
 const errorLink = onError((error: any) => {
@@ -21,9 +22,25 @@ const httpLink = new HttpLink({
   credentials: 'include', // Important for session cookies
 });
 
+// Language context link - adds languageCode header
+let currentLanguage = 'en'; // Default language
+
+export function setApolloLanguage(lang: string) {
+  currentLanguage = lang;
+}
+
+const languageLink = setContext((_, { headers }) => {
+  return {
+    headers: {
+      ...headers,
+      'vendure-token': currentLanguage, // Vendure uses this header for language
+    }
+  };
+});
+
 // Create Apollo Client
 export const apolloClient = new ApolloClient({
-  link: from([errorLink, httpLink]),
+  link: from([errorLink, languageLink, httpLink]),
   cache: new InMemoryCache({
     typePolicies: {
       Query: {

@@ -4,6 +4,7 @@ import "./globals.css";
 import { ApolloProvider } from "@/components/providers/ApolloProvider";
 import { CartProvider } from "@/lib/hooks/useCart";
 import { AuthProvider } from "@/lib/hooks/useAuth";
+import { LanguageProvider } from "@/lib/contexts/LanguageContext";
 import CartDrawer from "@/components/CartDrawer";
 
 const geistSans = Geist({
@@ -31,14 +32,16 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ApolloProvider>
-          <AuthProvider>
-            <CartProvider>
-              {children}
-              <CartDrawer />
-            </CartProvider>
-          </AuthProvider>
-        </ApolloProvider>
+        <LanguageProvider>
+          <ApolloProvider>
+            <AuthProvider>
+              <CartProvider>
+                {children}
+                <CartDrawer />
+              </CartProvider>
+            </AuthProvider>
+          </ApolloProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

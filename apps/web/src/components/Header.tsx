@@ -1,12 +1,91 @@
 'use client';
 
-import { User, LogIn, LogOut, Settings, Package, ChevronDown, ShoppingBag } from 'lucide-react';
+import { User, LogIn, LogOut, Settings, Package, ChevronDown, ShoppingBag, Globe } from 'lucide-react';
 import Link from 'next/link';
 import SearchBar from '@/components/SearchBar';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useCart } from '@/lib/hooks/useCart';
+import { useLanguage, type LanguageCode } from '@/lib/contexts/LanguageContext';
+
+// Language Switcher Component
+function LanguageSwitcher() {
+  const { language, setLanguage } = useLanguage();
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        !buttonRef.current?.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const languages: { code: LanguageCode; label: string; flag: string }[] = [
+    { code: 'en', label: 'English', flag: '🇬🇧' },
+    { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  ];
+
+  const currentLang = languages.find(l => l.code === language) || languages[0];
+
+  return (
+    <div className="relative">
+      <button
+        ref={buttonRef}
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1 md:gap-2 hover:text-gray-300 transition-colors text-xs"
+      >
+        <Globe className="w-4 h-4" />
+        <span className="hidden md:inline">{currentLang.flag}</span>
+        <span className="md:hidden">{currentLang.flag}</span>
+        <ChevronDown className="w-3 h-3 hidden md:inline" />
+      </button>
+
+      {/* Dropdown Menu */}
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 z-40" 
+            onClick={() => setIsOpen(false)}
+          />
+          
+          <div 
+            ref={dropdownRef}
+            className="absolute right-0 top-full mt-2 w-36 bg-white text-black shadow-xl border border-gray-200 rounded-lg z-50 py-1"
+          >
+            {languages.map((lang) => (
+              <button
+                key={lang.code}
+                onClick={() => {
+                  setLanguage(lang.code);
+                  setIsOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                  language === lang.code ? 'bg-gray-100 font-medium' : ''
+                }`}
+              >
+                <span className="text-lg">{lang.flag}</span>
+                {lang.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 // User Menu Component
 function UserMenu() {
@@ -180,8 +259,9 @@ function HeaderContent({
             )}
             
             {/* Header Actions */}
-            <div className="flex items-center gap-6 text-xs">
-              <a href="#" className="hover:text-gray-300">Help & Support</a>
+            <div className="flex items-center gap-4 md:gap-6 text-xs">
+              <a href="#" className="hover:text-gray-300 hidden md:inline">Help & Support</a>
+              <LanguageSwitcher />
               <UserMenu />
               {/* Cart Button */}
               <button

@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { GET_PRODUCT_BY_SLUG, GET_BUNDLE } from '@/lib/graphql/queries';
-import { Star, Heart, Share2, Truck, Shield, RotateCcw, Plus, Minus, ArrowLeft, ShoppingCart, Package } from 'lucide-react';
+import { Star, Heart, Share2, Truck, Shield, RotateCcw, Plus, Minus, ArrowLeft, ShoppingCart, Package, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ProductReviews } from '@/components/ProductReviews';
@@ -67,6 +67,8 @@ export default function ProductDetailPage() {
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [selectedBundleComponentIndex, setSelectedBundleComponentIndex] = useState(0);
+  const [isNutritionAccordionOpen, setIsNutritionAccordionOpen] = useState(false);
   const { addItem, openCart } = useCart();
 
   // Query for product (shell product for both regular products and bundles)
@@ -249,6 +251,49 @@ export default function ProductDetailPage() {
     ? bundle.totalSavings || 0
     : 0;
 
+  // Get current nutrition batch for selected variant
+  const currentNutritionBatch = selectedVariant?.currentNutritionBatch;
+
+  // Generate short description: from nutrition batch or fallback to truncated description
+  const getShortDescription = () => {
+    // Primary: Use nutrition batch shortLabelDescription
+    if (currentNutritionBatch?.shortLabelDescription) {
+      return currentNutritionBatch.shortLabelDescription;
+    }
+    
+    // Fallback: Truncate product description to ~150-200 chars
+    if (product?.description) {
+      const plainText = product.description.replace(/<[^>]*>/g, ''); // Strip HTML
+      if (plainText.length <= 200) return plainText;
+      return plainText.substring(0, 200).trim() + '…';
+    }
+    
+    return null;
+  };
+
+  const shortDescription = getShortDescription();
+
+  // Get nutrition batch for display
+  // For bundles: use selected component's nutrition batch
+  // For regular products: use selected variant's nutrition batch
+  const getNutritionBatchForDisplay = () => {
+    if (isBundle && bundle?.items && bundle.items.length > 0) {
+      const sortedItems = [...bundle.items].sort((a, b) => a.displayOrder - b.displayOrder);
+      const selectedItem = sortedItems[selectedBundleComponentIndex];
+      return selectedItem?.productVariant?.currentNutritionBatch;
+    }
+    return currentNutritionBatch;
+  };
+
+  const displayNutritionBatch = getNutritionBatchForDisplay();
+
+  // Group nutrition rows by nutrient group
+  const groupedRows = displayNutritionBatch?.rows?.reduce((acc, row) => {
+    if (!acc[row.group]) acc[row.group] = [];
+    acc[row.group].push(row);
+    return acc;
+  }, {} as Record<string, typeof displayNutritionBatch.rows>) || {};
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -280,51 +325,64 @@ export default function ProductDetailPage() {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-2 gap-12">
-          {/* Product Images */}
-          <div className="space-y-4">
-            {/* Main Image */}
-            <div className="aspect-square bg-white rounded-lg overflow-hidden border">
-              {images[selectedImageIndex] ? (
-                <img
-                  src={images[selectedImageIndex]}
-                  alt={currentItem?.name}
-                  className="w-full h-full object-contain p-8"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-8xl">
-                  🏋️
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+          {/* Left Column: Images + Product Overview */}
+          <div className="space-y-6">
+            {/* Product Images */}
+            <div className="space-y-4">
+              {/* Main Image */}
+              <div className="aspect-square bg-white rounded-lg overflow-hidden border">
+                {images[selectedImageIndex] ? (
+                  <img
+                    src={images[selectedImageIndex]}
+                    alt={currentItem?.name}
+                    className="w-full h-full object-contain p-8"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-8xl">
+                    🏋️
+                  </div>
+                )}
+              </div>
+              
+              {/* Image Thumbnails */}
+              {images.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto">
+                  {images.map((image, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedImageIndex(index)}
+                      className={`flex-shrink-0 w-16 h-16 rounded border-2 overflow-hidden ${
+                        selectedImageIndex === index ? 'border-black' : 'border-gray-300'
+                      }`}
+                    >
+                      <img
+                        src={image}
+                        alt={`${currentItem?.name} ${index + 1}`}
+                        className="w-full h-full object-contain p-1"
+                      />
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
-            
-            {/* Image Thumbnails */}
-            {images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto">
-                {images.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImageIndex(index)}
-                    className={`flex-shrink-0 w-16 h-16 rounded border-2 overflow-hidden ${
-                      selectedImageIndex === index ? 'border-black' : 'border-gray-300'
-                    }`}
-                  >
-                    <img
-                      src={image}
-                      alt={`${currentItem?.name} ${index + 1}`}
-                      className="w-full h-full object-contain p-1"
-                    />
-                  </button>
-                ))}
+
+            {/* Product Overview Section */}
+            {product?.description && (
+              <div className="bg-white rounded-lg border p-6">
+                <h2 className="text-xl font-semibold mb-4">Product Overview</h2>
+                <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
+                  <div dangerouslySetInnerHTML={{ __html: product.description }} />
+                </div>
               </div>
             )}
           </div>
 
-          {/* Product Info */}
+          {/* Right Column: Product Info */}
           <div className="space-y-6">
             {/* Title and Rating */}
             <div>
-              <h1 className="text-3xl font-bold mb-2">{currentItem?.name}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold mb-2">{currentItem?.name}</h1>
               <div className="flex items-center gap-2 mb-4">
                 <div className="flex items-center">
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -339,6 +397,15 @@ export default function ProductDetailPage() {
                 <span className="text-sm text-gray-600">(127 reviews)</span>
               </div>
             </div>
+
+            {/* Short Description - From Nutrition Batch or Fallback */}
+            {shortDescription && (
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <p className="text-sm md:text-base text-gray-700 leading-relaxed">
+                  {shortDescription}
+                </p>
+              </div>
+            )}
 
             {/* Price */}
             <div>
@@ -509,15 +576,188 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Description */}
-            {product?.description && (
-              <div>
-                <h3 className="font-semibold mb-3">Description</h3>
-                <div className="text-gray-700 leading-relaxed">
-                  <div dangerouslySetInnerHTML={{ __html: product.description }} />
+            {/* Nutritional Information Accordion */}
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setIsNutritionAccordionOpen(!isNutritionAccordionOpen)}
+                className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors"
+              >
+                <h3 className="text-lg font-semibold">Nutritional Information</h3>
+                <ChevronDown className={`w-5 h-5 transition-transform ${
+                  isNutritionAccordionOpen ? 'rotate-180' : ''
+                }`} />
+              </button>
+
+              {isNutritionAccordionOpen && (
+                <div className="p-4 md:p-6 bg-gray-50 border-t">
+                  {/* Bundle Component Selector */}
+                  {isBundle && bundle?.items && bundle.items.length > 1 && (
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Component:
+                      </label>
+                      {/* Mobile: Dropdown */}
+                      <select
+                        value={selectedBundleComponentIndex}
+                        onChange={(e) => setSelectedBundleComponentIndex(Number(e.target.value))}
+                        className="w-full md:hidden px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                      >
+                        {[...bundle.items]
+                          .sort((a, b) => a.displayOrder - b.displayOrder)
+                          .map((item, index) => (
+                            <option key={item.id} value={index}>
+                              {item.productVariant.name}
+                            </option>
+                          ))}
+                      </select>
+                      {/* Desktop: Tabs */}
+                      <div className="hidden md:flex flex-wrap gap-2">
+                        {[...bundle.items]
+                          .sort((a, b) => a.displayOrder - b.displayOrder)
+                          .map((item, index) => (
+                            <button
+                              key={item.id}
+                              onClick={() => setSelectedBundleComponentIndex(index)}
+                              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                selectedBundleComponentIndex === index
+                                  ? 'bg-black text-white'
+                                  : 'bg-white text-gray-700 border border-gray-300 hover:border-gray-400'
+                              }`}
+                            >
+                              {item.productVariant.name}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {displayNutritionBatch ? (
+                    <div className="space-y-6">
+                      {/* Composition / Nutrition Facts */}
+                      <div>
+                        <h4 className="text-base font-semibold mb-3">Composition / Nutrition Facts</h4>
+                        {displayNutritionBatch.servingLabel && (
+                          <p className="text-sm text-gray-600 mb-4">
+                            Serving Size: {displayNutritionBatch.servingSizeValue}{displayNutritionBatch.servingSizeUnit} ({displayNutritionBatch.servingLabel})
+                            {displayNutritionBatch.servingsPerContainer && (
+                              <span className="ml-2">• {displayNutritionBatch.servingsPerContainer} servings per container</span>
+                            )}
+                          </p>
+                        )}
+                        
+                        {/* Desktop: Table */}
+                        <div className="hidden md:block overflow-x-auto">
+                          <table className="w-full text-sm border-collapse">
+                            <thead>
+                              <tr className="border-b-2 border-gray-300">
+                                <th className="text-left py-2 pr-4 font-semibold">Nutrient</th>
+                                <th className="text-right py-2 px-4 font-semibold">Per Serving</th>
+                                <th className="text-right py-2 px-4 font-semibold">Per 100g</th>
+                                <th className="text-right py-2 pl-4 font-semibold">RI%</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {Object.entries(groupedRows).map(([group, rows]) => (
+                                <>
+                                  <tr key={`group-${group}`} className="bg-gray-100">
+                                    <td colSpan={4} className="py-2 px-2 font-medium text-xs uppercase text-gray-600">
+                                      {group}
+                                    </td>
+                                  </tr>
+                                  {rows
+                                    .sort((a: any, b: any) => a.displayOrder - b.displayOrder)
+                                    .map((row: any) => (
+                                      <tr key={row.id} className="border-b border-gray-200">
+                                        <td className="py-2 pr-4">{row.name}</td>
+                                        <td className="text-right py-2 px-4">
+                                          {row.valuePerServing != null ? `${row.valuePerServing}${row.unit}` : '-'}
+                                        </td>
+                                        <td className="text-right py-2 px-4">
+                                          {row.valuePer100g != null ? `${row.valuePer100g}${row.unit}` : '-'}
+                                        </td>
+                                        <td className="text-right py-2 pl-4">
+                                          {row.referenceIntakePercentPerServing != null ? `${row.referenceIntakePercentPerServing}%` : '-'}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                </>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Mobile: Cards */}
+                        <div className="md:hidden space-y-3">
+                          {Object.entries(groupedRows).map(([group, rows]) => (
+                            <div key={`group-${group}`}>
+                              <div className="text-xs uppercase font-medium text-gray-600 mb-2">{group}</div>
+                              {rows
+                                .sort((a: any, b: any) => a.displayOrder - b.displayOrder)
+                                .map((row: any) => (
+                                  <div key={row.id} className="bg-white rounded-lg p-3 mb-2 border">
+                                    <div className="font-medium mb-2">{row.name}</div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm text-gray-600">
+                                      <div>
+                                        <div className="text-xs text-gray-500">Per Serving</div>
+                                        <div className="font-medium">
+                                          {row.valuePerServing != null ? `${row.valuePerServing}${row.unit}` : '-'}
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <div className="text-xs text-gray-500">Per 100g</div>
+                                        <div className="font-medium">
+                                          {row.valuePer100g != null ? `${row.valuePer100g}${row.unit}` : '-'}
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <div className="text-xs text-gray-500">RI%</div>
+                                        <div className="font-medium">
+                                          {row.referenceIntakePercentPerServing != null ? `${row.referenceIntakePercentPerServing}%` : '-'}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          ))}
+                        </div>
+
+                        {displayNutritionBatch.referenceIntakeFootnoteText && (
+                          <p className="text-xs text-gray-500 mt-4">
+                            {displayNutritionBatch.referenceIntakeFootnoteText}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Ingredients */}
+                      {displayNutritionBatch.ingredientsText && (
+                        <div className="border-t pt-6">
+                          <h4 className="text-base font-semibold mb-3">Ingredients</h4>
+                          <div className="text-sm text-gray-700 leading-relaxed">
+                            <div dangerouslySetInnerHTML={{ __html: displayNutritionBatch.ingredientsText }} />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Allergy Advice */}
+                      {displayNutritionBatch.allergyAdviceText && (
+                        <div className="border-t pt-6">
+                          <h4 className="text-base font-semibold mb-3">Allergy Advice</h4>
+                          <div className="text-sm text-gray-700 leading-relaxed">
+                            <div dangerouslySetInnerHTML={{ __html: displayNutritionBatch.allergyAdviceText }} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>Nutrition information coming soon</p>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+
           </div>
         </div>
 
