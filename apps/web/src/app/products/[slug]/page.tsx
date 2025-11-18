@@ -10,6 +10,7 @@ import Image from 'next/image';
 import { ProductReviews } from '@/components/ProductReviews';
 import { RelatedProducts } from '@/components/RelatedProducts';
 import { useCart } from '@/lib/hooks/useCart';
+import { useLanguage } from '@/lib/contexts/LanguageContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Button from '@/components/Button';
@@ -61,9 +62,20 @@ interface Product {
 
 // Bundle types are now imported from @/lib/types/product
 
+// Helper to resolve localized text from LocaleString object
+function resolveLocaleString(value: any, language: string): string | undefined {
+  if (!value) return undefined;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    return value[language] || value['en'] || Object.values(value)[0] || undefined;
+  }
+  return undefined;
+}
+
 export default function ProductDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
+  const { language } = useLanguage();
   
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
@@ -257,9 +269,10 @@ export default function ProductDetailPage() {
 
   // Generate short description: from nutrition batch or fallback to truncated description
   const getShortDescription = () => {
-    // Primary: Use nutrition batch shortLabelDescription
+    // Primary: Use nutrition batch shortLabelDescription (resolve locale)
     if (currentNutritionBatch?.shortLabelDescription) {
-      return currentNutritionBatch.shortLabelDescription;
+      const resolved = resolveLocaleString(currentNutritionBatch.shortLabelDescription, language);
+      if (resolved) return resolved;
     }
     
     // Fallback: Truncate product description to ~150-200 chars
@@ -639,7 +652,7 @@ export default function ProductDetailPage() {
                         <h4 className="text-base font-semibold mb-3">Composition / Nutrition Facts</h4>
                         {displayNutritionBatch.servingLabel && (
                           <p className="text-sm text-gray-600 mb-4">
-                            Serving Size: {displayNutritionBatch.servingSizeValue}{displayNutritionBatch.servingSizeUnit} ({displayNutritionBatch.servingLabel})
+                            Serving Size: {displayNutritionBatch.servingSizeValue}{displayNutritionBatch.servingSizeUnit} ({resolveLocaleString(displayNutritionBatch.servingLabel, language)})
                             {displayNutritionBatch.servingsPerContainer && (
                               <span className="ml-2">• {displayNutritionBatch.servingsPerContainer} servings per container</span>
                             )}
@@ -725,27 +738,27 @@ export default function ProductDetailPage() {
 
                         {displayNutritionBatch.referenceIntakeFootnoteText && (
                           <p className="text-xs text-gray-500 mt-4">
-                            {displayNutritionBatch.referenceIntakeFootnoteText}
+                            <span dangerouslySetInnerHTML={{ __html: resolveLocaleString(displayNutritionBatch.referenceIntakeFootnoteText, language) || '' }} />
                           </p>
                         )}
                       </div>
 
                       {/* Ingredients */}
-                      {displayNutritionBatch.ingredientsText && (
+                      {resolveLocaleString(displayNutritionBatch.ingredientsText, language) && (
                         <div className="border-t pt-6">
                           <h4 className="text-base font-semibold mb-3">Ingredients</h4>
                           <div className="text-sm text-gray-700 leading-relaxed">
-                            <div dangerouslySetInnerHTML={{ __html: displayNutritionBatch.ingredientsText }} />
+                            <div dangerouslySetInnerHTML={{ __html: resolveLocaleString(displayNutritionBatch.ingredientsText, language) || '' }} />
                           </div>
                         </div>
                       )}
 
                       {/* Allergy Advice */}
-                      {displayNutritionBatch.allergyAdviceText && (
+                      {resolveLocaleString(displayNutritionBatch.allergyAdviceText, language) && (
                         <div className="border-t pt-6">
                           <h4 className="text-base font-semibold mb-3">Allergy Advice</h4>
                           <div className="text-sm text-gray-700 leading-relaxed">
-                            <div dangerouslySetInnerHTML={{ __html: displayNutritionBatch.allergyAdviceText }} />
+                            <div dangerouslySetInnerHTML={{ __html: resolveLocaleString(displayNutritionBatch.allergyAdviceText, language) || '' }} />
                           </div>
                         </div>
                       )}
