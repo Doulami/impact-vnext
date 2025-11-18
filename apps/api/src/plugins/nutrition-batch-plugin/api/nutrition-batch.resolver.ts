@@ -1,4 +1,4 @@
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Mutation, Query, Resolver, ResolveField, Parent } from '@nestjs/graphql';
 import { Allow, Ctx, ID, ListQueryBuilder, ListQueryOptions, Permission, PaginatedList, Relations, RelationPaths, RequestContext, Transaction } from '@vendure/core';
 import { DeletionResponse, DeletionResult } from '@vendure/common/lib/generated-types';
 import { NutritionBatchService } from '../services/nutrition-batch.service';
@@ -190,7 +190,7 @@ export class NutritionBatchAdminResolver {
  * Provides public access to nutrition data for storefront display.
  * All localized fields are automatically resolved based on request language.
  */
-@Resolver()
+@Resolver('NutritionBatch')
 export class NutritionBatchShopResolver {
     constructor(
         private nutritionBatchService: NutritionBatchService
@@ -201,9 +201,7 @@ export class NutritionBatchShopResolver {
         @Ctx() ctx: RequestContext,
         @Args() args: { variantId: ID }
     ): Promise<NutritionBatch | null> {
-        const batch = await this.nutritionBatchService.getCurrentBatch(ctx, args.variantId);
-        // Note: Locale resolution happens via entity field resolvers
-        return batch;
+        return this.nutritionBatchService.getCurrentBatch(ctx, args.variantId);
     }
 
     @Query()
@@ -211,8 +209,53 @@ export class NutritionBatchShopResolver {
         @Ctx() ctx: RequestContext,
         @Args() args: { variantId: ID }
     ): Promise<NutritionBatch[]> {
-        const batches = await this.nutritionBatchService.findByVariantId(ctx, args.variantId);
-        // Note: Locale resolution happens via entity field resolvers
-        return batches;
+        return this.nutritionBatchService.findByVariantId(ctx, args.variantId);
+    }
+
+    // Resolve LocaleString fields based on request language
+    private resolveLocaleString(value: Record<string, string> | undefined, ctx: RequestContext): string | undefined {
+        if (!value) return undefined;
+        const languageCode = ctx.languageCode;
+        return value[languageCode] || value['en'] || Object.values(value)[0] || undefined;
+    }
+
+    @ResolveField()
+    servingLabel(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): string | undefined {
+        return this.resolveLocaleString(batch.servingLabel, ctx);
+    }
+
+    @ResolveField()
+    shortLabelDescription(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): string | undefined {
+        return this.resolveLocaleString(batch.shortLabelDescription, ctx);
+    }
+
+    @ResolveField()
+    ingredientsText(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): string | undefined {
+        return this.resolveLocaleString(batch.ingredientsText, ctx);
+    }
+
+    @ResolveField()
+    allergyAdviceText(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): string | undefined {
+        return this.resolveLocaleString(batch.allergyAdviceText, ctx);
+    }
+
+    @ResolveField()
+    recommendedUseText(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): string | undefined {
+        return this.resolveLocaleString(batch.recommendedUseText, ctx);
+    }
+
+    @ResolveField()
+    storageAdviceText(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): string | undefined {
+        return this.resolveLocaleString(batch.storageAdviceText, ctx);
+    }
+
+    @ResolveField()
+    warningsText(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): string | undefined {
+        return this.resolveLocaleString(batch.warningsText, ctx);
+    }
+
+    @ResolveField()
+    referenceIntakeFootnoteText(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): string | undefined {
+        return this.resolveLocaleString(batch.referenceIntakeFootnoteText, ctx);
     }
 }
