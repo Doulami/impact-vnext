@@ -415,9 +415,7 @@ export default function ProductDetailPage() {
             {/* Short Description - From Nutrition Batch or Fallback */}
             {shortDescription && (
               <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <p className="text-sm md:text-base text-gray-700 leading-relaxed">
-                  {shortDescription}
-                </p>
+                <div className="text-sm md:text-base text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: shortDescription }} />
               </div>
             )}
 
