@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import React, { useState, Fragment } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { GET_PRODUCT_BY_SLUG, GET_BUNDLE } from '@/lib/graphql/queries';
 import { Star, Heart, Share2, Truck, Shield, RotateCcw, Plus, Minus, ArrowLeft, ShoppingCart, Package, ChevronDown } from 'lucide-react';
@@ -62,15 +62,6 @@ interface Product {
 
 // Bundle types are now imported from @/lib/types/product
 
-// Helper to resolve localized text from LocaleString object
-function resolveLocaleString(value: any, language: string): string | undefined {
-  if (!value) return undefined;
-  if (typeof value === 'string') return value;
-  if (typeof value === 'object') {
-    return value[language] || value['en'] || Object.values(value)[0] || undefined;
-  }
-  return undefined;
-}
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -81,7 +72,11 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedBundleComponentIndex, setSelectedBundleComponentIndex] = useState(0);
+  const [isOverviewAccordionOpen, setIsOverviewAccordionOpen] = useState(false);
   const [isNutritionAccordionOpen, setIsNutritionAccordionOpen] = useState(false);
+  const [isRecommendedUseAccordionOpen, setIsRecommendedUseAccordionOpen] = useState(false);
+  const [isStorageAdviceAccordionOpen, setIsStorageAdviceAccordionOpen] = useState(false);
+  const [isWarningsAccordionOpen, setIsWarningsAccordionOpen] = useState(false);
   const { addItem, openCart } = useCart();
 
   // Query for product (shell product for both regular products and bundles)
@@ -269,10 +264,9 @@ export default function ProductDetailPage() {
 
   // Generate short description: from nutrition batch or fallback to truncated description
   const getShortDescription = () => {
-    // Primary: Use nutrition batch shortLabelDescription (resolve locale)
+    // Primary: Use nutrition batch shortLabelDescription (already resolved server-side)
     if (currentNutritionBatch?.shortLabelDescription) {
-      const resolved = resolveLocaleString(currentNutritionBatch.shortLabelDescription, language);
-      if (resolved) return resolved;
+      return currentNutritionBatch.shortLabelDescription;
     }
     
     // Fallback: Truncate product description to ~150-200 chars
@@ -286,6 +280,13 @@ export default function ProductDetailPage() {
   };
 
   const shortDescription = getShortDescription();
+  
+  // Debug: Log shortDescription to see what we're rendering
+  if (currentNutritionBatch?.shortLabelDescription) {
+    console.log('[PDP] shortLabelDescription type:', typeof currentNutritionBatch.shortLabelDescription);
+    console.log('[PDP] shortLabelDescription value:', currentNutritionBatch.shortLabelDescription);
+    console.log('[PDP] shortDescription (final):', shortDescription);
+  }
 
   // Get nutrition batch for display
   // For bundles: use selected component's nutrition batch
@@ -345,7 +346,7 @@ export default function ProductDetailPage() {
             {/* Product Images */}
             <div className="space-y-4">
               {/* Main Image */}
-              <div className="aspect-square bg-white rounded-lg overflow-hidden border">
+              <div className="aspect-square bg-white rounded-lg overflow-hidden">
                 {images[selectedImageIndex] ? (
                   <img
                     src={images[selectedImageIndex]}
@@ -381,13 +382,272 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            {/* Product Overview Section */}
+            {/* Product Overview Accordion */}
             {product?.description && (
-              <div className="bg-white rounded-lg border p-6">
-                <h2 className="text-xl font-semibold mb-4">Product Overview</h2>
-                <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
-                  <div dangerouslySetInnerHTML={{ __html: product.description }} />
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setIsOverviewAccordionOpen(!isOverviewAccordionOpen)}
+                  className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors"
+                >
+                  <h3 className="text-lg font-semibold">Product Overview</h3>
+                  <ChevronDown className={`w-5 h-5 transition-transform ${
+                    isOverviewAccordionOpen ? 'rotate-180' : ''
+                  }`} />
+                </button>
+                {isOverviewAccordionOpen && (
+                  <div className="p-4 md:p-6 bg-gray-50 border-t">
+                    <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
+                      <div dangerouslySetInnerHTML={{ __html: product.description }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Nutritional Information Accordion */}
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setIsNutritionAccordionOpen(!isNutritionAccordionOpen)}
+                className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors"
+              >
+                <h3 className="text-lg font-semibold">Nutritional Information</h3>
+                <ChevronDown className={`w-5 h-5 transition-transform ${
+                  isNutritionAccordionOpen ? 'rotate-180' : ''
+                }`} />
+              </button>
+
+              {isNutritionAccordionOpen && (
+                <div className="p-4 md:p-6 bg-gray-50 border-t">
+                  {/* Bundle Component Selector */}
+                  {isBundle && bundle?.items && bundle.items.length > 1 && (
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Component:
+                      </label>
+                      {/* Mobile: Dropdown */}
+                      <select
+                        value={selectedBundleComponentIndex}
+                        onChange={(e) => setSelectedBundleComponentIndex(Number(e.target.value))}
+                        className="w-full md:hidden px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                      >
+                        {[...bundle.items]
+                          .sort((a, b) => a.displayOrder - b.displayOrder)
+                          .map((item, index) => (
+                            <option key={item.id} value={index}>
+                              {item.productVariant.name}
+                            </option>
+                          ))}
+                      </select>
+                      {/* Desktop: Tabs */}
+                      <div className="hidden md:flex flex-wrap gap-2">
+                        {[...bundle.items]
+                          .sort((a, b) => a.displayOrder - b.displayOrder)
+                          .map((item, index) => (
+                            <button
+                              key={item.id}
+                              onClick={() => setSelectedBundleComponentIndex(index)}
+                              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                selectedBundleComponentIndex === index
+                                  ? 'bg-black text-white'
+                                  : 'bg-white text-gray-700 border border-gray-300 hover:border-gray-400'
+                              }`}
+                            >
+                              {item.productVariant.name}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {displayNutritionBatch ? (
+                    <div className="space-y-6">
+                      {/* Composition / Nutrition Facts */}
+                      <div>
+                        <h4 className="text-base font-semibold mb-3">Composition / Nutrition Facts</h4>
+                        {displayNutritionBatch.servingLabel && (
+                          <p className="text-sm text-gray-600 mb-4">
+                            Serving Size: {displayNutritionBatch.servingSizeValue}{displayNutritionBatch.servingSizeUnit} ({displayNutritionBatch.servingLabel})
+                            {displayNutritionBatch.servingsPerContainer && (
+                              <span className="ml-2">• {displayNutritionBatch.servingsPerContainer} servings per container</span>
+                            )}
+                          </p>
+                        )}
+                        
+                        {/* Desktop: Table */}
+                        <div className="hidden md:block overflow-x-auto">
+                          <table className="w-full text-sm border-collapse">
+                            <thead>
+                              <tr className="border-b-2 border-gray-300">
+                                <th className="text-left py-2 pr-4 font-semibold">Nutrient</th>
+                                <th className="text-right py-2 px-4 font-semibold">Per Serving</th>
+                                <th className="text-right py-2 px-4 font-semibold">Per 100g</th>
+                                <th className="text-right py-2 pl-4 font-semibold">RI%</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {Object.entries(groupedRows).map(([group, rows]) => (
+                                <Fragment key={`group-${group}`}>
+                                  <tr className="bg-gray-100">
+                                    <td colSpan={4} className="py-2 px-2 font-medium text-xs uppercase text-gray-600">
+                                      {group}
+                                    </td>
+                                  </tr>
+                                  {rows
+                                    .sort((a: any, b: any) => a.displayOrder - b.displayOrder)
+                                    .map((row: any) => (
+                                      <tr key={row.id} className="border-b border-gray-200">
+                                        <td className="py-2 pr-4">{row.name}</td>
+                                        <td className="text-right py-2 px-4">
+                                          {row.valuePerServing != null ? `${row.valuePerServing}${row.unit}` : '-'}
+                                        </td>
+                                        <td className="text-right py-2 px-4">
+                                          {row.valuePer100g != null ? `${row.valuePer100g}${row.unit}` : '-'}
+                                        </td>
+                                        <td className="text-right py-2 pl-4">
+                                          {row.referenceIntakePercentPerServing != null ? `${row.referenceIntakePercentPerServing}%` : '-'}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                </Fragment>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Mobile: Cards */}
+                        <div className="md:hidden space-y-3">
+                          {Object.entries(groupedRows).map(([group, rows]) => (
+                            <div key={`group-${group}`}>
+                              <div className="text-xs uppercase font-medium text-gray-600 mb-2">{group}</div>
+                              {rows
+                                .sort((a: any, b: any) => a.displayOrder - b.displayOrder)
+                                .map((row: any) => (
+                                  <div key={row.id} className="bg-white rounded-lg p-3 mb-2 border">
+                                    <div className="font-medium mb-2">{row.name}</div>
+                                    <div className="grid grid-cols-3 gap-2 text-sm text-gray-600">
+                                      <div>
+                                        <div className="text-xs text-gray-500">Per Serving</div>
+                                        <div className="font-medium">
+                                          {row.valuePerServing != null ? `${row.valuePerServing}${row.unit}` : '-'}
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <div className="text-xs text-gray-500">Per 100g</div>
+                                        <div className="font-medium">
+                                          {row.valuePer100g != null ? `${row.valuePer100g}${row.unit}` : '-'}
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <div className="text-xs text-gray-500">RI%</div>
+                                        <div className="font-medium">
+                                          {row.referenceIntakePercentPerServing != null ? `${row.referenceIntakePercentPerServing}%` : '-'}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Ingredients */}
+                      {displayNutritionBatch.ingredientsText && (
+                        <div className="border-t pt-6">
+                          <h4 className="text-base font-semibold mb-3">Ingredients</h4>
+                          <div className="text-sm text-gray-700 leading-relaxed">
+                            <div dangerouslySetInnerHTML={{ __html: displayNutritionBatch.ingredientsText }} />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Allergy Advice */}
+                      {displayNutritionBatch.allergyAdviceText && (
+                        <div className="border-t pt-6">
+                          <h4 className="text-base font-semibold mb-3">Allergy Advice</h4>
+                          <div className="text-sm text-gray-700 leading-relaxed">
+                            <div dangerouslySetInnerHTML={{ __html: displayNutritionBatch.allergyAdviceText }} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>Nutrition information coming soon</p>
+                    </div>
+                  )}
                 </div>
+              )}
+            </div>
+
+            {/* Recommended Use Accordion */}
+            {displayNutritionBatch?.recommendedUseText && (
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setIsRecommendedUseAccordionOpen(!isRecommendedUseAccordionOpen)}
+                  className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors"
+                >
+                  <h3 className="text-lg font-semibold">Recommended Use</h3>
+                  <ChevronDown className={`w-5 h-5 transition-transform ${
+                    isRecommendedUseAccordionOpen ? 'rotate-180' : ''
+                  }`} />
+                </button>
+                {isRecommendedUseAccordionOpen && (
+                  <div className="p-4 md:p-6 bg-gray-50 border-t">
+                    <div className="text-sm text-gray-700 leading-relaxed">
+                      <div dangerouslySetInnerHTML={{ __html: displayNutritionBatch.recommendedUseText }} />
+                    </div>
+                    {displayNutritionBatch.referenceIntakeFootnoteText && (
+                      <div className="text-xs text-gray-500 mt-4 pt-4 border-t">
+                        <div dangerouslySetInnerHTML={{ __html: displayNutritionBatch.referenceIntakeFootnoteText }} />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Storage Advice Accordion */}
+            {displayNutritionBatch?.storageAdviceText && (
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setIsStorageAdviceAccordionOpen(!isStorageAdviceAccordionOpen)}
+                  className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors"
+                >
+                  <h3 className="text-lg font-semibold">Storage Advice</h3>
+                  <ChevronDown className={`w-5 h-5 transition-transform ${
+                    isStorageAdviceAccordionOpen ? 'rotate-180' : ''
+                  }`} />
+                </button>
+                {isStorageAdviceAccordionOpen && (
+                  <div className="p-4 md:p-6 bg-gray-50 border-t">
+                    <div className="text-sm text-gray-700 leading-relaxed">
+                      <div dangerouslySetInnerHTML={{ __html: displayNutritionBatch.storageAdviceText }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Warnings Accordion */}
+            {displayNutritionBatch?.warningsText && (
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => setIsWarningsAccordionOpen(!isWarningsAccordionOpen)}
+                  className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors"
+                >
+                  <h3 className="text-lg font-semibold">Warnings</h3>
+                  <ChevronDown className={`w-5 h-5 transition-transform ${
+                    isWarningsAccordionOpen ? 'rotate-180' : ''
+                  }`} />
+                </button>
+                {isWarningsAccordionOpen && (
+                  <div className="p-4 md:p-6 bg-gray-50 border-t">
+                    <div className="text-sm text-gray-700 leading-relaxed">
+                      <div dangerouslySetInnerHTML={{ __html: displayNutritionBatch.warningsText }} />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -414,7 +674,7 @@ export default function ProductDetailPage() {
 
             {/* Short Description - From Nutrition Batch or Fallback */}
             {shortDescription && (
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div className="bg-gray-50 rounded-lg p-4">
                 <div className="text-sm md:text-base text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: shortDescription }} />
               </div>
             )}
@@ -570,7 +830,7 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Features */}
-            <div className="grid grid-cols-3 gap-4 py-6 border-t border-b">
+            <div className="grid grid-cols-3 gap-4 py-6 border-t">
               <div className="text-center">
                 <Truck className="w-6 h-6 mx-auto mb-2 text-gray-600" />
                 <div className="text-xs text-gray-600">Free Shipping</div>
@@ -587,189 +847,6 @@ export default function ProductDetailPage() {
                 <div className="text-xs text-gray-500">30 day returns</div>
               </div>
             </div>
-
-            {/* Nutritional Information Accordion */}
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
-              <button
-                onClick={() => setIsNutritionAccordionOpen(!isNutritionAccordionOpen)}
-                className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors"
-              >
-                <h3 className="text-lg font-semibold">Nutritional Information</h3>
-                <ChevronDown className={`w-5 h-5 transition-transform ${
-                  isNutritionAccordionOpen ? 'rotate-180' : ''
-                }`} />
-              </button>
-
-              {isNutritionAccordionOpen && (
-                <div className="p-4 md:p-6 bg-gray-50 border-t">
-                  {/* Bundle Component Selector */}
-                  {isBundle && bundle?.items && bundle.items.length > 1 && (
-                    <div className="mb-6">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Select Component:
-                      </label>
-                      {/* Mobile: Dropdown */}
-                      <select
-                        value={selectedBundleComponentIndex}
-                        onChange={(e) => setSelectedBundleComponentIndex(Number(e.target.value))}
-                        className="w-full md:hidden px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                      >
-                        {[...bundle.items]
-                          .sort((a, b) => a.displayOrder - b.displayOrder)
-                          .map((item, index) => (
-                            <option key={item.id} value={index}>
-                              {item.productVariant.name}
-                            </option>
-                          ))}
-                      </select>
-                      {/* Desktop: Tabs */}
-                      <div className="hidden md:flex flex-wrap gap-2">
-                        {[...bundle.items]
-                          .sort((a, b) => a.displayOrder - b.displayOrder)
-                          .map((item, index) => (
-                            <button
-                              key={item.id}
-                              onClick={() => setSelectedBundleComponentIndex(index)}
-                              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                selectedBundleComponentIndex === index
-                                  ? 'bg-black text-white'
-                                  : 'bg-white text-gray-700 border border-gray-300 hover:border-gray-400'
-                              }`}
-                            >
-                              {item.productVariant.name}
-                            </button>
-                          ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {displayNutritionBatch ? (
-                    <div className="space-y-6">
-                      {/* Composition / Nutrition Facts */}
-                      <div>
-                        <h4 className="text-base font-semibold mb-3">Composition / Nutrition Facts</h4>
-                        {displayNutritionBatch.servingLabel && (
-                          <p className="text-sm text-gray-600 mb-4">
-                            Serving Size: {displayNutritionBatch.servingSizeValue}{displayNutritionBatch.servingSizeUnit} ({resolveLocaleString(displayNutritionBatch.servingLabel, language)})
-                            {displayNutritionBatch.servingsPerContainer && (
-                              <span className="ml-2">• {displayNutritionBatch.servingsPerContainer} servings per container</span>
-                            )}
-                          </p>
-                        )}
-                        
-                        {/* Desktop: Table */}
-                        <div className="hidden md:block overflow-x-auto">
-                          <table className="w-full text-sm border-collapse">
-                            <thead>
-                              <tr className="border-b-2 border-gray-300">
-                                <th className="text-left py-2 pr-4 font-semibold">Nutrient</th>
-                                <th className="text-right py-2 px-4 font-semibold">Per Serving</th>
-                                <th className="text-right py-2 px-4 font-semibold">Per 100g</th>
-                                <th className="text-right py-2 pl-4 font-semibold">RI%</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {Object.entries(groupedRows).map(([group, rows]) => (
-                                <>
-                                  <tr key={`group-${group}`} className="bg-gray-100">
-                                    <td colSpan={4} className="py-2 px-2 font-medium text-xs uppercase text-gray-600">
-                                      {group}
-                                    </td>
-                                  </tr>
-                                  {rows
-                                    .sort((a: any, b: any) => a.displayOrder - b.displayOrder)
-                                    .map((row: any) => (
-                                      <tr key={row.id} className="border-b border-gray-200">
-                                        <td className="py-2 pr-4">{row.name}</td>
-                                        <td className="text-right py-2 px-4">
-                                          {row.valuePerServing != null ? `${row.valuePerServing}${row.unit}` : '-'}
-                                        </td>
-                                        <td className="text-right py-2 px-4">
-                                          {row.valuePer100g != null ? `${row.valuePer100g}${row.unit}` : '-'}
-                                        </td>
-                                        <td className="text-right py-2 pl-4">
-                                          {row.referenceIntakePercentPerServing != null ? `${row.referenceIntakePercentPerServing}%` : '-'}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                </>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-
-                        {/* Mobile: Cards */}
-                        <div className="md:hidden space-y-3">
-                          {Object.entries(groupedRows).map(([group, rows]) => (
-                            <div key={`group-${group}`}>
-                              <div className="text-xs uppercase font-medium text-gray-600 mb-2">{group}</div>
-                              {rows
-                                .sort((a: any, b: any) => a.displayOrder - b.displayOrder)
-                                .map((row: any) => (
-                                  <div key={row.id} className="bg-white rounded-lg p-3 mb-2 border">
-                                    <div className="font-medium mb-2">{row.name}</div>
-                                    <div className="grid grid-cols-3 gap-2 text-sm text-gray-600">
-                                      <div>
-                                        <div className="text-xs text-gray-500">Per Serving</div>
-                                        <div className="font-medium">
-                                          {row.valuePerServing != null ? `${row.valuePerServing}${row.unit}` : '-'}
-                                        </div>
-                                      </div>
-                                      <div>
-                                        <div className="text-xs text-gray-500">Per 100g</div>
-                                        <div className="font-medium">
-                                          {row.valuePer100g != null ? `${row.valuePer100g}${row.unit}` : '-'}
-                                        </div>
-                                      </div>
-                                      <div>
-                                        <div className="text-xs text-gray-500">RI%</div>
-                                        <div className="font-medium">
-                                          {row.referenceIntakePercentPerServing != null ? `${row.referenceIntakePercentPerServing}%` : '-'}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                            </div>
-                          ))}
-                        </div>
-
-                        {displayNutritionBatch.referenceIntakeFootnoteText && (
-                          <p className="text-xs text-gray-500 mt-4">
-                            <span dangerouslySetInnerHTML={{ __html: resolveLocaleString(displayNutritionBatch.referenceIntakeFootnoteText, language) || '' }} />
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Ingredients */}
-                      {resolveLocaleString(displayNutritionBatch.ingredientsText, language) && (
-                        <div className="border-t pt-6">
-                          <h4 className="text-base font-semibold mb-3">Ingredients</h4>
-                          <div className="text-sm text-gray-700 leading-relaxed">
-                            <div dangerouslySetInnerHTML={{ __html: resolveLocaleString(displayNutritionBatch.ingredientsText, language) || '' }} />
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Allergy Advice */}
-                      {resolveLocaleString(displayNutritionBatch.allergyAdviceText, language) && (
-                        <div className="border-t pt-6">
-                          <h4 className="text-base font-semibold mb-3">Allergy Advice</h4>
-                          <div className="text-sm text-gray-700 leading-relaxed">
-                            <div dangerouslySetInnerHTML={{ __html: resolveLocaleString(displayNutritionBatch.allergyAdviceText, language) || '' }} />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <p>Nutrition information coming soon</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
           </div>
         </div>
 

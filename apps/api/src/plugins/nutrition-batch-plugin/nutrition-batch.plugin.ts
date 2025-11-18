@@ -5,7 +5,7 @@ import { NutritionBatchRow } from './entities/nutrition-batch-row.entity';
 import { NutritionBatchService } from './services/nutrition-batch.service';
 import { NutritionBatchRowService } from './services/nutrition-batch-row.service';
 import { NutritionLocaleService } from './services/nutrition-locale.service';
-import { NutritionBatchAdminResolver, NutritionBatchShopResolver } from './api/nutrition-batch.resolver';
+import { NutritionBatchAdminResolver, NutritionBatchShopResolver, NutritionBatchRowShopResolver } from './api/nutrition-batch.resolver';
 import { ProductVariantNutritionResolver } from './api/product-variant.resolver';
 
 /**
@@ -226,7 +226,7 @@ import { ProductVariantNutritionResolver } from './api/product-variant.resolver'
     
     // Shop API extensions (read-only access for storefront)
     shopApiExtensions: {
-        resolvers: [NutritionBatchShopResolver, ProductVariantNutritionResolver],
+        resolvers: [NutritionBatchShopResolver, NutritionBatchRowShopResolver, ProductVariantNutritionResolver],
         schema: gql`
             # Enums
             enum ServingSizeUnit {

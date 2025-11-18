@@ -23,30 +23,43 @@ export class NutritionLocaleService {
      */
     resolveLocaleString(
         ctx: RequestContext,
-        localeObject: Record<string, string> | undefined | null,
+        localeObject: Record<string, string> | string | undefined | null,
         defaultLanguage: LanguageCode = LanguageCode.en
     ): string | undefined {
         if (!localeObject) {
             return undefined;
         }
 
+        // If it's a string (from simple-json serialization), parse it
+        let parsedObject: Record<string, string>;
+        if (typeof localeObject === 'string') {
+            try {
+                parsedObject = JSON.parse(localeObject);
+            } catch (e) {
+                // If parsing fails, return the string as-is
+                return localeObject;
+            }
+        } else {
+            parsedObject = localeObject;
+        }
+
         // Get requested language from context
         const requestedLanguage = ctx.languageCode;
 
         // Try to get the requested language
-        if (localeObject[requestedLanguage]) {
-            return localeObject[requestedLanguage];
+        if (parsedObject[requestedLanguage]) {
+            return parsedObject[requestedLanguage];
         }
 
         // Fallback to default language
-        if (localeObject[defaultLanguage]) {
-            return localeObject[defaultLanguage];
+        if (parsedObject[defaultLanguage]) {
+            return parsedObject[defaultLanguage];
         }
 
         // Last resort: return first available language
-        const availableLanguages = Object.keys(localeObject);
+        const availableLanguages = Object.keys(parsedObject);
         if (availableLanguages.length > 0) {
-            return localeObject[availableLanguages[0]];
+            return parsedObject[availableLanguages[0]];
         }
 
         return undefined;

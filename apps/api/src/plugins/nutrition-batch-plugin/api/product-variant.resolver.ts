@@ -1,8 +1,6 @@
 import { Parent, ResolveField, Resolver } from '@nestjs/graphql';
 import { Ctx, ProductVariant, RequestContext } from '@vendure/core';
 import { NutritionBatchService } from '../services/nutrition-batch.service';
-import { NutritionBatch } from '../entities/nutrition-batch.entity';
-import { NutritionLocaleService } from '../services/nutrition-locale.service';
 
 /**
  * ProductVariant Field Resolver for Shop API
@@ -16,8 +14,7 @@ import { NutritionLocaleService } from '../services/nutrition-locale.service';
 @Resolver('ProductVariant')
 export class ProductVariantNutritionResolver {
     constructor(
-        private nutritionBatchService: NutritionBatchService,
-        private nutritionLocaleService: NutritionLocaleService
+        private nutritionBatchService: NutritionBatchService
     ) {}
 
     /**
@@ -28,8 +25,8 @@ export class ProductVariantNutritionResolver {
         @Ctx() ctx: RequestContext,
         @Parent() variant: ProductVariant
     ): Promise<any[]> {
-        const batches = await this.nutritionBatchService.findByVariantId(ctx, variant.id);
-        return batches.map(batch => this.nutritionLocaleService.translateBatch(batch, ctx));
+        // Return raw batches - @ResolveField in NutritionBatchShopResolver will handle locale resolution
+        return await this.nutritionBatchService.findByVariantId(ctx, variant.id);
     }
 
     /**
@@ -40,8 +37,7 @@ export class ProductVariantNutritionResolver {
         @Ctx() ctx: RequestContext,
         @Parent() variant: ProductVariant
     ): Promise<any | null> {
-        const batch = await this.nutritionBatchService.getCurrentBatch(ctx, variant.id);
-        if (!batch) return null;
-        return this.nutritionLocaleService.translateBatch(batch, ctx);
+        // Return raw batch entity - @ResolveField in NutritionBatchShopResolver will handle locale resolution
+        return await this.nutritionBatchService.getCurrentBatch(ctx, variant.id);
     }
 }

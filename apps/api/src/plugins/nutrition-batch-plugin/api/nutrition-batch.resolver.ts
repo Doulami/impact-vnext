@@ -2,6 +2,7 @@ import { Args, Mutation, Query, Resolver, ResolveField, Parent } from '@nestjs/g
 import { Allow, Ctx, ID, ListQueryBuilder, ListQueryOptions, Permission, PaginatedList, Relations, RelationPaths, RequestContext, Transaction } from '@vendure/core';
 import { DeletionResponse, DeletionResult } from '@vendure/common/lib/generated-types';
 import { NutritionBatchService } from '../services/nutrition-batch.service';
+import { NutritionLocaleService } from '../services/nutrition-locale.service';
 import { NutritionBatchRowService } from '../services/nutrition-batch-row.service';
 import { NutritionBatch } from '../entities/nutrition-batch.entity';
 import { NutritionBatchRow } from '../entities/nutrition-batch-row.entity';
@@ -193,7 +194,8 @@ export class NutritionBatchAdminResolver {
 @Resolver('NutritionBatch')
 export class NutritionBatchShopResolver {
     constructor(
-        private nutritionBatchService: NutritionBatchService
+        private nutritionBatchService: NutritionBatchService,
+        private nutritionLocaleService: NutritionLocaleService
     ) {}
 
     @Query()
@@ -213,10 +215,24 @@ export class NutritionBatchShopResolver {
     }
 
     // Resolve LocaleString fields based on request language
-    private resolveLocaleString(value: Record<string, string> | undefined, ctx: RequestContext): string | undefined {
+    private resolveLocaleString(value: Record<string, string> | string | undefined, ctx: RequestContext): string | undefined {
         if (!value) return undefined;
+        
+        // If it's a string (from simple-json serialization), parse it
+        let parsedObject: Record<string, string>;
+        if (typeof value === 'string') {
+            try {
+                parsedObject = JSON.parse(value);
+            } catch (e) {
+                // If parsing fails, return the string as-is
+                return value;
+            }
+        } else {
+            parsedObject = value;
+        }
+        
         const languageCode = ctx.languageCode;
-        return value[languageCode] || value['en'] || Object.values(value)[0] || undefined;
+        return parsedObject[languageCode] || parsedObject['en'] || Object.values(parsedObject)[0] || undefined;
     }
 
     @ResolveField()
@@ -226,7 +242,11 @@ export class NutritionBatchShopResolver {
 
     @ResolveField()
     shortLabelDescription(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): string | undefined {
-        return this.resolveLocaleString(batch.shortLabelDescription, ctx);
+        const raw = batch.shortLabelDescription;
+        console.log('[NutritionBatchShopResolver] shortLabelDescription input:', { type: typeof raw, valuePreview: typeof raw === 'string' ? (raw as string).substring(0, 100) : JSON.stringify(raw) });
+        const resolved = this.resolveLocaleString(raw, ctx);
+        console.log('[NutritionBatchShopResolver] shortLabelDescription output:', { type: typeof resolved, length: resolved?.length, valuePreview: resolved?.substring(0, 100) });
+        return resolved;
     }
 
     @ResolveField()
@@ -257,5 +277,53 @@ export class NutritionBatchShopResolver {
     @ResolveField()
     referenceIntakeFootnoteText(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): string | undefined {
         return this.resolveLocaleString(batch.referenceIntakeFootnoteText, ctx);
+    }
+
+    @ResolveField()
+    rows(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): any[] {
+        // Resolve row names - must parse JSON string first
+        const resolved = batch.rows?.map(row => {
+            console.log('[NutritionBatchShopResolver] Row name input:', { type: typeof row.name, value: row.name });
+            const resolvedName = this.resolveLocaleString(row.name as any, ctx);
+            console.log('[NutritionBatchShopResolver] Row name output:', { type: typeof resolvedName, value: resolvedName });
+            return {
+                ...row,
+                name: resolvedName
+            };
+        }) || [];
+        return resolved;
+    }
+}
+
+/**
+ * Shop API Resolver for Nutrition Batch Row
+ * Resolves localized row name field
+ */
+@Resolver('NutritionBatchRow')
+export class NutritionBatchRowShopResolver {
+    // Resolve LocaleString fields based on request language
+    private resolveLocaleString(value: Record<string, string> | string | undefined, ctx: RequestContext): string | undefined {
+        if (!value) return undefined;
+        
+        // If it's a string (from simple-json serialization), parse it
+        let parsedObject: Record<string, string>;
+        if (typeof value === 'string') {
+            try {
+                parsedObject = JSON.parse(value);
+            } catch (e) {
+                // If parsing fails, return the string as-is
+                return value;
+            }
+        } else {
+            parsedObject = value;
+        }
+        
+        const languageCode = ctx.languageCode;
+        return parsedObject[languageCode] || parsedObject['en'] || Object.values(parsedObject)[0] || undefined;
+    }
+
+    @ResolveField()
+    name(@Parent() row: NutritionBatchRow, @Ctx() ctx: RequestContext): string | undefined {
+        return this.resolveLocaleString(row.name, ctx);
     }
 }
