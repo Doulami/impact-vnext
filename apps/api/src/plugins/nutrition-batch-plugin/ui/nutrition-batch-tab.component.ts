@@ -1,22 +1,22 @@
 import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { DataService, NotificationService, ModalService, SharedModule } from '@vendure/admin-ui/core';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { DataService, NotificationService, ModalService, SharedModule, TypedBaseListComponent } from '@vendure/admin-ui/core';
 import { gql } from 'graphql-tag';
 
-const GET_NUTRITION_BATCHES = gql`
-  query GetNutritionBatches($variantId: ID!) {
-    nutritionBatches(variantId: $variantId) {
-      id
-      batchCode
-      productionDate
-      expiryDate
-      isCurrentForWebsite
-      servingSizeValue
-      servingSizeUnit
-      servingLabel
+const GET_NUTRITION_BATCH_LIST = gql`
+  query GetNutritionBatchList($options: NutritionBatchListOptions, $variantId: ID!) {
+    nutritionBatches(options: $options, variantId: $variantId) {
+      items {
+        id
+        batchCode
+        productionDate
+        expiryDate
+        isCurrentForWebsite
+        servingSizeValue
+        servingSizeUnit
+        servingLabel
+      }
+      totalItems
     }
   }
 `;
@@ -50,7 +50,7 @@ const SET_CURRENT_BATCH = gql`
 @Component({
   selector: 'nutrition-batch-tab',
   standalone: true,
-  imports: [CommonModule, SharedModule, RouterModule],
+  imports: [SharedModule, RouterModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <router-outlet></router-outlet>
@@ -67,107 +67,119 @@ const SET_CURRENT_BATCH = gql`
         </vdr-ab-left>
       </vdr-action-bar>
 
-      <div style="margin-bottom: 20px;"></div>
+      <vdr-data-table-2
+        id="nutrition-batch-list"
+        [items]="items$ | async"
+        [itemsPerPage]="itemsPerPage$ | async"
+        [totalItems]="totalItems$ | async"
+        [currentPage]="currentPage$ | async"
+        (pageChange)="setPageNumber($event)"
+        (itemsPerPageChange)="setItemsPerPage($event)"
+      >
+        <vdr-dt2-column
+          id="batch-code"
+          [heading]="'nutrition-batch.batch-code' | translate"
+          [sort]="sorts.get('batchCode')"
+        >
+          <ng-template let-batch="item">
+            <a class="button-ghost" [routerLink]="['./', batch.id]">
+              {{ batch.batchCode }}
+            </a>
+            <span
+              *ngIf="batch.isCurrentForWebsite"
+              class="badge badge-success"
+            >
+              {{ 'nutrition-batch.current-badge' | translate }}
+            </span>
+          </ng-template>
+        </vdr-dt2-column>
 
-      <ng-container *ngIf="batches$ | async as batches">
-        <!-- Empty state -->
-        <ng-container *ngIf="batches.length === 0; else batchList">
-          <vdr-card>
-            <vdr-card-title>{{ 'nutrition-batch.no-batches' | translate }}</vdr-card-title>
-            <vdr-card-subtitle>{{ 'nutrition-batch.create-first-batch' | translate }}</vdr-card-subtitle>
-          </vdr-card>
-        </ng-container>
+        <vdr-dt2-column
+          id="production-date"
+          [heading]="'nutrition-batch.production-date' | translate"
+          [sort]="sorts.get('productionDate')"
+        >
+          <ng-template let-batch="item">
+            {{ batch.productionDate | date }}
+          </ng-template>
+        </vdr-dt2-column>
 
-        <!-- Non-empty state -->
-        <ng-template #batchList>
-          <vdr-card>
-            <vdr-card-title>{{ 'nutrition-batch.batches-list' | translate }}</vdr-card-title>
-            <vdr-card-content>
-          <table class="table">
-            <thead>
-              <tr>
-                <th>{{ 'nutrition-batch.batch-code' | translate }}</th>
-                <th>{{ 'nutrition-batch.production-date' | translate }}</th>
-                <th>{{ 'nutrition-batch.expiry-date' | translate }}</th>
-                <th>{{ 'nutrition-batch.serving-size' | translate }}</th>
-                <th>{{ 'nutrition-batch.current-for-website' | translate }}</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let batch of batches">
-                <td>
-                  <a [routerLink]="['./', batch.id]">{{ batch.batchCode }}</a>
-                  <span
-                    *ngIf="batch.isCurrentForWebsite"
-                    class="badge badge-success"
-                  >
-                    {{ 'nutrition-batch.current-badge' | translate }}
-                  </span>
-                </td>
-                <td>{{ batch.productionDate | date }}</td>
-                <td>
-                  {{ batch.expiryDate | date }}
-                  <span
-                    *ngIf="isExpired(batch.expiryDate)"
-                    class="badge badge-danger"
-                  >
-                    {{ 'nutrition-batch.expired-badge' | translate }}
-                  </span>
-                </td>
-                <td>
-                  {{ batch.servingSizeValue }}
-                  {{ batch.servingSizeUnit }}
-                </td>
-                <td>
-                  <button
-                    *ngIf="!batch.isCurrentForWebsite"
-                    class="button-small"
-                    (click)="setAsCurrent(batch.id)"
-                  >
-                    {{ 'nutrition-batch.set-as-current' | translate }}
-                  </button>
-                </td>
-                <td class="actions">
-                  <vdr-dropdown>
-                    <button class="icon-button" vdrDropdownTrigger>
-                      <clr-icon shape="ellipsis-vertical"></clr-icon>
-                    </button>
-                    <vdr-dropdown-menu vdrPosition="bottom-right">
-                      <button
-                        type="button"
-                        class="dropdown-item"
-                        (click)="editBatch(batch.id)"
-                      >
-                        <clr-icon shape="pencil"></clr-icon>
-                        {{ 'nutrition-batch.edit-batch' | translate }}
-                      </button>
-                      <button
-                        type="button"
-                        class="dropdown-item"
-                        (click)="duplicateBatch(batch.id)"
-                      >
-                        <clr-icon shape="copy"></clr-icon>
-                        {{ 'nutrition-batch.duplicate-batch' | translate }}
-                      </button>
-                      <button
-                        type="button"
-                        class="dropdown-item"
-                        (click)="deleteBatch(batch.id)"
-                      >
-                        <clr-icon shape="trash"></clr-icon>
-                        {{ 'nutrition-batch.delete-batch' | translate }}
-                      </button>
-                    </vdr-dropdown-menu>
-                  </vdr-dropdown>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-            </vdr-card-content>
-          </vdr-card>
-        </ng-template>
-      </ng-container>
+        <vdr-dt2-column
+          id="expiry-date"
+          [heading]="'nutrition-batch.expiry-date' | translate"
+          [sort]="sorts.get('expiryDate')"
+        >
+          <ng-template let-batch="item">
+            {{ batch.expiryDate | date }}
+            <span
+              *ngIf="isExpired(batch.expiryDate)"
+              class="badge badge-danger"
+            >
+              {{ 'nutrition-batch.expired-badge' | translate }}
+            </span>
+          </ng-template>
+        </vdr-dt2-column>
+
+        <vdr-dt2-column
+          id="serving-size"
+          [heading]="'nutrition-batch.serving-size' | translate"
+        >
+          <ng-template let-batch="item">
+            {{ batch.servingSizeValue }} {{ batch.servingSizeUnit }}
+          </ng-template>
+        </vdr-dt2-column>
+
+        <vdr-dt2-column
+          id="current"
+          [heading]="'nutrition-batch.current-for-website' | translate"
+        >
+          <ng-template let-batch="item">
+            <button
+              *ngIf="!batch.isCurrentForWebsite"
+              class="button-small"
+              (click)="setAsCurrent(batch.id)"
+            >
+              {{ 'nutrition-batch.set-as-current' | translate }}
+            </button>
+          </ng-template>
+        </vdr-dt2-column>
+
+        <vdr-dt2-column id="actions" [heading]="''">
+          <ng-template let-batch="item">
+            <vdr-dropdown>
+              <button class="icon-button" vdrDropdownTrigger>
+                <clr-icon shape="ellipsis-vertical"></clr-icon>
+              </button>
+              <vdr-dropdown-menu vdrPosition="bottom-right">
+                <button
+                  type="button"
+                  class="dropdown-item"
+                  (click)="editBatch(batch.id)"
+                >
+                  <clr-icon shape="pencil"></clr-icon>
+                  {{ 'nutrition-batch.edit-batch' | translate }}
+                </button>
+                <button
+                  type="button"
+                  class="dropdown-item"
+                  (click)="duplicateBatch(batch.id)"
+                >
+                  <clr-icon shape="copy"></clr-icon>
+                  {{ 'nutrition-batch.duplicate-batch' | translate }}
+                </button>
+                <button
+                  type="button"
+                  class="dropdown-item"
+                  (click)="deleteBatch(batch.id)"
+                >
+                  <clr-icon shape="trash"></clr-icon>
+                  {{ 'nutrition-batch.delete-batch' | translate }}
+                </button>
+              </vdr-dropdown-menu>
+            </vdr-dropdown>
+          </ng-template>
+        </vdr-dt2-column>
+      </vdr-data-table-2>
     </div>
   `,
   styles: [`
@@ -188,31 +200,52 @@ const SET_CURRENT_BATCH = gql`
       background-color: #c92100;
       color: white;
     }
-    .actions {
-      text-align: right;
-    }
   `]
 })
-export class NutritionBatchTabComponent implements OnInit {
+export class NutritionBatchTabComponent extends TypedBaseListComponent<typeof GET_NUTRITION_BATCH_LIST, 'nutritionBatches'> implements OnInit {
   variantId!: string;
-  batches$!: Observable<any[]>;
   hasChildRoute = false;
 
+  readonly sorts = this.createSortCollection()
+    .defaultSort('createdAt', 'DESC')
+    .addSort({ name: 'batchCode' })
+    .addSort({ name: 'productionDate' })
+    .addSort({ name: 'expiryDate' })
+    .connectToRoute(this.route);
+
   constructor(
-    private route: ActivatedRoute,
+    protected route: ActivatedRoute,
     private router: Router,
     private dataService: DataService,
     private notificationService: NotificationService,
     private modalService: ModalService,
     private changeDetector: ChangeDetectorRef
-  ) {}
+  ) {
+    super();
+    
+    // Get variantId from parent route
+    this.variantId = this.route.parent?.snapshot.params.id || this.route.snapshot.params.id;
+
+    super.configure({
+      document: GET_NUTRITION_BATCH_LIST,
+      getItems: data => data.nutritionBatches,
+      setVariables: (skip, take) => ({
+        options: {
+          skip,
+          take,
+          sort: this.sorts.createSortInput(),
+        },
+        variantId: this.variantId,
+      }),
+      refreshListOnChanges: [this.sorts.valueChanges],
+    });
+  }
 
   ngOnInit() {
-    // Get variantId from parent route (product-variant-detail)
-    this.variantId = this.route.parent?.snapshot.params.id || this.route.snapshot.params.id;
+    super.ngOnInit();
     
     // Check for child routes and subscribe to router events
-    this.router.events.subscribe((event) => {
+    this.router.events.subscribe(() => {
       const previousState = this.hasChildRoute;
       
       // Check both route.firstChild AND URL to determine if we're on list or detail
@@ -222,7 +255,7 @@ export class NutritionBatchTabComponent implements OnInit {
       
       // Reload batches when returning from child route to list
       if (previousState && !this.hasChildRoute) {
-        this.loadBatches();
+        this.refresh();
         this.changeDetector.detectChanges();
       }
     });
@@ -231,19 +264,6 @@ export class NutritionBatchTabComponent implements OnInit {
     const url = this.router.url;
     const onListView = url.endsWith('nutrition-batches') || url.includes('nutrition-batches?');
     this.hasChildRoute = !onListView;
-    
-    if (!this.hasChildRoute) {
-      this.loadBatches();
-    }
-  }
-
-  loadBatches() {
-    this.batches$ = this.dataService
-      .query(GET_NUTRITION_BATCHES, { variantId: this.variantId })
-      .mapStream((data: any) => {
-        const batches = data?.nutritionBatches ?? [];
-        return batches;
-      });
   }
 
   createBatch() {
@@ -254,23 +274,20 @@ export class NutritionBatchTabComponent implements OnInit {
     this.router.navigate([batchId], { relativeTo: this.route });
   }
 
-async duplicateBatch(batchId: string) {
+  async duplicateBatch(batchId: string) {
     try {
-      const result = await this.dataService
+      await this.dataService
         .mutate(DUPLICATE_BATCH, { id: batchId })
         .toPromise();
 
       this.notificationService.success('nutrition-batch.batch-duplicated');
-      // Reload the list to show the duplicated batch
-      this.loadBatches();
-      // Force immediate refresh
-      window.location.reload();
+      this.refresh();
     } catch (error: any) {
       this.notificationService.error(error.message);
     }
   }
 
-async deleteBatch(batchId: string) {
+  async deleteBatch(batchId: string) {
     this.modalService
       .dialog({
         title: 'nutrition-batch.delete-batch',
@@ -285,10 +302,7 @@ async deleteBatch(batchId: string) {
           this.dataService.mutate(DELETE_BATCH, { id: batchId }).subscribe({
             next: () => {
               this.notificationService.success('nutrition-batch.batch-deleted');
-              // Reload the list to remove the deleted batch
-              this.loadBatches();
-              // Force immediate refresh
-              window.location.reload();
+              this.refresh();
             },
             error: (error: any) => {
               this.notificationService.error(error.message);
@@ -305,7 +319,7 @@ async deleteBatch(batchId: string) {
         .toPromise();
 
       this.notificationService.success('nutrition-batch.set-current-success');
-      this.loadBatches();
+      this.refresh();
     } catch (error: any) {
       this.notificationService.error(error.message);
     }

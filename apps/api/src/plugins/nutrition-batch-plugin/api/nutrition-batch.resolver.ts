@@ -1,5 +1,5 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { Allow, Ctx, ID, Permission, RequestContext, Transaction } from '@vendure/core';
+import { Allow, Ctx, ID, ListQueryBuilder, ListQueryOptions, Permission, PaginatedList, RequestContext, Transaction } from '@vendure/core';
 import { DeletionResponse, DeletionResult } from '@vendure/common/lib/generated-types';
 import { NutritionBatchService } from '../services/nutrition-batch.service';
 import { NutritionBatchRowService } from '../services/nutrition-batch-row.service';
@@ -20,7 +20,8 @@ import { CreateNutritionBatchInput, UpdateNutritionBatchInput, CreateNutritionBa
 export class NutritionBatchAdminResolver {
     constructor(
         private nutritionBatchService: NutritionBatchService,
-        private nutritionBatchRowService: NutritionBatchRowService
+        private nutritionBatchRowService: NutritionBatchRowService,
+        private listQueryBuilder: ListQueryBuilder
     ) {}
 
     // ==================== Batch Queries ====================
@@ -29,9 +30,22 @@ export class NutritionBatchAdminResolver {
     @Allow(Permission.ReadCatalog)
     async nutritionBatches(
         @Ctx() ctx: RequestContext,
-        @Args() args: { variantId: ID }
-    ): Promise<NutritionBatch[]> {
-        return this.nutritionBatchService.findByVariantId(ctx, args.variantId);
+        @Args() args: { options?: ListQueryOptions<NutritionBatch>; variantId: ID }
+    ): Promise<PaginatedList<NutritionBatch>> {
+        return this.listQueryBuilder
+            .build(NutritionBatch, args.options, {
+                relations: ['productVariant', 'rows', 'coaAsset'],
+                ctx,
+            })
+            .getManyAndCount()
+            .then(([items, totalItems]) => {
+                // Filter by variantId
+                const filtered = items.filter(batch => batch.productVariant?.id === args.variantId);
+                return {
+                    items: filtered,
+                    totalItems: filtered.length,
+                };
+            });
     }
 
     @Query()
