@@ -170,28 +170,36 @@ function CheckoutPageContent() {
     skip: currentStep !== 3,
     fetchPolicy: 'cache-and-network', // Always check for updates
     errorPolicy: 'all',
-    onCompleted: (data) => {
-      console.log('Available payment methods:', data.eligiblePaymentMethods);
+  });
+  
+  // Handle payment methods data when it loads
+  useEffect(() => {
+    if (paymentMethodsData?.eligiblePaymentMethods) {
+      console.log('Available payment methods:', paymentMethodsData.eligiblePaymentMethods);
       
       // Reset selected payment method if it's no longer available
-      if (selectedPaymentMethod && !data.eligiblePaymentMethods.find(method => method.code === selectedPaymentMethod)) {
+      if (selectedPaymentMethod && !paymentMethodsData.eligiblePaymentMethods.find(method => method.code === selectedPaymentMethod)) {
         console.log(`Previously selected payment method '${selectedPaymentMethod}' is no longer available, resetting selection`);
         setSelectedPaymentMethod('');
       }
       
       // Set default payment method if none selected
-      if (!selectedPaymentMethod && data.eligiblePaymentMethods.length > 0) {
-        const defaultMethod = data.eligiblePaymentMethods.find(method => method.isEligible) || data.eligiblePaymentMethods[0];
+      if (!selectedPaymentMethod && paymentMethodsData.eligiblePaymentMethods.length > 0) {
+        const defaultMethod = paymentMethodsData.eligiblePaymentMethods.find(method => method.isEligible) || paymentMethodsData.eligiblePaymentMethods[0];
         if (defaultMethod) {
           console.log(`Setting default payment method to: ${defaultMethod.code}`);
           setSelectedPaymentMethod(defaultMethod.code);
         }
       }
-    },
-    onError: (error) => {
-      console.error('Payment methods query error:', error);
     }
-  });
+  }, [paymentMethodsData, selectedPaymentMethod]);
+  
+  // Handle payment methods errors
+  useEffect(() => {
+    if (paymentMethodsError) {
+      console.error('Payment methods query error:', paymentMethodsError);
+    }
+  }, [paymentMethodsError]);
 
   const [selectedShippingMethod, setSelectedShippingMethod] = useState('');
 

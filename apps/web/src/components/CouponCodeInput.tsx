@@ -22,7 +22,12 @@ export default function CouponCodeInput({ appliedCoupons, onSuccess }: CouponCod
       message?: string;
     };
   }>(APPLY_COUPON_CODE);
-  const [removeCoupon] = useMutation(REMOVE_COUPON_CODE);
+  const [removeCoupon] = useMutation<{
+    removeCouponCode: {
+      __typename: string;
+      message?: string;
+    };
+  }>(REMOVE_COUPON_CODE);
 
   const handleApply = async () => {
     if (!couponCode.trim()) return;

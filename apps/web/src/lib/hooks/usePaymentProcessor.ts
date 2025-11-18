@@ -34,9 +34,38 @@ export function usePaymentProcessor() {
   const [error, setError] = useState<string | null>(null);
 
   // GraphQL mutations and queries
-  const [createPayment] = useMutation(ADD_PAYMENT_TO_ORDER);
-  const [transitionToPayment] = useMutation(TRANSITION_TO_ARRANGING_PAYMENT);
-  const [getOrderState] = useLazyQuery(GET_ACTIVE_ORDER_STATE);
+  const [createPayment] = useMutation<{
+    addPaymentToOrder: {
+      __typename: string;
+      id?: string;
+      code?: string;
+      state?: string;
+      payments?: Array<{
+        id: string;
+        metadata?: { [key: string]: any };
+      }>;
+      message?: string;
+      errorCode?: string;
+    };
+  }>(ADD_PAYMENT_TO_ORDER);
+  const [transitionToPayment] = useMutation<{
+    transitionOrderToState: {
+      __typename: string;
+      id?: string;
+      code?: string;
+      state?: string;
+      message?: string;
+      errorCode?: string;
+    };
+  }>(TRANSITION_TO_ARRANGING_PAYMENT);
+  const [getOrderState] = useLazyQuery<{
+    activeOrder?: {
+      id: string;
+      code: string;
+      state: string;
+      lines?: Array<{ id: string }>;
+    };
+  }>(GET_ACTIVE_ORDER_STATE);
 
   // ClicToPay specific hook for redirect handling
   const clicToPayHook = useClicToPayment();

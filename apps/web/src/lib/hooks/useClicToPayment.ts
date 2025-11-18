@@ -25,10 +25,54 @@ export function useClicToPayment() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [createPayment] = useMutation(CREATE_CLICTOPAY_PAYMENT);
-  const [checkPaymentStatus] = useLazyQuery(CHECK_CLICTOPAY_PAYMENT_STATUS);
-  const [transitionToPayment] = useMutation(TRANSITION_TO_ARRANGING_PAYMENT);
-  const [getOrderState] = useLazyQuery(GET_ACTIVE_ORDER_STATE);
+  const [createPayment] = useMutation<{
+    addPaymentToOrder: {
+      __typename: string;
+      id?: string;
+      code?: string;
+      state?: string;
+      payments?: Array<{
+        id: string;
+        metadata?: {
+          redirectUrl?: string;
+          transactionId?: string;
+          [key: string]: any;
+        };
+      }>;
+      message?: string;
+      errorCode?: string;
+    };
+  }>(CREATE_CLICTOPAY_PAYMENT);
+  const [checkPaymentStatus] = useLazyQuery<{
+    checkPaymentStatus?: {
+      status: 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'UNKNOWN';
+      orderCode?: string;
+      transactionId?: string;
+      amount?: number;
+      currency?: string;
+      message?: string;
+    };
+  }>(CHECK_CLICTOPAY_PAYMENT_STATUS, {
+    fetchPolicy: 'network-only' // Always fetch fresh data
+  });
+  const [transitionToPayment] = useMutation<{
+    transitionOrderToState: {
+      __typename: string;
+      id?: string;
+      code?: string;
+      state?: string;
+      message?: string;
+      errorCode?: string;
+    };
+  }>(TRANSITION_TO_ARRANGING_PAYMENT);
+  const [getOrderState] = useLazyQuery<{
+    activeOrder?: {
+      id: string;
+      code: string;
+      state: string;
+      lines?: Array<{ id: string }>;
+    };
+  }>(GET_ACTIVE_ORDER_STATE);
 
   const initiatePayment = async (orderTotal: number, paymentMethodCode: string): Promise<ClicToPaymentResult> => {
     setLoading(true);
@@ -41,7 +85,8 @@ export function useClicToPayment() {
       // Step 1: Check current order state
       console.log('Checking current order state...');
       const { data: orderStateData } = await getOrderState();
-      const currentOrderState = orderStateData?.activeOrder?.state;
+      const activeOrder = orderStateData?.activeOrder;
+      const currentOrderState = activeOrder?.state;
       console.log('Current order state:', currentOrderState);
 
       // Step 2: Transition to ArrangingPayment if not already there
@@ -170,8 +215,7 @@ export function useClicToPayment() {
       console.log('Checking ClicToPay payment status for order:', orderId);
 
       const { data } = await checkPaymentStatus({
-        variables: { orderId },
-        fetchPolicy: 'network-only' // Always fetch fresh data
+        variables: { orderId }
       });
 
       const statusData = data?.checkPaymentStatus;
