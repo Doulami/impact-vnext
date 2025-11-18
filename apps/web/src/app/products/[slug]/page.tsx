@@ -13,7 +13,7 @@ import { useCart } from '@/lib/hooks/useCart';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Button from '@/components/Button';
-import type { Bundle, BundleItem } from '@/lib/types/product';
+import type { Bundle, BundleItem, NutritionBatch } from '@/lib/types/product';
 
 interface ProductVariant {
   id: string;
@@ -26,6 +26,7 @@ interface ProductVariant {
     id: string;
     preview: string;
   };
+  currentNutritionBatch?: NutritionBatch;
 }
 
 interface Product {

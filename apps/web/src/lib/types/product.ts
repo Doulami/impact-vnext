@@ -182,6 +182,37 @@ export function productToCardData(product: Product): ProductCard {
   };
 }
 
+// Nutrition Batch Types
+export interface NutritionBatchRow {
+  id: string;
+  name: string;
+  group: string;
+  unit: string;
+  valuePerServing?: number;
+  valuePer100g?: number;
+  referenceIntakePercentPerServing?: number;
+  displayOrder: number;
+}
+
+export interface NutritionBatch {
+  id: string;
+  batchCode: string;
+  productionDate?: string;
+  expiryDate?: string;
+  servingSizeValue: number;
+  servingSizeUnit: string;
+  servingLabel: string;
+  servingsPerContainer?: number;
+  shortLabelDescription?: string;
+  ingredientsText?: string;
+  allergyAdviceText?: string;
+  recommendedUseText?: string;
+  storageAdviceText?: string;
+  warningsText?: string;
+  referenceIntakeFootnoteText?: string;
+  rows: NutritionBatchRow[];
+}
+
 // Bundle Types
 export interface BundleItem {
   id: string;
@@ -204,6 +235,7 @@ export interface BundleItem {
         preview: string;
       };
     };
+    currentNutritionBatch?: NutritionBatch;
   };
   quantity: number;
   unitPrice: number; // Price in dollars
