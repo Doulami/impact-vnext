@@ -384,18 +384,22 @@ export default function ProductDetailPage() {
 
             {/* Product Overview Accordion */}
             {product?.description && (
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="rounded-lg overflow-hidden">
                 <button
                   onClick={() => setIsOverviewAccordionOpen(!isOverviewAccordionOpen)}
                   className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors"
                 >
                   <h3 className="text-lg font-semibold">Product Overview</h3>
-                  <ChevronDown className={`w-5 h-5 transition-transform ${
-                    isOverviewAccordionOpen ? 'rotate-180' : ''
-                  }`} />
+                  <div className={`rounded-full p-2 transition-colors ${
+                    isOverviewAccordionOpen ? 'bg-slate-900' : 'bg-white border-2 border-slate-200'
+                  }`}>
+                    <ChevronDown className={`w-4 h-4 transition-all ${
+                      isOverviewAccordionOpen ? 'rotate-180 text-white' : 'text-slate-900'
+                    }`} />
+                  </div>
                 </button>
                 {isOverviewAccordionOpen && (
-                  <div className="p-4 md:p-6 bg-gray-50 border-t">
+                  <div className="p-4 md:p-6 bg-gray-50">
                     <div className="prose prose-sm max-w-none text-gray-700 leading-relaxed">
                       <div dangerouslySetInnerHTML={{ __html: product.description }} />
                     </div>
@@ -405,19 +409,23 @@ export default function ProductDetailPage() {
             )}
 
             {/* Nutritional Information Accordion */}
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <div className="rounded-lg overflow-hidden">
               <button
                 onClick={() => setIsNutritionAccordionOpen(!isNutritionAccordionOpen)}
                 className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors"
               >
                 <h3 className="text-lg font-semibold">Nutritional Information</h3>
-                <ChevronDown className={`w-5 h-5 transition-transform ${
-                  isNutritionAccordionOpen ? 'rotate-180' : ''
-                }`} />
+                <div className={`rounded-full p-2 transition-colors ${
+                  isNutritionAccordionOpen ? 'bg-slate-900' : 'bg-white border-2 border-slate-200'
+                }`}>
+                  <ChevronDown className={`w-4 h-4 transition-all ${
+                    isNutritionAccordionOpen ? 'rotate-180 text-white' : 'text-slate-900'
+                  }`} />
+                </div>
               </button>
 
               {isNutritionAccordionOpen && (
-                <div className="p-4 md:p-6 bg-gray-50 border-t">
+                <div className="p-4 md:p-6 bg-gray-50">
                   {/* Bundle Component Selector */}
                   {isBundle && bundle?.items && bundle.items.length > 1 && (
                     <div className="mb-6">
@@ -582,18 +590,22 @@ export default function ProductDetailPage() {
 
             {/* Recommended Use Accordion */}
             {displayNutritionBatch?.recommendedUseText && (
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="rounded-lg overflow-hidden">
                 <button
                   onClick={() => setIsRecommendedUseAccordionOpen(!isRecommendedUseAccordionOpen)}
                   className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors"
                 >
                   <h3 className="text-lg font-semibold">Recommended Use</h3>
-                  <ChevronDown className={`w-5 h-5 transition-transform ${
-                    isRecommendedUseAccordionOpen ? 'rotate-180' : ''
-                  }`} />
+                  <div className={`rounded-full p-2 transition-colors ${
+                    isRecommendedUseAccordionOpen ? 'bg-slate-900' : 'bg-white border-2 border-slate-200'
+                  }`}>
+                    <ChevronDown className={`w-4 h-4 transition-all ${
+                      isRecommendedUseAccordionOpen ? 'rotate-180 text-white' : 'text-slate-900'
+                    }`} />
+                  </div>
                 </button>
                 {isRecommendedUseAccordionOpen && (
-                  <div className="p-4 md:p-6 bg-gray-50 border-t">
+                  <div className="p-4 md:p-6 bg-gray-50">
                     <div className="text-sm text-gray-700 leading-relaxed">
                       <div dangerouslySetInnerHTML={{ __html: displayNutritionBatch.recommendedUseText }} />
                     </div>
@@ -609,18 +621,22 @@ export default function ProductDetailPage() {
 
             {/* Storage Advice Accordion */}
             {displayNutritionBatch?.storageAdviceText && (
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="rounded-lg overflow-hidden">
                 <button
                   onClick={() => setIsStorageAdviceAccordionOpen(!isStorageAdviceAccordionOpen)}
                   className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors"
                 >
                   <h3 className="text-lg font-semibold">Storage Advice</h3>
-                  <ChevronDown className={`w-5 h-5 transition-transform ${
-                    isStorageAdviceAccordionOpen ? 'rotate-180' : ''
-                  }`} />
+                  <div className={`rounded-full p-2 transition-colors ${
+                    isStorageAdviceAccordionOpen ? 'bg-slate-900' : 'bg-white border-2 border-slate-200'
+                  }`}>
+                    <ChevronDown className={`w-4 h-4 transition-all ${
+                      isStorageAdviceAccordionOpen ? 'rotate-180 text-white' : 'text-slate-900'
+                    }`} />
+                  </div>
                 </button>
                 {isStorageAdviceAccordionOpen && (
-                  <div className="p-4 md:p-6 bg-gray-50 border-t">
+                  <div className="p-4 md:p-6 bg-gray-50">
                     <div className="text-sm text-gray-700 leading-relaxed">
                       <div dangerouslySetInnerHTML={{ __html: displayNutritionBatch.storageAdviceText }} />
                     </div>
@@ -631,18 +647,22 @@ export default function ProductDetailPage() {
 
             {/* Warnings Accordion */}
             {displayNutritionBatch?.warningsText && (
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="rounded-lg overflow-hidden">
                 <button
                   onClick={() => setIsWarningsAccordionOpen(!isWarningsAccordionOpen)}
                   className="w-full flex items-center justify-between p-4 bg-white hover:bg-gray-50 transition-colors"
                 >
                   <h3 className="text-lg font-semibold">Warnings</h3>
-                  <ChevronDown className={`w-5 h-5 transition-transform ${
-                    isWarningsAccordionOpen ? 'rotate-180' : ''
-                  }`} />
+                  <div className={`rounded-full p-2 transition-colors ${
+                    isWarningsAccordionOpen ? 'bg-slate-900' : 'bg-white border-2 border-slate-200'
+                  }`}>
+                    <ChevronDown className={`w-4 h-4 transition-all ${
+                      isWarningsAccordionOpen ? 'rotate-180 text-white' : 'text-slate-900'
+                    }`} />
+                  </div>
                 </button>
                 {isWarningsAccordionOpen && (
-                  <div className="p-4 md:p-6 bg-gray-50 border-t">
+                  <div className="p-4 md:p-6 bg-gray-50">
                     <div className="text-sm text-gray-700 leading-relaxed">
                       <div dangerouslySetInnerHTML={{ __html: displayNutritionBatch.warningsText }} />
                     </div>
