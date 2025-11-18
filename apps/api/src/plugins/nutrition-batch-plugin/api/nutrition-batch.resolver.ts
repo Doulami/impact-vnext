@@ -1,5 +1,5 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
-import { Allow, Ctx, ID, ListQueryBuilder, ListQueryOptions, Permission, PaginatedList, RequestContext, Transaction } from '@vendure/core';
+import { Allow, Ctx, ID, ListQueryBuilder, ListQueryOptions, Permission, PaginatedList, Relations, RelationPaths, RequestContext, Transaction } from '@vendure/core';
 import { DeletionResponse, DeletionResult } from '@vendure/common/lib/generated-types';
 import { NutritionBatchService } from '../services/nutrition-batch.service';
 import { NutritionBatchRowService } from '../services/nutrition-batch-row.service';
@@ -30,22 +30,28 @@ export class NutritionBatchAdminResolver {
     @Allow(Permission.ReadCatalog)
     async nutritionBatches(
         @Ctx() ctx: RequestContext,
-        @Args() args: { options?: ListQueryOptions<NutritionBatch>; variantId: ID }
+        @Args() args: { options?: ListQueryOptions<NutritionBatch>; variantId?: ID },
+        @Relations(NutritionBatch) relations: RelationPaths<NutritionBatch>
     ): Promise<PaginatedList<NutritionBatch>> {
-        return this.listQueryBuilder
-            .build(NutritionBatch, args.options, {
-                relations: ['productVariant', 'rows', 'coaAsset'],
-                ctx,
-            })
-            .getManyAndCount()
-            .then(([items, totalItems]) => {
-                // Filter by variantId
-                const filtered = items.filter(batch => batch.productVariant?.id === args.variantId);
-                return {
-                    items: filtered,
-                    totalItems: filtered.length,
-                };
-            });
+        console.log('[NutritionBatchResolver] nutritionBatches called with:', {
+            variantId: args.variantId,
+            options: args.options,
+        });
+
+        const qb = this.listQueryBuilder.build(NutritionBatch, args.options, {
+            relations: relations || ['productVariant', 'rows', 'coaAsset'],
+            ctx,
+        });
+
+        // Filter by variantId if provided
+        if (args.variantId) {
+            // Use the query builder's alias to avoid column name issues
+            qb.andWhere(`${qb.alias}.productVariantId = :variantId`, { variantId: args.variantId });
+        }
+
+        const [items, totalItems] = await qb.getManyAndCount();
+        console.log('[NutritionBatchResolver] returning:', { itemsCount: items.length, totalItems });
+        return { items, totalItems };
     }
 
     @Query()

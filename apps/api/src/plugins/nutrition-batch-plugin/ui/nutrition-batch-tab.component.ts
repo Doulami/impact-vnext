@@ -2,8 +2,37 @@ import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { DataService, NotificationService, ModalService, SharedModule, TypedBaseListComponent } from '@vendure/admin-ui/core';
 import { gql } from 'graphql-tag';
+import { TypedDocumentNode } from '@apollo/client/core';
 
-const GET_NUTRITION_BATCH_LIST = gql`
+// Define the query result type
+interface GetNutritionBatchListQuery {
+  nutritionBatches: {
+    items: Array<{
+      id: string;
+      batchCode: string;
+      productionDate: string;
+      expiryDate: string;
+      isCurrentForWebsite: boolean;
+      servingSizeValue: number;
+      servingSizeUnit: string;
+      servingLabel: string;
+    }>;
+    totalItems: number;
+  };
+}
+
+// Define the query variables type
+interface GetNutritionBatchListQueryVariables {
+  options: {
+    skip?: number;
+    take?: number;
+    filter?: any;
+    sort: any;
+  };
+  variantId: string;
+}
+
+const GET_NUTRITION_BATCH_LIST: TypedDocumentNode<GetNutritionBatchListQuery, GetNutritionBatchListQueryVariables> = gql`
   query GetNutritionBatchList($options: NutritionBatchListOptions, $variantId: ID!) {
     nutritionBatches(options: $options, variantId: $variantId) {
       items {
@@ -73,9 +102,17 @@ const SET_CURRENT_BATCH = gql`
         [itemsPerPage]="itemsPerPage$ | async"
         [totalItems]="totalItems$ | async"
         [currentPage]="currentPage$ | async"
+        [filters]="filters"
         (pageChange)="setPageNumber($event)"
         (itemsPerPageChange)="setItemsPerPage($event)"
       >
+        <!-- Search by batch code -->
+        <vdr-dt2-search
+          [searchTermControl]="searchTermControl"
+          searchTermPlaceholder="Search by batch code"
+        ></vdr-dt2-search>
+
+        <!-- Checkbox + select all (built-in to vdr-data-table-2) -->
         <vdr-dt2-column
           id="batch-code"
           [heading]="'nutrition-batch.batch-code' | translate"
@@ -144,7 +181,11 @@ const SET_CURRENT_BATCH = gql`
           </ng-template>
         </vdr-dt2-column>
 
-        <vdr-dt2-column id="actions" [heading]="''">
+        <vdr-dt2-column
+          id="actions"
+          [heading]="'Actions'"
+          [optional]="false"
+        >
           <ng-template let-batch="item">
             <vdr-dropdown>
               <button class="icon-button" vdrDropdownTrigger>
@@ -213,10 +254,13 @@ export class NutritionBatchTabComponent extends TypedBaseListComponent<typeof GE
     .addSort({ name: 'expiryDate' })
     .connectToRoute(this.route);
 
+  readonly filters = this.createFilterCollection()
+    .connectToRoute(this.route);
+
   constructor(
     protected route: ActivatedRoute,
-    private router: Router,
-    private dataService: DataService,
+    protected router: Router,
+    protected dataService: DataService,
     private notificationService: NotificationService,
     private modalService: ModalService,
     private changeDetector: ChangeDetectorRef
@@ -228,16 +272,37 @@ export class NutritionBatchTabComponent extends TypedBaseListComponent<typeof GE
 
     super.configure({
       document: GET_NUTRITION_BATCH_LIST,
-      getItems: data => data.nutritionBatches,
-      setVariables: (skip, take) => ({
-        options: {
-          skip,
-          take,
-          sort: this.sorts.createSortInput(),
-        },
-        variantId: this.variantId,
-      }),
-      refreshListOnChanges: [this.sorts.valueChanges],
+      getItems: (data: GetNutritionBatchListQuery) => {
+        console.log('[NutritionBatchTab] nutritionBatches response:', data.nutritionBatches);
+        return {
+          items: data.nutritionBatches.items,
+          totalItems: data.nutritionBatches.totalItems,
+        };
+      },
+      setVariables: (skip: number, take: number) => {
+        console.log('[NutritionBatchTab] setVariables - variantId:', this.variantId, 'skip:', skip, 'take:', take);
+        return {
+          options: {
+            skip,
+            take,
+            filter: {
+              // search by batch code only
+              batchCode: {
+                contains: this.searchTermControl.value || undefined,
+              },
+              // keep any structured filters
+              ...this.filters.createFilterInput(),
+            },
+            sort: this.sorts.createSortInput(),
+          },
+          variantId: this.variantId,
+        };
+      },
+      refreshListOnChanges: [
+        this.filters.valueChanges,
+        this.sorts.valueChanges,
+        this.searchTermControl.valueChanges,
+      ],
     });
   }
 

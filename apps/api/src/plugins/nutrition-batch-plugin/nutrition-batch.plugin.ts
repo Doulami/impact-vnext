@@ -62,6 +62,11 @@ import { ProductVariantNutritionResolver } from './api/product-variant.resolver'
             }
             
             # Types
+            type NutritionBatchList implements PaginatedList {
+                items: [NutritionBatch!]!
+                totalItems: Int!
+            }
+            
             type NutritionBatch implements Node {
                 id: ID!
                 createdAt: DateTime!
@@ -172,9 +177,32 @@ import { ProductVariantNutritionResolver } from './api/product-variant.resolver'
                 displayOrder: Int
             }
             
+            input NutritionBatchListOptions {
+                skip: Int
+                take: Int
+                sort: NutritionBatchSortParameter
+                filter: NutritionBatchFilterParameter
+            }
+            
+            input NutritionBatchSortParameter {
+                id: SortOrder
+                createdAt: SortOrder
+                updatedAt: SortOrder
+                batchCode: SortOrder
+                productionDate: SortOrder
+                expiryDate: SortOrder
+            }
+            
+            input NutritionBatchFilterParameter {
+                batchCode: StringOperators
+                productionDate: DateOperators
+                expiryDate: DateOperators
+                isCurrentForWebsite: BooleanOperators
+            }
+            
             # Queries
             extend type Query {
-                nutritionBatches(variantId: ID!): [NutritionBatch!]!
+                nutritionBatches(options: NutritionBatchListOptions, variantId: ID!): NutritionBatchList!
                 nutritionBatch(id: ID!): NutritionBatch
                 currentNutritionBatch(variantId: ID!): NutritionBatch
                 nutritionBatchRows(batchId: ID!): [NutritionBatchRow!]!
