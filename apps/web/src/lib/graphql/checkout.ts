@@ -507,3 +507,64 @@ export const GET_ORDER_FOR_CHECKOUT = gql`
     }
   }
 `;
+
+// ClicToPay payment mutations
+export const CREATE_CLICTOPAY_PAYMENT = gql`
+  mutation CreateClicToPayPayment($input: PaymentInput!) {
+    addPaymentToOrder(input: $input) {
+      ... on Order {
+        id
+        code
+        state
+        total
+        totalWithTax
+        payments {
+          id
+          method
+          amount
+          state
+          metadata
+        }
+      }
+      ... on OrderPaymentStateError {
+        errorCode
+        message
+      }
+      ... on IneligiblePaymentMethodError {
+        errorCode
+        message
+      }
+      ... on PaymentFailedError {
+        errorCode
+        message
+        paymentErrorMessage
+      }
+      ... on PaymentDeclinedError {
+        errorCode
+        message
+        paymentErrorMessage
+      }
+      ... on OrderStateTransitionError {
+        errorCode
+        message
+      }
+      ... on NoActiveOrderError {
+        errorCode
+        message
+      }
+    }
+  }
+`;
+
+export const CHECK_CLICTOPAY_PAYMENT_STATUS = gql`
+  query CheckClicToPayPaymentStatus($orderId: String!) {
+    checkPaymentStatus(orderId: $orderId) {
+      status
+      orderCode
+      transactionId
+      amount
+      currency
+      message
+    }
+  }
+`;

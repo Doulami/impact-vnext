@@ -21,6 +21,7 @@ import { RewardPointsPlugin, rewardPointsUiExtension } from './plugins/reward-po
 import { FeaturedCollectionPlugin } from './plugins/featured-collection.plugin';
 import { autoExpireBundlesTask } from './plugins/bundle-plugin/tasks/auto-expire-bundles.task';
 import { NutritionBatchPlugin, nutritionBatchUiExtension } from './plugins/nutrition-batch-plugin/nutrition-batch.plugin';
+import { ClicToPayPlugin } from './plugins/clictopay-plugin/clictopay.plugin';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
 const serverPort = +process.env.PORT || 3000;
@@ -179,5 +180,21 @@ export const config: VendureConfig = {
         FeaturedCollectionPlugin,
         // Nutrition Batch Plugin for nutrition information management
         NutritionBatchPlugin.init(),
+        // ClicToPay Payment Gateway Plugin
+        ClicToPayPlugin.init({
+            enableDebugLogging: IS_DEV,
+            config: {
+                enabled: true,
+                title: 'ClicToPay',
+                description: 'Pay securely with credit/debit card',
+                testMode: process.env.CLICTOPAY_TEST_MODE === 'true',
+                username: process.env.CLICTOPAY_USERNAME || 'test_merchant_user',
+                password: process.env.CLICTOPAY_PASSWORD || 'test_merchant_pass',
+                apiUrl: process.env.CLICTOPAY_API_URL || 'https://test.clictopay.com/payment/rest',
+                timeout: 30000,
+                retryAttempts: 3,
+                webhookSecret: process.env.CLICTOPAY_WEBHOOK_SECRET || 'clictopay_webhook_secret_123',
+            },
+        }),
     ],
 };

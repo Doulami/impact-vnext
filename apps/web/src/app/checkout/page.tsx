@@ -12,6 +12,7 @@ import {
   SET_ORDER_SHIPPING_ADDRESS,
   SET_ORDER_SHIPPING_METHOD,
   GET_ELIGIBLE_SHIPPING_METHODS,
+  GET_ELIGIBLE_PAYMENT_METHODS,
   TRANSITION_TO_ARRANGING_PAYMENT,
   ADD_PAYMENT_TO_ORDER,
   GET_ACTIVE_ORDER_STATE,
@@ -25,7 +26,11 @@ import Button from '@/components/Button';
 import BundleCard from '@/components/BundleCard';
 import CouponCodeInput from '@/components/CouponCodeInput';
 import RewardPointsRedemption from '@/components/RewardPointsRedemption';
-import { Package, CreditCard, CheckCircle, AlertCircle, ShoppingCart } from 'lucide-react';
+import { CheckCircle, AlertCircle, ShoppingCart } from 'lucide-react';
+import PaymentMethodCard from '@/components/payment/PaymentMethodCard';
+import PaymentActionButton from '@/components/payment/PaymentActionButton';
+import { usePaymentProcessor } from '@/lib/hooks/usePaymentProcessor';
+import { PaymentMethod } from '@/lib/utils/payment-methods';
 
 function CheckoutPageContent() {
   const router = useRouter();
@@ -41,6 +46,7 @@ function CheckoutPageContent() {
   const [orderCompleted, setOrderCompleted] = useState(false);
   const [pointsRedeemed, setPointsRedeemed] = useState(0);
   const [pointsDiscount, setPointsDiscount] = useState(0);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>(''); // Will be set dynamically
 
   const [shippingForm, setShippingForm] = useState({
     fullName: '',
@@ -69,6 +75,9 @@ function CheckoutPageContent() {
   const [setShippingMethod] = useMutation(SET_ORDER_SHIPPING_METHOD);
   const [transitionToPayment] = useMutation(TRANSITION_TO_ARRANGING_PAYMENT);
   const [addPayment] = useMutation(ADD_PAYMENT_TO_ORDER);
+  
+  // Payment processor for dynamic payment handling
+  const paymentProcessor = usePaymentProcessor();
 
   const { data: shippingMethodsData, loading: shippingMethodsLoading, error: shippingMethodsError } = useQuery(GET_ELIGIBLE_SHIPPING_METHODS, {
     skip: currentStep !== 2
@@ -145,6 +154,43 @@ function CheckoutPageContent() {
     }>;
   }>(GET_AVAILABLE_COUNTRIES, {
     skip: currentStep !== 1
+  });
+
+  // Debug payment methods availability
+  const { data: paymentMethodsData, loading: paymentMethodsLoading, error: paymentMethodsError } = useQuery<{
+    eligiblePaymentMethods: Array<{
+      id: string;
+      code: string;
+      name: string;
+      description: string;
+      isEligible: boolean;
+      eligibilityMessage?: string;
+    }>;
+  }>(GET_ELIGIBLE_PAYMENT_METHODS, {
+    skip: currentStep !== 3,
+    fetchPolicy: 'cache-and-network', // Always check for updates
+    errorPolicy: 'all',
+    onCompleted: (data) => {
+      console.log('Available payment methods:', data.eligiblePaymentMethods);
+      
+      // Reset selected payment method if it's no longer available
+      if (selectedPaymentMethod && !data.eligiblePaymentMethods.find(method => method.code === selectedPaymentMethod)) {
+        console.log(`Previously selected payment method '${selectedPaymentMethod}' is no longer available, resetting selection`);
+        setSelectedPaymentMethod('');
+      }
+      
+      // Set default payment method if none selected
+      if (!selectedPaymentMethod && data.eligiblePaymentMethods.length > 0) {
+        const defaultMethod = data.eligiblePaymentMethods.find(method => method.isEligible) || data.eligiblePaymentMethods[0];
+        if (defaultMethod) {
+          console.log(`Setting default payment method to: ${defaultMethod.code}`);
+          setSelectedPaymentMethod(defaultMethod.code);
+        }
+      }
+    },
+    onError: (error) => {
+      console.error('Payment methods query error:', error);
+    }
   });
 
   const [selectedShippingMethod, setSelectedShippingMethod] = useState('');
@@ -324,57 +370,61 @@ function CheckoutPageContent() {
     }
   };
 
-  const handlePaymentSubmit = async () => {
+  const handlePaymentSubmit = async (methodCode?: string) => {
+    const paymentMethod = methodCode || selectedPaymentMethod;
+    if (!paymentMethod) {
+      setError('Please select a payment method');
+      return;
+    }
+
     setError('');
     setProcessing(true);
 
     try {
-      // Transition to arranging payment
-      console.log('Transitioning to ArrangingPayment state...');
-      const transitionResult = await transitionToPayment();
-      console.log('Transition result:', transitionResult);
+      const orderTotal = (() => {
+        const selectedMethod = shippingMethods.find((m: any) => m.id === selectedShippingMethod);
+        const shippingCost = selectedMethod?.priceWithTax || 0;
+        return activeOrderData?.activeOrder?.totalWithTax || (totalPrice + shippingCost);
+      })();
 
-      // Add Cash on Delivery payment
-      console.log('Adding payment to order...');
-      const { data } = await addPayment({
-        variables: {
-          input: {
-            method: 'cash-on-delivery',
-            metadata: {
-              paymentType: 'COD'
-            }
-          }
+      console.log(`Processing payment with method: ${paymentMethod}, amount: ${orderTotal}`);
+
+      const result = await paymentProcessor.processPayment(paymentMethod, orderTotal);
+
+      if (result.success) {
+        if (result.requiresRedirect && result.redirectUrl) {
+          // Handle redirect-based payments
+          console.log('Redirecting to payment gateway:', result.redirectUrl);
+          setOrderCompleted(true);
+          paymentProcessor.handleRedirect(result.redirectUrl);
+        } else {
+          // Handle instant payments
+          console.log('Payment completed successfully:', result.orderId);
+          setOrderCompleted(true);
+          clearCart();
+          router.push(`/thank-you?order=${result.orderId}`);
         }
-      });
-
-      console.log('Payment response:', data);
-      
-      const order = (data as any)?.addPaymentToOrder;
-      
-      // Check for error responses
-      if (order?.__typename && order.__typename !== 'Order') {
-        console.error('Payment failed with error:', order);
-        throw new Error(order.message || `Payment failed: ${order.__typename}`);
-      }
-      
-      if (order && '__typename' in order && order.__typename === 'Order' && order.code) {
-        console.log('Order created successfully:', order.code);
-        setOrderCompleted(true); // Mark order as completed to prevent cart redirect
-        clearCart(); // Clear local cart after successful order
-        // Redirect to thank you page with order code
-        router.push(`/thank-you?order=${order.code}`);
       } else {
-        console.error('Unexpected payment response structure:', order);
-        throw new Error('Payment failed or order not created');
+        throw new Error(result.error || 'Payment processing failed');
       }
     } catch (err: any) {
       console.error('Payment error:', err);
-      // Extract more specific error message if available
-      const errorMessage = err.graphQLErrors?.[0]?.message || err.message || 'Failed to process payment';
+      const errorMessage = err.message || 'Failed to process payment';
       setError(errorMessage);
     } finally {
       setProcessing(false);
     }
+  };
+
+  const handleClicToPayPaymentInitiated = (orderId: string, transactionId?: string) => {
+    console.log('ClicToPay payment initiated:', { orderId, transactionId });
+    setOrderCompleted(true); // Mark as completed to prevent cart redirect during payment process
+    // Note: Cart will be cleared by the success page after payment verification
+  };
+
+  const handleClicToPayError = (error: string) => {
+    console.error('ClicToPay error:', error);
+    setError(error);
   };
 
   const shippingMethods = (shippingMethodsData as any)?.eligibleShippingMethods || [];
@@ -694,22 +744,44 @@ function CheckoutPageContent() {
                 />
               </div>
 
-              {/* Payment Method */}
+              {/* Payment Method Selection */}
               <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-xl font-bold mb-6">Payment Method</h2>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                  <p className="text-sm text-blue-800">
-                    <strong>Cash on Delivery:</strong> Pay when you receive your order. Our delivery agent will collect payment upon delivery.
-                  </p>
-                </div>
-                <div className="border-2 border-[var(--brand-primary)] rounded-lg p-6 mb-6 bg-gray-50">
-                  <div className="flex items-center mb-4">
-                    <Package className="w-6 h-6 text-gray-900 mr-3" />
-                    <span className="font-medium text-lg">Cash on Delivery (COD)</span>
+                <h2 className="text-xl font-bold mb-6">Select Payment Method</h2>
+                
+                
+                {paymentMethodsLoading && (
+                  <div className="mb-4 p-3 bg-blue-50 border rounded-lg text-sm text-blue-700">
+                    Loading payment methods...
                   </div>
-                  <p className="text-sm text-gray-600">Pay in cash when your order is delivered to your address.</p>
-                  <p className="text-xs text-gray-500 mt-2">💡 Please keep the exact amount ready for a smooth transaction.</p>
+                )}
+                
+                {paymentMethodsError && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                    Payment methods error: {paymentMethodsError.message}
+                  </div>
+                )}
+                
+                {/* Dynamic Payment Method Options */}
+                <div className="space-y-4 mb-6">
+                  {paymentMethodsData?.eligiblePaymentMethods?.length ? (
+                    paymentMethodsData.eligiblePaymentMethods.map((method) => (
+                      <PaymentMethodCard
+                        key={method.id}
+                        method={method as PaymentMethod}
+                        isSelected={selectedPaymentMethod === method.code}
+                        onSelect={setSelectedPaymentMethod}
+                        disabled={processing || !method.isEligible}
+                      />
+                    ))
+                  ) : (
+                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
+                      <p className="text-yellow-800">No payment methods are currently available.</p>
+                      <p className="text-sm text-yellow-700 mt-1">Please contact support for assistance.</p>
+                    </div>
+                  )}
                 </div>
+
+                {/* Order Total Summary */}
                 <div className="bg-gray-100 rounded-lg p-4 mb-6">
                   <div className="flex justify-between mb-2 text-sm">
                     <span className="text-gray-600">Subtotal:</span>
@@ -744,16 +816,34 @@ function CheckoutPageContent() {
                     );
                   })()}
                 </div>
-                <Button
-                  onClick={handlePaymentSubmit}
-                  variant="primary"
-                  size="lg"
-                  fullWidth
-                  disabled={processing}
-                  loading={processing}
-                >
-                  Place Order
-                </Button>
+
+                {/* Dynamic Payment Action */}
+                {selectedPaymentMethod && paymentMethodsData?.eligiblePaymentMethods && (
+                  (() => {
+                    const selectedMethod = paymentMethodsData.eligiblePaymentMethods.find(
+                      method => method.code === selectedPaymentMethod
+                    );
+                    
+                    if (!selectedMethod) return null;
+                    
+                    const orderTotal = (() => {
+                      const shippingMethod = shippingMethods.find((m: any) => m.id === selectedShippingMethod);
+                      const shippingCost = shippingMethod?.priceWithTax || 0;
+                      return activeOrderData?.activeOrder?.totalWithTax || (totalPrice + shippingCost);
+                    })();
+                    
+                    return (
+                      <PaymentActionButton
+                        method={selectedMethod as PaymentMethod}
+                        orderTotal={orderTotal}
+                        onPaymentSuccess={handleClicToPayPaymentInitiated}
+                        onPaymentError={handleClicToPayError}
+                        onStandardPayment={handlePaymentSubmit}
+                        disabled={processing || paymentProcessor.loading}
+                      />
+                    );
+                  })()
+                )}
               </div>
             </div>
           )}
