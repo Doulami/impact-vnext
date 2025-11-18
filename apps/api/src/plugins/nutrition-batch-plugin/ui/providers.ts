@@ -12,7 +12,7 @@ export default [
     routeConfig: {
       children: [
         {
-          path: ':batchId',
+          path: ':id',
           component: NutritionBatchDetailComponent,
         },
       ],

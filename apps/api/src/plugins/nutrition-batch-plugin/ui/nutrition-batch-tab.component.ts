@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { DataService, NotificationService, ModalService, SharedModule } from '@vendure/admin-ui/core';
@@ -55,11 +55,6 @@ const SET_CURRENT_BATCH = gql`
   template: `
     <router-outlet></router-outlet>
     <div class="nutrition-batch-tab" *ngIf="!hasChildRoute">
-      <!-- Debug line -->
-      <div style="padding:4px;font-size:11px;color:#999">
-        debug — batches length: {{ (batches$ | async)?.length }}
-      </div>
-
       <vdr-action-bar>
         <vdr-ab-left>
           <button
@@ -71,6 +66,8 @@ const SET_CURRENT_BATCH = gql`
           </button>
         </vdr-ab-left>
       </vdr-action-bar>
+
+      <div style="margin-bottom: 20px;"></div>
 
       <ng-container *ngIf="batches$ | async as batches">
         <!-- Empty state -->
@@ -206,28 +203,38 @@ export class NutritionBatchTabComponent implements OnInit {
     private router: Router,
     private dataService: DataService,
     private notificationService: NotificationService,
-    private modalService: ModalService
+    private modalService: ModalService,
+    private changeDetector: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
     // Get variantId from parent route (product-variant-detail)
     this.variantId = this.route.parent?.snapshot.params.id || this.route.snapshot.params.id;
-    console.log('[NutritionBatchTab] ngOnInit - variantId:', this.variantId);
     
     // Check for child routes and subscribe to router events
-    this.router.events.subscribe(() => {
+    this.router.events.subscribe((event) => {
       const previousState = this.hasChildRoute;
-      this.hasChildRoute = this.route.firstChild !== null;
+      
+      // Check both route.firstChild AND URL to determine if we're on list or detail
+      const url = this.router.url;
+      const onListView = url.endsWith('nutrition-batches') || url.includes('nutrition-batches?');
+      this.hasChildRoute = !onListView;
+      
+      console.log('[NAV-DEBUG] Event:', event.constructor.name, '| URL:', url, '| onListView:', onListView, '| hasChildRoute:', this.hasChildRoute);
       
       // Reload batches when returning from child route to list
       if (previousState && !this.hasChildRoute) {
-        console.log('[NutritionBatchTab] Reloading batches');
+        console.log('[NAV-DEBUG] Reloading batches and triggering change detection');
         this.loadBatches();
+        this.changeDetector.detectChanges();
       }
     });
     
-    // Initial check
-    this.hasChildRoute = this.route.firstChild !== null;
+    // Initial check using URL
+    const url = this.router.url;
+    const onListView = url.endsWith('nutrition-batches') || url.includes('nutrition-batches?');
+    this.hasChildRoute = !onListView;
+    console.log('[NAV-DEBUG] Initial | URL:', url, '| onListView:', onListView, '| hasChildRoute:', this.hasChildRoute);
     
     if (!this.hasChildRoute) {
       this.loadBatches();
@@ -235,39 +242,39 @@ export class NutritionBatchTabComponent implements OnInit {
   }
 
   loadBatches() {
-    console.log('[NutritionBatchTab] loadBatches called with variantId:', this.variantId);
     this.batches$ = this.dataService
       .query(GET_NUTRITION_BATCHES, { variantId: this.variantId })
       .mapStream((data: any) => {
-        console.log('[NutritionBatchTab] Query response:', data);
         const batches = data?.nutritionBatches ?? [];
-        console.log('[NutritionBatchTab] Batches:', batches);
         return batches;
       });
   }
 
   createBatch() {
-    this.router.navigate(['new'], { relativeTo: this.route });
+    this.router.navigate(['create'], { relativeTo: this.route });
   }
 
   editBatch(batchId: string) {
     this.router.navigate([batchId], { relativeTo: this.route });
   }
 
-  async duplicateBatch(batchId: string) {
+async duplicateBatch(batchId: string) {
     try {
       const result = await this.dataService
         .mutate(DUPLICATE_BATCH, { id: batchId })
         .toPromise();
 
       this.notificationService.success('nutrition-batch.batch-duplicated');
+      // Reload the list to show the duplicated batch
       this.loadBatches();
+      // Force immediate refresh
+      window.location.reload();
     } catch (error: any) {
       this.notificationService.error(error.message);
     }
   }
 
-  async deleteBatch(batchId: string) {
+async deleteBatch(batchId: string) {
     this.modalService
       .dialog({
         title: 'nutrition-batch.delete-batch',
@@ -282,7 +289,10 @@ export class NutritionBatchTabComponent implements OnInit {
           this.dataService.mutate(DELETE_BATCH, { id: batchId }).subscribe({
             next: () => {
               this.notificationService.success('nutrition-batch.batch-deleted');
+              // Reload the list to remove the deleted batch
               this.loadBatches();
+              // Force immediate refresh
+              window.location.reload();
             },
             error: (error: any) => {
               this.notificationService.error(error.message);

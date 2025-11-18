@@ -1,8 +1,8 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { BaseDetailComponent, DataService, NotificationService, SharedModule, ServerConfigService, PermissionsService } from '@vendure/admin-ui/core';
+import { DataService, NotificationService, SharedModule } from '@vendure/admin-ui/core';
 import { gql } from 'graphql-tag';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -466,29 +466,26 @@ const CREATE_DEFAULT_MACROS = gql`
     }
   `]
 })
-export class NutritionBatchDetailComponent extends BaseDetailComponent<NutritionBatchFragment> implements OnInit, OnDestroy {
-  detailForm: FormGroup; // Required by BaseDetailComponent
-  batchForm: FormGroup; // Our form (same as detailForm)
+export class NutritionBatchDetailComponent implements OnInit, OnDestroy {
+  batchForm: FormGroup;
   batch: NutritionBatchFragment | null = null;
   variantId: string;
   batchId: string;
   isNew = false;
   loading = false;
   saving = false;
-  currentLanguage: string = 'en';
+  currentLanguage: 'en' | 'fr' | 'ar' = 'en';
   protected destroy$ = new Subject<void>();
 
   constructor(
-    protected router: Router,
-    protected route: ActivatedRoute,
-    protected serverConfigService: ServerConfigService,
-    protected dataService: DataService,
-    protected permissionsService: PermissionsService,
+    private router: Router,
+    private route: ActivatedRoute,
+    private dataService: DataService,
     private formBuilder: FormBuilder,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private changeDetector: ChangeDetectorRef
   ) {
-    super(route, router, serverConfigService, dataService, permissionsService);
-    this.detailForm = this.batchForm = this.formBuilder.group({
+    this.batchForm = this.formBuilder.group({
       batchCode: ['', Validators.required],
       productionDate: [''],
       expiryDate: [''],
@@ -514,51 +511,48 @@ export class NutritionBatchDetailComponent extends BaseDetailComponent<Nutrition
   }
 
   ngOnInit() {
-    this.init(); // IMPORTANT: sets up entity$, languageCode$, etc.
-    
     // Get variantId from parent's parent route (product-variant-detail)
-    // Route hierarchy: product-variant/:id/nutrition-batches/:batchId
+    // Route hierarchy: product-variant/:id/nutrition-batches/:id
     this.variantId = this.route.parent?.parent?.snapshot.params.id;
-    this.batchId = this.route.snapshot.params.batchId;
-    this.isNew = this.batchId === 'new';
 
-    // Subscribe to language changes using BaseDetailComponent's languageCode$
-    if (this.languageCode$) {
-      this.languageCode$
-        .pipe(takeUntil(this.destroy$))
-        .subscribe(lang => {
-          this.currentLanguage = lang;
-          // Reload form when language changes (only if editing existing batch)
-          if (!this.isNew && this.batch) {
-            this.populateForm();
-          }
-        });
-    }
-
-    if (!this.isNew) {
-      this.loadBatch();
-    }
+    // Get batchId from route
+    this.route.params.pipe(takeUntil(this.destroy$)).subscribe(params => {
+      if (params.id === 'create') {
+        this.isNew = true;
+        this.loading = false;
+      } else {
+        this.batchId = params.id;
+        this.isNew = false;
+        this.loadBatch();
+      }
+    });
   }
 
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
-    this.destroy();
   }
+
 
   loadBatch() {
     this.loading = true;
-    this.dataService.query(GET_BATCH, { id: this.batchId }).single$.subscribe({
-      next: (data: any) => {
-        this.batch = data.nutritionBatch;
-        this.populateForm();
-        this.loading = false;
-      },
-      error: (error: any) => {
-        this.notificationService.error(error.message);
-        this.loading = false;
-      }
-    });
+    this.changeDetector.detectChanges();
+    
+    this.dataService.query(GET_BATCH, { id: this.batchId })
+      .mapStream((data: any) => data.nutritionBatch)
+      .subscribe({
+        next: (batch) => {
+          this.batch = batch;
+          this.populateForm();
+          this.loading = false;
+          this.changeDetector.detectChanges();
+        },
+        error: (error) => {
+          this.notificationService.error(error.message);
+          this.loading = false;
+          this.changeDetector.detectChanges();
+        }
+      });
   }
 
   populateForm() {
@@ -592,13 +586,6 @@ export class NutritionBatchDetailComponent extends BaseDetailComponent<Nutrition
     this.batch.rows.forEach((row: any) => {
       this.nutritionRows.push(this.createNutritionRowForm(row));
     });
-  }
-  
-  // Required by BaseDetailComponent
-  protected setFormValues(entity: NutritionBatchFragment, languageCode: string): void {
-    this.batch = entity;
-    this.currentLanguage = languageCode;
-    this.populateForm();
   }
 
   parseLocaleString(value: any): string {
