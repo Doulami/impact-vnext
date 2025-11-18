@@ -220,11 +220,8 @@ export class NutritionBatchTabComponent implements OnInit {
       const onListView = url.endsWith('nutrition-batches') || url.includes('nutrition-batches?');
       this.hasChildRoute = !onListView;
       
-      console.log('[NAV-DEBUG] Event:', event.constructor.name, '| URL:', url, '| onListView:', onListView, '| hasChildRoute:', this.hasChildRoute);
-      
       // Reload batches when returning from child route to list
       if (previousState && !this.hasChildRoute) {
-        console.log('[NAV-DEBUG] Reloading batches and triggering change detection');
         this.loadBatches();
         this.changeDetector.detectChanges();
       }
@@ -234,7 +231,6 @@ export class NutritionBatchTabComponent implements OnInit {
     const url = this.router.url;
     const onListView = url.endsWith('nutrition-batches') || url.includes('nutrition-batches?');
     this.hasChildRoute = !onListView;
-    console.log('[NAV-DEBUG] Initial | URL:', url, '| onListView:', onListView, '| hasChildRoute:', this.hasChildRoute);
     
     if (!this.hasChildRoute) {
       this.loadBatches();
