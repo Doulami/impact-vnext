@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Poppins, Inter } from "next/font/google";
 import "./globals.css";
 import { ApolloProvider } from "@/components/providers/ApolloProvider";
 import { CartProvider } from "@/lib/hooks/useCart";
 import { AuthProvider } from "@/lib/hooks/useAuth";
 import { LanguageProvider } from "@/lib/contexts/LanguageContext";
 import CartDrawer from "@/components/CartDrawer";
+import dynamic from "next/dynamic";
+
+const WizardProtein = dynamic(() => import("@/components/calculator/WizardProtein"), { ssr: false });
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,6 +41,7 @@ export default function RootLayout({
               <CartProvider>
                 {children}
                 <CartDrawer />
+                <WizardProtein />
               </CartProvider>
             </AuthProvider>
           </ApolloProvider>
