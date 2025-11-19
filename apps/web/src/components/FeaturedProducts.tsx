@@ -55,7 +55,7 @@ export function FeaturedProducts({ title = 'Your journey starts here' }: Feature
       description: v.product.description,
       image: v.product.featuredAsset?.preview,
       priceWithTax: v.priceWithTax,
-      inStock: true,
+      inStock: v.stockLevel !== 'OUT_OF_STOCK',
       rating: 4.5,
       reviews: 0,
       isBundle
@@ -109,19 +109,19 @@ export function FeaturedProducts({ title = 'Your journey starts here' }: Feature
         </h2>
 
           <div id="products-carousel" className="relative">
-            <div className="flex gap-6 overflow-x-auto pb-4">
+            <div className="flex gap-4 md:gap-6 overflow-x-auto pb-4 scrollbar-hide">
               {productCards.map((product: any) => (
                 <Link
                   key={product.id}
                   href={`/products/${product.slug}`}
-                  className="bg-white border border-gray-200 hover:shadow-lg transition-shadow flex-shrink-0 w-64 group"
+                  className="bg-gray-50 hover:shadow-lg transition-shadow flex-shrink-0 w-52 sm:w-56 md:w-64 group flex flex-col h-[380px] sm:h-[400px] md:h-[420px]"
                 >
-                <div className="aspect-square bg-gray-50 flex items-center justify-center p-4 relative">
+                <div className="w-full h-40 sm:h-44 md:h-48 bg-gray-100 flex items-center justify-center p-3 md:p-4 relative flex-shrink-0">
                   {product.image ? (
                     <img
                       src={product.image}
                       alt={product.name}
-                      className="w-full h-full object-contain"
+                      className="max-w-full max-h-full object-contain"
                     />
                   ) : (
                     <div className="text-6xl">🏋️</div>
@@ -134,9 +134,8 @@ export function FeaturedProducts({ title = 'Your journey starts here' }: Feature
                     </div>
                   )}
                 </div>
-                <div className="p-4">
-                  <h3 className="font-bold text-sm mb-1 group-hover:text-blue-600 transition-colors">{product.name}</h3>
-                  <p className="text-xs text-gray-600 mb-2">Premium Quality</p>
+                <div className="p-3 md:p-4 flex flex-col flex-1 min-h-0">
+                  <h3 className="font-bold text-sm mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">{product.name}</h3>
                   <div className="flex items-center gap-2 mb-3">
                     <div className="flex items-center">
                       {Array.from({ length: 5 }).map((_, i) => (
@@ -154,9 +153,10 @@ export function FeaturedProducts({ title = 'Your journey starts here' }: Feature
                       ({product.reviews || 0})
                     </span>
                   </div>
-                  <div className="space-y-3">
-                    {/* Price */}
-                    <div className="text-center">
+                  
+                  <div className="space-y-3 mt-auto">
+                    {/* Price - Left aligned */}
+                    <div className="text-left">
                       {product.priceRange ? (
                         <div className="text-lg font-bold">
                           ${(product.priceRange.min / 100).toFixed(2)} - ${(product.priceRange.max / 100).toFixed(2)}
@@ -167,52 +167,52 @@ export function FeaturedProducts({ title = 'Your journey starts here' }: Feature
                         </div>
                       )}
                     </div>
-                    
-                    {/* Action Button - Full Width */}
-                    <button 
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        // For products with variations, redirect to PDP
-                        if (product.priceRange) {
-                          window.location.href = `/products/${product.slug}`;
-                        } else if (product.isBundle) {
-                          // Use unified bundle helper
-                          addBundleToCart({
-                            slug: product.slug,
-                            productId: product.productId,
-                            productName: product.name,
-                            image: product.image,
-                            quantity: 1,
-                            apolloClient
-                          })
-                            .then(cartItem => {
-                              addItem(cartItem);
-                              openCart();
-                            })
-                            .catch(err => {
-                              console.error('[FeaturedProducts] Error adding bundle:', err);
-                            });
-                        } else {
-                          // Add single variant product to cart
-                          addItem({
-                            id: product.id,
-                            variantId: product.id,
-                            productName: product.name,
-                            price: product.priceWithTax,
-                            image: product.image,
-                            slug: product.slug,
-                            inStock: product.inStock,
-                          });
-                          openCart();
-                        }
-                      }}
-                      className="w-full bg-black text-white py-2.5 text-xs font-medium hover:bg-gray-800 transition-colors uppercase tracking-wide"
-                    >
-                      {product.isBundle ? 'ADD BUNDLE' : product.priceRange ? 'CHOOSE OPTIONS' : 'ADD TO CART'}
-                    </button>
                   </div>
                 </div>
+                
+                {/* Action Button - Full Width at bottom */}
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // For products with variations, redirect to PDP
+                    if (product.priceRange) {
+                      window.location.href = `/products/${product.slug}`;
+                    } else if (product.isBundle) {
+                      // Use unified bundle helper
+                      addBundleToCart({
+                        slug: product.slug,
+                        productId: product.productId,
+                        productName: product.name,
+                        image: product.image,
+                        quantity: 1,
+                        apolloClient
+                      })
+                        .then(cartItem => {
+                          addItem(cartItem);
+                          openCart();
+                        })
+                        .catch(err => {
+                          console.error('[FeaturedProducts] Error adding bundle:', err);
+                        });
+                    } else {
+                      // Add single variant product to cart
+                      addItem({
+                        id: product.id,
+                        variantId: product.id,
+                        productName: product.name,
+                        price: product.priceWithTax,
+                        image: product.image,
+                        slug: product.slug,
+                        inStock: product.inStock,
+                      });
+                      openCart();
+                    }
+                  }}
+                  className="w-full bg-black text-white py-2.5 md:py-3 text-xs font-bold hover:bg-gray-800 transition-colors uppercase tracking-wide"
+                >
+                  {product.isBundle ? 'ADD BUNDLE' : product.priceRange ? 'CHOOSE OPTIONS' : 'ADD TO CART'}
+                </button>
                 </Link>
               ))}
           </div>
