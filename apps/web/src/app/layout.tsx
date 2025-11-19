@@ -6,18 +6,20 @@ import { CartProvider } from "@/lib/hooks/useCart";
 import { AuthProvider } from "@/lib/hooks/useAuth";
 import { LanguageProvider } from "@/lib/contexts/LanguageContext";
 import CartDrawer from "@/components/CartDrawer";
-import dynamic from "next/dynamic";
+import WizardProteinWrapper from "@/components/calculator/WizardProteinWrapper";
 
-const WizardProtein = dynamic(() => import("@/components/calculator/WizardProtein"), { ssr: false });
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const fontHeading = Poppins({
+  variable: "--font-heading",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const fontBody = Inter({
+  variable: "--font-body",
   subsets: ["latin"],
+  weight: ["400", "500"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -31,17 +33,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+    <html
+      lang="en"
+      className={`${fontHeading.variable} ${fontBody.variable}`}
+    >
+      <body className="font-body antialiased">
         <LanguageProvider>
           <ApolloProvider>
             <AuthProvider>
               <CartProvider>
                 {children}
                 <CartDrawer />
-                <WizardProtein />
+                <WizardProteinWrapper />
               </CartProvider>
             </AuthProvider>
           </ApolloProvider>

@@ -13,9 +13,9 @@ const DAYS: Day[] = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dim
 export default function WizardProtein() {
   const [step, setStep] = useState(0);
   const [sex, setSex] = useState<Sex>('M');
-  const [ageYears, setAgeYears] = useState<number>(30);
-  const [heightCm, setHeightCm] = useState<number>(175);
-  const [weightKg, setWeightKg] = useState<number>(75);
+  const [ageYears, setAgeYears] = useState<number>(0);
+  const [heightCm, setHeightCm] = useState<number>(0);
+  const [weightKg, setWeightKg] = useState<number>(0);
 
   const [query, setQuery] = useState('');
   const [matches, setMatches] = useState<{label:string;met:number;score:number}[]>([]);
@@ -36,13 +36,7 @@ export default function WizardProtein() {
     setSchedule(prev => { const c = { ...(prev as any) }; delete c[label]; return c as any; });
   }
 
-  const [meals, setMeals] = useState<Meal[]>([
-    { name: 'REPAS 1', proteinG: 20, carbsG: 45, fatsG: 35, kcal: 575 },
-    { name: 'COLLATION', proteinG: 35, carbsG: 25, fatsG: 20, kcal: 420 },
-    { name: 'REPAS 2', proteinG: 45, carbsG: 45, fatsG: 35, kcal: 675 },
-    { name: 'Collation journée', proteinG: 0, carbsG: 55, fatsG: 0, kcal: 220 },
-    { name: 'Dîner', proteinG: 0, carbsG: 0, fatsG: 0, kcal: 0 },
-  ]);
+  const [meals, setMeals] = useState<Meal[]>([]);
   function setMeal(i: number, patch: Partial<Meal>) {
     setMeals(arr => arr.map((m, idx) => idx===i ? { ...m, ...patch } : m));
   }
