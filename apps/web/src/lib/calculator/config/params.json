@@ -1,0 +1,8 @@
+{
+  "tef": { 
+    "protein": 0.25, 
+    "carbs": 0.075, 
+    "fat": 0.015 
+  },
+  "timeframeDays": 7
+}

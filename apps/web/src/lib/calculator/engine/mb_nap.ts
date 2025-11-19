@@ -1,6 +1,6 @@
 // engine/mb_nap.ts
 export type Sex = 'M'|'F';
-export type Day = 'Lundi'|'Mardi'|'Mercredi'|'Jeudi'|'Vendredi'|'Samedi'|'Dimanche';
+export type Day = 'Monday'|'Tuesday'|'Wednesday'|'Thursday'|'Friday'|'Saturday'|'Sunday';
 
 export type ActivityDB = Record<string, number>;
 export type WeeklySchedule = Record<string, Record<Day, number>>;
@@ -21,7 +21,7 @@ export function computeMB(args: { weightKg: number; heightCm: number; ageYears: 
 }
 
 export function computeWeeklyMetHours(schedule: WeeklySchedule, db: ActivityDB): number {
-  const days: Day[] = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+  const days: Day[] = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
   let total = 0;
   for (const [label, dayMap] of Object.entries(schedule)) {
     const met = db[label];
