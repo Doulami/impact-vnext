@@ -26,6 +26,7 @@ build/
 .env
 .env.local
 .env.*.local
+.env.plesk
 
 # Cache directories
 .cache/

@@ -9,3 +9,11 @@ build
 admin-ui
 static/assets
 static/email/test-emails
+
+# Environment files
+.env
+.env.*
+
+# Old migrations (production has its own)
+src/migrations/
+migrations/
