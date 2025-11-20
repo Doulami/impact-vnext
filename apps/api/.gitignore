@@ -6,7 +6,6 @@ build
 /build
 .next
 /.next
-admin-ui
 static/assets
 static/email/test-emails
 
@@ -17,3 +16,6 @@ static/email/test-emails
 # Old migrations (production has its own)
 src/migrations/
 migrations/
+
+# Angular build cache
+admin-ui/.angular
