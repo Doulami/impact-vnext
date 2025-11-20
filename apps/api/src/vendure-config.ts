@@ -133,33 +133,32 @@ export const config: VendureConfig = {
                 changeEmailAddressUrl: 'http://localhost:8080/verify-email-address-change'
             },
         }),
-        AdminUiPlugin.init({
-            route: 'admin',
-            port: 3002,
-            // In dev: compile UI with extensions
-            // In prod: serve pre-built static admin-ui folder  
-            app: IS_DEV 
-                ? compileUiExtensions({
-                      outputPath: path.join(__dirname, '../admin-ui'),
-                      extensions: [
-                          {
-                              extensionPath: path.join(__dirname, '../ui-extensions'),
-                              providers: ['providers.ts'],
-                          },
-                          bundleUiExtension,
-                          rewardPointsUiExtension,
-                          nutritionBatchUiExtension,
-                      ],
-                      devMode: true,
-                  })
-                : {
-                      path: path.join(__dirname, '../admin-ui'),
-                  },
-            adminUiConfig: {
-                apiHost: 'http://localhost',
-                apiPort: serverPort,
-            },
-        }),
+        // AdminUiPlugin temporarily disabled - serve via separate static server
+        // AdminUiPlugin.init({
+        //     route: 'admin',
+        //     port: 3002,
+        //     app: IS_DEV 
+        //         ? compileUiExtensions({
+        //               outputPath: path.join(__dirname, '../admin-ui'),
+        //               extensions: [
+        //                   {
+        //                       extensionPath: path.join(__dirname, '../ui-extensions'),
+        //                       providers: ['providers.ts'],
+        //                   },
+        //                   bundleUiExtension,
+        //                   rewardPointsUiExtension,
+        //                   nutritionBatchUiExtension,
+        //               ],
+        //               devMode: true,
+        //           })
+        //         : {
+        //               path: path.join(__dirname, '../admin-ui'),
+        //           },
+        //     adminUiConfig: {
+        //         apiHost: 'http://localhost',
+        //         apiPort: serverPort,
+        //     },
+        // }),
         DashboardPlugin.init({
             route: 'dashboard',
             appDir: path.join(__dirname, '../dist/dashboard'),
