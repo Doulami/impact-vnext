@@ -14,6 +14,9 @@
     "outDir": "./dist",
     "baseUrl": "./"
   },
+  "include": [
+    "src/**/*.ts"
+  ],
   "exclude": [
     "node_modules",
     "migration.ts",
@@ -22,7 +25,8 @@
     "src/plugins/**/dashboard/*",
     "ui-extensions/dashboard/*",
     "src/gql/*",
-    "vite.*.*ts"
+    "vite.*.*ts",
+    "dist"
   ],
   "ts-node": {
     "files": true
