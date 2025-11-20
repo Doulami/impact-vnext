@@ -152,7 +152,9 @@ export const config: VendureConfig = {
                       ],
                       devMode: true,
                   })
-                : path.join(__dirname, '../admin-ui'),
+                : {
+                      path: path.join(__dirname, '../admin-ui'),
+                  },
             adminUiConfig: {
                 apiHost: 'http://localhost',
                 apiPort: serverPort,
