@@ -2,9 +2,16 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class BundleAssetRelations1731252000000 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {
+        // Check if bundle table exists before proceeding
+        const bundleTableExists = await queryRunner.hasTable("bundle");
+        if (!bundleTableExists) {
+            // Skip migration if bundle table doesn't exist yet
+            return;
+        }
+
         // Create junction table for bundle assets (many-to-many)
         await queryRunner.query(`
-            CREATE TABLE "bundle_assets" (
+            CREATE TABLE IF NOT EXISTS "bundle_assets" (
                 "bundle_id" integer NOT NULL,
                 "asset_id" integer NOT NULL,
                 CONSTRAINT "PK_bundle_assets" PRIMARY KEY ("bundle_id", "asset_id")
@@ -13,42 +20,63 @@ export class BundleAssetRelations1731252000000 implements MigrationInterface {
 
         // Add featured asset foreign key to bundle
         await queryRunner.query(`
-            ALTER TABLE "bundle" ADD "featuredAssetId" integer
+            ALTER TABLE "bundle" ADD COLUMN IF NOT EXISTS "featuredAssetId" integer
         `);
 
         // Add foreign key constraints
         await queryRunner.query(`
-            ALTER TABLE "bundle_assets" 
-            ADD CONSTRAINT "FK_bundle_assets_bundle" 
-            FOREIGN KEY ("bundle_id") REFERENCES "bundle"("id") 
-            ON DELETE CASCADE ON UPDATE NO ACTION
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint WHERE conname = 'FK_bundle_assets_bundle'
+                ) THEN
+                    ALTER TABLE "bundle_assets" 
+                    ADD CONSTRAINT "FK_bundle_assets_bundle" 
+                    FOREIGN KEY ("bundle_id") REFERENCES "bundle"("id") 
+                    ON DELETE CASCADE ON UPDATE NO ACTION;
+                END IF;
+            END $$;
         `);
 
         await queryRunner.query(`
-            ALTER TABLE "bundle_assets" 
-            ADD CONSTRAINT "FK_bundle_assets_asset" 
-            FOREIGN KEY ("asset_id") REFERENCES "asset"("id") 
-            ON DELETE CASCADE ON UPDATE NO ACTION
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint WHERE conname = 'FK_bundle_assets_asset'
+                ) THEN
+                    ALTER TABLE "bundle_assets" 
+                    ADD CONSTRAINT "FK_bundle_assets_asset" 
+                    FOREIGN KEY ("asset_id") REFERENCES "asset"("id") 
+                    ON DELETE CASCADE ON UPDATE NO ACTION;
+                END IF;
+            END $$;
         `);
 
         await queryRunner.query(`
-            ALTER TABLE "bundle" 
-            ADD CONSTRAINT "FK_bundle_featuredAsset" 
-            FOREIGN KEY ("featuredAssetId") REFERENCES "asset"("id") 
-            ON DELETE SET NULL ON UPDATE NO ACTION
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint WHERE conname = 'FK_bundle_featuredAsset'
+                ) THEN
+                    ALTER TABLE "bundle" 
+                    ADD CONSTRAINT "FK_bundle_featuredAsset" 
+                    FOREIGN KEY ("featuredAssetId") REFERENCES "asset"("id") 
+                    ON DELETE SET NULL ON UPDATE NO ACTION;
+                END IF;
+            END $$;
         `);
 
         // Create indexes for better query performance
         await queryRunner.query(`
-            CREATE INDEX "IDX_bundle_assets_bundle_id" ON "bundle_assets" ("bundle_id")
+            CREATE INDEX IF NOT EXISTS "IDX_bundle_assets_bundle_id" ON "bundle_assets" ("bundle_id")
         `);
 
         await queryRunner.query(`
-            CREATE INDEX "IDX_bundle_assets_asset_id" ON "bundle_assets" ("asset_id")
+            CREATE INDEX IF NOT EXISTS "IDX_bundle_assets_asset_id" ON "bundle_assets" ("asset_id")
         `);
 
         await queryRunner.query(`
-            CREATE INDEX "IDX_bundle_featuredAssetId" ON "bundle" ("featuredAssetId")
+            CREATE INDEX IF NOT EXISTS "IDX_bundle_featuredAssetId" ON "bundle" ("featuredAssetId")
         `);
 
         // Migrate existing assets and image data if needed
