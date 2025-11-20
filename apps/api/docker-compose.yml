@@ -10,7 +10,7 @@ services:
         volumes:
             - postgres_db_data:/var/lib/postgresql/data
         ports:
-            - "6543:5432"
+            - "5432:5432"
         environment:
             POSTGRES_DB: vendure
             POSTGRES_USER: vendure
@@ -18,45 +18,45 @@ services:
         labels:
             - "io.vendure.create.name=api"
 
-    mysql_db:
-        image: mysql:8
-        volumes:
-            - mysql_db_data:/var/lib/mysql
-        environment:
-            MYSQL_ROOT_PASSWORD: 'ROOT'
-            MYSQL_DATABASE: vendure
-            MYSQL_USER: vendure
-            MYSQL_PASSWORD: 3Ru2esG7OcF7r6vN1uhp2w
-        ports:
-            - "4306:3306"
-        labels:
-            - "io.vendure.create.name=api"
+    # mysql_db:
+      #   image: mysql:8
+       #  volumes:
+       #      - mysql_db_data:/var/lib/mysql
+      #   environment:
+          #   MYSQL_ROOT_PASSWORD: 'ROOT'
+          #   MYSQL_DATABASE: vendure
+          #   MYSQL_USER: vendure
+          #   MYSQL_PASSWORD: 3Ru2esG7OcF7r6vN1uhp2w
+      #   ports:
+        #     - "4306:3306"
+        # labels:
+        #     - "io.vendure.create.name=api"
 
-    mariadb_db:
-        image: mariadb:10
-        volumes:
-            - mariadb_db_data:/var/lib/mysql
-        environment:
-            MARIADB_ROOT_PASSWORD: 'ROOT'
-            MARIADB_DATABASE: vendure
-            MARIADB_USER: vendure
-            MARIADB_PASSWORD: 3Ru2esG7OcF7r6vN1uhp2w
-        ports:
-            - "3306:3306"
-        labels:
-            - "io.vendure.create.name=api"
-
+    # mariadb_db:
+      #   image: mariadb:10
+       #  volumes:
+      #       - mariadb_db_data:/var/lib/mysql
+       #  environment:
+       #      MARIADB_ROOT_PASSWORD: 'ROOT'
+         #    MARIADB_DATABASE: vendure
+        #     MARIADB_USER: vendure
+          #   MARIADB_PASSWORD: 3Ru2esG7OcF7r6vN1uhp2w
+         #ports:
+          #   - "3306:3306"
+        # labels:
+           #  - "io.vendure.create.name=api"
+ #
     # RECOMMENDED (especially for production)
     # Want to use our BullMQ with Redis instead of our default database job queue?
     # Checkout our BullMQ plugin: https://docs.vendure.io/reference/core-plugins/job-queue-plugin/bull-mqjob-queue-plugin/
-    redis:
-        image: redis:7-alpine
-        ports:
-            - "6479:6379"
-        volumes:
-            - redis_data:/data
-        labels:
-            - "io.vendure.create.name=api"
+     #redis:
+        # image: redis:7-alpine
+        # ports:
+           #  - "6479:6379"
+        # volumes:
+         #    - redis_data:/data
+        # labels:
+          #   - "io.vendure.create.name=api"
 
     # RECOMMENDED
     # Want to use Typesense instead of our default search engine?
