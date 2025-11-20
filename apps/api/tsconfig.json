@@ -12,7 +12,8 @@
     "sourceMap": false,
     "skipLibCheck": true,
     "outDir": "./dist",
-    "baseUrl": "./"
+    "baseUrl": "./",
+    "types": ["node"]
   },
   "include": [
     "src/**/*.ts"
@@ -26,7 +27,10 @@
     "ui-extensions/dashboard/*",
     "src/gql/*",
     "vite.*.*ts",
-    "dist"
+    "dist",
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.spec.ts"
   ],
   "ts-node": {
     "files": true
