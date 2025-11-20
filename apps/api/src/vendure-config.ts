@@ -136,19 +136,23 @@ export const config: VendureConfig = {
         AdminUiPlugin.init({
             route: 'admin',
             port: 3002,
-            app: compileUiExtensions({
-                outputPath: path.join(__dirname, '../admin-ui'),
-                extensions: [
-                    {
-                        extensionPath: path.join(__dirname, '../ui-extensions'),
-                        providers: ['providers.ts'],
-                    },
-                    bundleUiExtension,
-                    rewardPointsUiExtension,
-                    nutritionBatchUiExtension,
-                ],
-                devMode: IS_DEV,
-            }),
+            // In dev: compile UI with extensions
+            // In prod: serve pre-built static admin-ui folder  
+            app: IS_DEV 
+                ? compileUiExtensions({
+                      outputPath: path.join(__dirname, '../admin-ui'),
+                      extensions: [
+                          {
+                              extensionPath: path.join(__dirname, '../ui-extensions'),
+                              providers: ['providers.ts'],
+                          },
+                          bundleUiExtension,
+                          rewardPointsUiExtension,
+                          nutritionBatchUiExtension,
+                      ],
+                      devMode: true,
+                  })
+                : path.join(__dirname, '../admin-ui'),
             adminUiConfig: {
                 apiHost: 'http://localhost',
                 apiPort: serverPort,
