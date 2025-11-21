@@ -198,7 +198,7 @@ export class ClicToPayApiService {
             'Accept': 'application/json',
             'User-Agent': 'Vendure-ClicToPay/1.0',
           },
-          transformRequest: [(data) => {
+          transformRequest: [(data: any) => {
             // Convert object to form URL-encoded string
             const formData = Object.keys(data)
               .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(data[key] || '')}`)
@@ -226,6 +226,7 @@ export class ClicToPayApiService {
         
         // Log detailed error information
         if (axios.isAxiosError(error)) {
+          const axiosErr = error as AxiosError;
           Logger.error(
             `ClicToPay API request attempt ${attempt + 1} failed with Axios error:`,
             ClicToPayApiService.loggerCtx
@@ -235,23 +236,23 @@ export class ClicToPayApiService {
             ClicToPayApiService.loggerCtx
           );
           Logger.error(
-            `- Status: ${error.response?.status || 'No response'}`,
+            `- Status: ${axiosErr.response?.status || 'No response'}`,
             ClicToPayApiService.loggerCtx
           );
           Logger.error(
-            `- Status Text: ${error.response?.statusText || 'No response'}`,
+            `- Status Text: ${axiosErr.response?.statusText || 'No response'}`,
             ClicToPayApiService.loggerCtx
           );
           Logger.error(
-            `- Response Data: ${JSON.stringify(error.response?.data, null, 2) || 'No response data'}`,
+            `- Response Data: ${JSON.stringify(axiosErr.response?.data, null, 2) || 'No response data'}`,
             ClicToPayApiService.loggerCtx
           );
           Logger.error(
-            `- Error Code: ${error.code || 'No error code'}`,
+            `- Error Code: ${axiosErr.code || 'No error code'}`,
             ClicToPayApiService.loggerCtx
           );
           Logger.error(
-            `- Error Message: ${error.message}`,
+            `- Error Message: ${axiosErr.message}`,
             ClicToPayApiService.loggerCtx
           );
         } else {
@@ -262,12 +263,15 @@ export class ClicToPayApiService {
         }
         
         // Don't retry on client errors (4xx)
-        if (axios.isAxiosError(error) && error.response?.status && error.response.status < 500) {
-          Logger.error(
-            `Client error (${error.response.status}), will not retry`,
-            ClicToPayApiService.loggerCtx
-          );
-          break;
+        if (axios.isAxiosError(error)) {
+          const axiosErr = error as AxiosError;
+          if (axiosErr.response?.status && axiosErr.response.status < 500) {
+            Logger.error(
+              `Client error (${axiosErr.response.status}), will not retry`,
+              ClicToPayApiService.loggerCtx
+            );
+            break;
+          }
         }
 
         // Calculate delay for next attempt
