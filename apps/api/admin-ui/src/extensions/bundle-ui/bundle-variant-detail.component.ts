@@ -284,9 +284,9 @@ const GET_SERVER_CONFIG = gql`
                   type="button"
                   class="btn btn-icon btn-sm"
                   (click)="toggleEdit(item.index)"
-                  [title]="item.editing ? 'Save changes' : 'Edit row'"
+                  [title]="item.editing === true ? 'Save changes' : 'Edit row'"
                 >
-                  <clr-icon [shape]="item.editing ? 'check' : 'pencil'"></clr-icon>
+                  <clr-icon [attr.shape]="item.editing === true ? 'check' : 'pencil'"></clr-icon>
                 </button>
                 <button
                   type="button"
@@ -682,13 +682,20 @@ export class BundleVariantDetailComponent implements OnInit, OnDestroy {
 
   onProductVariantSelected(variant: any, index: number) {
     const itemControl = this.items.at(index);
+    
+    // vdr-product-variant-selector can emit different structures
+    const variantId = variant.id || variant.productVariantId;
+    const variantName = variant.name || variant.productVariantName || variant.productName;
+    const variantSku = variant.sku || variant.productSku;
+    
     itemControl.patchValue({
-      productVariantId: variant.id,
-      productVariantName: variant.name,
-      productVariantSku: variant.sku,
+      productVariantId: variantId,
+      productVariantName: variantName,
+      productVariantSku: variantSku,
       editing: false,
     });
-    this.changeDetector.markForCheck();
+    
+    this.changeDetector.detectChanges();
   }
 
   toggleEdit(index: number) {
