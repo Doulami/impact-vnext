@@ -875,18 +875,13 @@ export class BundleService {
                 effectivePricePreTax = bundle.effectivePrice;
             }
             
-            // Prepare asset updates for shell product
-            const featuredAssetId = bundle.featuredAsset?.id;
-            // Exclude featured asset from assetIds to prevent duplication
-            const assetIds = (bundle.assets || [])
-                .filter(a => a.id !== featuredAssetId)
-                .map(a => a.id);
+            // NOTE: Asset sync removed - shell product manages its own assets
+            // Storefront uses shell product assets, not bundle assets
+            // CLEANUP: Bundle.assets and Bundle.featuredAsset fields can be deprecated in future
             
-            // Update shell product with bundle assets
+            // Update shell product (price, availability, components only)
             await this.productService.update(ctx, {
                 id: shellProduct.id,
-                assetIds: assetIds,
-                featuredAssetId: featuredAssetId,
                 customFields: {
                     ...shellProduct.customFields,
                     bundlePrice: effectivePricePreTax,
@@ -915,7 +910,7 @@ export class BundleService {
             }
             
             Logger.info(
-                `Synced bundle ${bundle.id} to shell product ${shellProduct.id}: price=${effectivePricePreTax} (pre-tax), availability=${A_final}`,
+                `Synced bundle ${bundle.id} to shell product ${shellProduct.id}: price=${effectivePricePreTax} (pre-tax), availability=${A_final} (assets managed by shell product)`,
                 'BundleService'
             );
             
