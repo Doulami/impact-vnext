@@ -56,8 +56,6 @@
     "npm": "10.9.4"
   },
   "overrides": {
-    "@vendure/dashboard": "3.5.0",
-    "@vitejs/plugin-react-swc": "4.2.0",
-    "@swc/core": "1.15.0"
+    "@vendure/dashboard": "3.5.1"
   }
 }

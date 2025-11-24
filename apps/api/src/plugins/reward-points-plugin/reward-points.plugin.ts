@@ -40,6 +40,9 @@ import { applyRewardPointsOrderDiscount } from './promotions/reward-points-order
     imports: [PluginCommonModule],
     compatibility: '^3.5.0',
     
+    // React Dashboard extension
+    dashboard: './dashboard/reward-points.index.tsx',
+    
     // Register custom entities
     entities: [RewardPointSettings, CustomerRewardPoints, RewardTransaction],
     
