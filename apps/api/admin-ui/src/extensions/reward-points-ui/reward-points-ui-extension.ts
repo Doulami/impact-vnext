@@ -15,6 +15,7 @@ import path from 'path';
 export const rewardPointsUiExtension: AdminUiExtension = {
     id: 'reward-points-ui',
     extensionPath: path.join(__dirname),
+    providers: ['providers.ts'],
     ngModules: [
         {
             type: 'shared',

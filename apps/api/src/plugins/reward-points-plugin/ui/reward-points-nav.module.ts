@@ -1,9 +1,13 @@
 import { NgModule } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { SharedModule, addNavMenuSection } from '@vendure/admin-ui/core';
+import { CustomerPointsTabComponent } from './customer-points-tab.component';
 
 @NgModule({
   imports: [SharedModule, RouterModule.forChild([])],
+  declarations: [
+    CustomerPointsTabComponent,
+  ],
   providers: [
     addNavMenuSection(
       {
