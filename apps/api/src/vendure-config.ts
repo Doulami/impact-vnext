@@ -83,12 +83,57 @@ export const config: VendureConfig = {
     customFields: {
         Product: [
             // Bundle shell product fields
-            { name: 'isBundle', type: 'boolean', nullable: true, defaultValue: false, label: [{ languageCode: LanguageCode.en, value: 'Is Bundle' }], description: [{ languageCode: LanguageCode.en, value: 'Marks this product as a bundle shell for SEO/PLP' }] },
-            { name: 'bundleId', type: 'string', nullable: true, label: [{ languageCode: LanguageCode.en, value: 'Bundle ID' }], description: [{ languageCode: LanguageCode.en, value: 'References the Bundle entity ID' }] },
-            // Phase 5: Shell sync fields
-            { name: 'bundlePrice', type: 'int', nullable: true, label: [{ languageCode: LanguageCode.en, value: 'Bundle Price' }], description: [{ languageCode: LanguageCode.en, value: 'Computed bundle price (cents, synced from Bundle)' }] },
-            { name: 'bundleAvailability', type: 'int', nullable: true, label: [{ languageCode: LanguageCode.en, value: 'Bundle Availability' }], description: [{ languageCode: LanguageCode.en, value: 'A_final availability (synced from Bundle)' }] },
-            { name: 'bundleComponents', type: 'string', nullable: true, label: [{ languageCode: LanguageCode.en, value: 'Bundle Components' }], description: [{ languageCode: LanguageCode.en, value: 'JSON: [{variantId, qty}]' }] }
+            { 
+                name: 'isBundle', 
+                type: 'boolean', 
+                nullable: true, 
+                defaultValue: false, 
+                label: [{ languageCode: LanguageCode.en, value: 'Is Bundle' }], 
+                description: [{ languageCode: LanguageCode.en, value: 'Marks this product as a bundle shell for SEO/PLP' }],
+                public: true,
+                readonly: false // Editable for activation, but managed via Bundle tab
+            },
+            { 
+                name: 'bundleId', 
+                type: 'string', 
+                nullable: true, 
+                label: [{ languageCode: LanguageCode.en, value: 'Bundle ID' }], 
+                description: [{ languageCode: LanguageCode.en, value: 'Managed by Bundle plugin – see Bundle tab' }],
+                public: true,
+                readonly: true,
+                ui: { component: 'readonly-text-form-input' }
+            },
+            // Phase 5: Shell sync fields (all readonly - managed by Bundle plugin)
+            { 
+                name: 'bundlePrice', 
+                type: 'int', 
+                nullable: true, 
+                label: [{ languageCode: LanguageCode.en, value: 'Bundle Price' }], 
+                description: [{ languageCode: LanguageCode.en, value: 'Computed bundle price (cents, synced from Bundle) – see Bundle tab' }],
+                public: true,
+                readonly: true,
+                ui: { component: 'readonly-text-form-input' }
+            },
+            { 
+                name: 'bundleAvailability', 
+                type: 'int', 
+                nullable: true, 
+                label: [{ languageCode: LanguageCode.en, value: 'Bundle Availability' }], 
+                description: [{ languageCode: LanguageCode.en, value: 'Computed availability (synced from Bundle) – see Bundle tab' }],
+                public: true,
+                readonly: true,
+                ui: { component: 'readonly-text-form-input' }
+            },
+            { 
+                name: 'bundleComponents', 
+                type: 'string', 
+                nullable: true, 
+                label: [{ languageCode: LanguageCode.en, value: 'Bundle Components' }], 
+                description: [{ languageCode: LanguageCode.en, value: 'JSON: [{variantId, qty}] (managed by Bundle plugin) – see Bundle tab' }],
+                public: true,
+                readonly: true,
+                ui: { component: 'readonly-text-form-input' }
+            }
         ],
         OrderLine: [
             // Bundle metadata fields for exploded bundles

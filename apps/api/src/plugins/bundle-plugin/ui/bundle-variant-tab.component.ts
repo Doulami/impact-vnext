@@ -1,11 +1,24 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { DataService, SharedModule } from '@vendure/admin-ui/core';
+import { DataService, SharedModule, NotificationService } from '@vendure/admin-ui/core';
 import { gql } from 'graphql-tag';
 
 const GET_PRODUCT = gql`
   query GetProduct($id: ID!) {
     product(id: $id) {
+      id
+      name
+      customFields {
+        isBundle
+        bundleId
+      }
+    }
+  }
+`;
+
+const UPDATE_PRODUCT = gql`
+  mutation UpdateProduct($input: UpdateProductInput!) {
+    updateProduct(input: $input) {
       id
       name
       customFields {
@@ -37,7 +50,16 @@ const GET_PRODUCT = gql`
       <div *ngIf="!loading && productId && !isBundle" class="bundle-not-configured">
         <vdr-alert type="info">
           <h3>This product is not configured as a bundle</h3>
-          <p>To manage bundles, first mark this product as a bundle in the product settings.</p>
+          <p>Activate bundle management for this product to create and configure bundle pricing.</p>
+          <button 
+            class="btn btn-primary" 
+            (click)="activateBundle()" 
+            [disabled]="activating"
+            style="margin-top: 12px;">
+            <clr-icon shape="check" *ngIf="!activating"></clr-icon>
+            <clr-spinner *ngIf="activating" clrInline></clr-spinner>
+            {{ activating ? 'Activating...' : 'Activate Bundle for this Product' }}
+          </button>
         </vdr-alert>
       </div>
     </div>
@@ -65,11 +87,13 @@ export class BundleVariantTabComponent implements OnInit {
   bundleId?: string;
   loading = true;
   hasChildRoute = false;
+  activating = false;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private dataService: DataService,
+    private notificationService: NotificationService,
     private changeDetector: ChangeDetectorRef
   ) {}
 
@@ -129,5 +153,37 @@ export class BundleVariantTabComponent implements OnInit {
           this.changeDetector.markForCheck();
         }
       });
+  }
+
+  activateBundle() {
+    if (this.activating || !this.productId) return;
+    
+    this.activating = true;
+    this.changeDetector.markForCheck();
+    
+    this.dataService.mutate(UPDATE_PRODUCT, {
+      input: {
+        id: this.productId,
+        customFields: {
+          isBundle: true
+        }
+      }
+    }).subscribe({
+      next: (result: any) => {
+        this.notificationService.success('Bundle activated successfully');
+        this.isBundle = true;
+        this.activating = false;
+        this.changeDetector.markForCheck();
+        
+        // Navigate to bundle creation form
+        this.router.navigate(['create'], { relativeTo: this.route, queryParams: { productName: this.productName } });
+      },
+      error: (error) => {
+        console.error('Error activating bundle:', error);
+        this.notificationService.error('Failed to activate bundle: ' + (error.message || 'Unknown error'));
+        this.activating = false;
+        this.changeDetector.markForCheck();
+      }
+    });
   }
 }
