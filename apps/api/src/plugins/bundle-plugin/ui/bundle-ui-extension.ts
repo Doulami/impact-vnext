@@ -16,6 +16,9 @@ import { AdminUiExtension } from '@vendure/ui-devkit/compiler';
 export const bundleUiExtension: AdminUiExtension = {
   id: 'bundle-ui',
   extensionPath: path.join(__dirname),
+  
+  // KEEP OLD: Standalone bundle UI (for backwards compatibility)
+  // CLEANUP: These ngModules can be removed after migration period
   ngModules: [
     {
       type: 'shared',
@@ -29,6 +32,10 @@ export const bundleUiExtension: AdminUiExtension = {
       ngModuleName: 'BundleUiModule',
     },
   ],
+  
+  // NEW: Product variant tab (primary workflow)
+  providers: ['bundle-variant-tab-providers.ts'],
+  
   translations: {
     en: path.join(__dirname, 'translations/en.json'),
     fr: path.join(__dirname, 'translations/fr.json'),

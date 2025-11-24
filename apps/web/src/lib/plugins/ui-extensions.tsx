@@ -145,8 +145,8 @@ export function BundleOpportunityBanner({ cart, onAddBundle }: {
           >
             <div className="flex justify-between items-start mb-2">
               <div>
-                <h4 className="font-medium text-gray-900">{opportunity.bundle.name}</h4>
-                <p className="text-sm text-gray-600">{opportunity.bundle.description}</p>
+                <h4 className="font-medium text-gray-900">{opportunity.bundle.shellProduct?.name}</h4>
+                <p className="text-sm text-gray-600">{opportunity.bundle.shellProduct?.description}</p>
               </div>
               <div className="text-right">
                 <div className="text-lg font-bold text-green-600">

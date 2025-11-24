@@ -370,9 +370,6 @@ export const BUNDLE_FRAGMENT = gql`
   ${NUTRITION_BATCH_FRAGMENT}
   fragment BundleFields on Bundle {
     id
-    name
-    slug
-    description
     status
     discountType
     fixedPrice
@@ -382,19 +379,16 @@ export const BUNDLE_FRAGMENT = gql`
     totalSavings
     validFrom
     validTo
-    featuredAsset {
-      id
-      preview
-    }
-    assets {
-      id
-      preview
-    }
     shellProductId
     shellProduct {
       id
       name
       slug
+      description
+      featuredAsset {
+        id
+        preview
+      }
     }
     items {
       id

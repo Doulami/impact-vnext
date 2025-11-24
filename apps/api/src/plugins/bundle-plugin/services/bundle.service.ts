@@ -22,19 +22,23 @@ import { BundleTranslationService } from './bundle-translation.service';
 
 // Bundle Plugin v2 Input Interfaces
 export interface CreateBundleInput {
-    name: string;
-    slug?: string;
-    description?: string;
+    name: string; // Required for standalone UI, derived from Product name in tab workflow
+    // DEPRECATED fields (use shell Product fields instead)
+    slug?: string; // DEPRECATED: Use shell Product slug
+    description?: string; // DEPRECATED: Use shell Product description
+    assets?: string[]; // DEPRECATED: Use shell Product assets (not synced to shell)
+    tags?: string[]; // DEPRECATED: Use shell Product facets/collections
+    category?: string; // DEPRECATED: Use shell Product collections
+    // Active fields
     discountType: BundleDiscountType;
     fixedPrice?: number; // In cents for fixed-price bundles
     percentOff?: number; // 0-100 for percentage bundles
     validFrom?: Date;
     validTo?: Date;
-    assets?: string[];
-    tags?: string[];
-    category?: string;
     allowExternalPromos?: boolean;
     items: CreateBundleItemInput[];
+    // Product tab integration
+    shellProductId?: string; // ID of existing Product to use as shell (Product tab workflow)
     // Legacy fields for backwards compatibility
     price?: number; // Deprecated: calculated from discount type
     enabled?: boolean; // Deprecated: use status instead
@@ -51,17 +55,19 @@ export interface CreateBundleItemInput {
 
 export interface UpdateBundleInput {
     id: ID;
-    name?: string;
-    slug?: string;
-    description?: string;
+    name?: string; // DEPRECATED: Use shell Product name
+    // DEPRECATED fields (use shell Product fields instead)
+    slug?: string; // DEPRECATED: Use shell Product slug
+    description?: string; // DEPRECATED: Use shell Product description
+    assets?: string[]; // DEPRECATED: Use shell Product assets (not synced to shell)
+    tags?: string[]; // DEPRECATED: Use shell Product facets/collections
+    category?: string; // DEPRECATED: Use shell Product collections
+    // Active fields
     discountType?: BundleDiscountType;
     fixedPrice?: number;
     percentOff?: number;
     validFrom?: Date;
     validTo?: Date;
-    assets?: string[];
-    tags?: string[];
-    category?: string;
     allowExternalPromos?: boolean;
     items?: UpdateBundleItemInput[];
     // Legacy fields for backwards compatibility
@@ -212,10 +218,70 @@ export class BundleService {
 
         await this.connection.getRepository(ctx, BundleItem).save(bundleItems);
 
-        // Create shell product for bundle (for SEO/PLP)
-        const shellProductId = await this.createShellProduct(ctx, savedBundle);
+        // Handle shell product
+        let shellProductId: string;
+        if (input.shellProductId) {
+            // Product tab workflow: Use existing product as shell
+            shellProductId = input.shellProductId;
+            
+            // Mark existing product as bundle
+            const shellProduct = await this.connection.getRepository(ctx, Product).findOne({
+                where: { id: shellProductId },
+                relations: ['variants']
+            });
+            
+            if (!shellProduct) {
+                throw new Error(`Shell product ${shellProductId} not found`);
+            }
+            
+            // Update product customFields
+            await this.productService.update(ctx, {
+                id: shellProductId,
+                customFields: {
+                    isBundle: true,
+                    bundleId: String(savedBundle.id)
+                }
+            });
+            
+            // Sync shell Product name/slug/description to Bundle (Product is source of truth)
+            savedBundle.name = shellProduct.name;
+            savedBundle.slug = shellProduct.slug;
+            savedBundle.description = shellProduct.description || '';
+            await this.connection.getRepository(ctx, Bundle).save(savedBundle);
+            
+            // Create variant if product has no variants
+            if (!shellProduct.variants || shellProduct.variants.length === 0) {
+                await this.productVariantService.create(ctx, [{
+                    productId: shellProductId,
+                    sku: `BUNDLE-${savedBundle.id}`,
+                    price: 0, // Price computed from bundle
+                    trackInventory: GlobalFlag.FALSE,
+                    translations: [{
+                        languageCode: LanguageCode.en,
+                        name: savedBundle.name
+                    }]
+                }]);
+                Logger.info(`Created variant for existing product ${shellProductId} (bundle ${savedBundle.id})`, 'BundleService');
+            }
+            
+            Logger.info(`Marked existing product ${shellProductId} as bundle ${savedBundle.id}`, 'BundleService');
+        } else {
+            // Standalone bundle UI workflow: Create new shell product
+            shellProductId = await this.createShellProduct(ctx, savedBundle);
+        }
+        
         savedBundle.shellProductId = shellProductId;
         await this.connection.getRepository(ctx, Bundle).save(savedBundle);
+        
+        // Sync bundle data to shell product (pricing, availability, components)
+        const bundleWithShell = await this.findOne(ctx, savedBundle.id);
+        if (bundleWithShell) {
+            try {
+                await this.syncBundleToShell(ctx, bundleWithShell);
+            } catch (error) {
+                Logger.warn(`Failed to sync bundle ${savedBundle.id} to shell on creation: ${error instanceof Error ? error.message : String(error)}`, 'BundleService');
+            }
+        }
 
         const result = await this.findOne(ctx, savedBundle.id);
         if (!result) {
@@ -328,6 +394,16 @@ export class BundleService {
         const bundle = await this.findOne(ctx, input.id);
         if (!bundle) {
             throw new Error(this.translationService.bundleNotFound(ctx, String(input.id)));
+        }
+
+        // Sync shell Product fields to Bundle if shell exists (Product is source of truth)
+        if (bundle.shellProductId) {
+            const shellProduct = await this.productService.findOne(ctx, bundle.shellProductId);
+            if (shellProduct) {
+                bundle.name = shellProduct.name;
+                bundle.slug = shellProduct.slug;
+                bundle.description = shellProduct.description || '';
+            }
         }
 
         // Update assets if provided
@@ -875,18 +951,13 @@ export class BundleService {
                 effectivePricePreTax = bundle.effectivePrice;
             }
             
-            // Prepare asset updates for shell product
-            const featuredAssetId = bundle.featuredAsset?.id;
-            // Exclude featured asset from assetIds to prevent duplication
-            const assetIds = (bundle.assets || [])
-                .filter(a => a.id !== featuredAssetId)
-                .map(a => a.id);
+            // NOTE: Asset sync removed - shell product manages its own assets
+            // Storefront uses shell product assets, not bundle assets
+            // CLEANUP: Bundle.assets and Bundle.featuredAsset fields can be deprecated in future
             
-            // Update shell product with bundle assets
+            // Update shell product (price, availability, components only)
             await this.productService.update(ctx, {
                 id: shellProduct.id,
-                assetIds: assetIds,
-                featuredAssetId: featuredAssetId,
                 customFields: {
                     ...shellProduct.customFields,
                     bundlePrice: effectivePricePreTax,
@@ -915,7 +986,7 @@ export class BundleService {
             }
             
             Logger.info(
-                `Synced bundle ${bundle.id} to shell product ${shellProduct.id}: price=${effectivePricePreTax} (pre-tax), availability=${A_final}`,
+                `Synced bundle ${bundle.id} to shell product ${shellProduct.id}: price=${effectivePricePreTax} (pre-tax), availability=${A_final} (assets managed by shell product)`,
                 'BundleService'
             );
             
