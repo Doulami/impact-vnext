@@ -1,8 +1,9 @@
 import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { DataService, NotificationService, ModalService, SharedModule, TypedBaseListComponent } from '@vendure/admin-ui/core';
+import { DataService, NotificationService, ModalService, SharedModule, BaseListComponent } from '@vendure/admin-ui/core';
 import { gql } from 'graphql-tag';
-import { TypedDocumentNode } from '@apollo/client/core';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 // Define the query result type
 interface GetNutritionBatchListQuery {
@@ -32,7 +33,7 @@ interface GetNutritionBatchListQueryVariables {
   variantId: string;
 }
 
-const GET_NUTRITION_BATCH_LIST: TypedDocumentNode<GetNutritionBatchListQuery, GetNutritionBatchListQueryVariables> = gql`
+const GET_NUTRITION_BATCH_LIST = gql`
   query GetNutritionBatchList($options: NutritionBatchListOptions, $variantId: ID!) {
     nutritionBatches(options: $options, variantId: $variantId) {
       items {
@@ -116,7 +117,6 @@ const SET_CURRENT_BATCH = gql`
         <vdr-dt2-column
           id="batch-code"
           [heading]="'nutrition-batch.batch-code' | translate"
-          [sort]="sorts.get('batchCode')"
         >
           <ng-template let-batch="item">
             <a class="button-ghost" [routerLink]="['./', batch.id]">
@@ -134,7 +134,6 @@ const SET_CURRENT_BATCH = gql`
         <vdr-dt2-column
           id="production-date"
           [heading]="'nutrition-batch.production-date' | translate"
-          [sort]="sorts.get('productionDate')"
         >
           <ng-template let-batch="item">
             {{ batch.productionDate | date }}
@@ -144,7 +143,6 @@ const SET_CURRENT_BATCH = gql`
         <vdr-dt2-column
           id="expiry-date"
           [heading]="'nutrition-batch.expiry-date' | translate"
-          [sort]="sorts.get('expiryDate')"
         >
           <ng-template let-batch="item">
             {{ batch.expiryDate | date }}
@@ -243,67 +241,56 @@ const SET_CURRENT_BATCH = gql`
     }
   `]
 })
-export class NutritionBatchTabComponent extends TypedBaseListComponent<typeof GET_NUTRITION_BATCH_LIST, 'nutritionBatches'> implements OnInit {
+export class NutritionBatchTabComponent extends BaseListComponent<any, any> implements OnInit {
   variantId!: string;
   hasChildRoute = false;
 
-  readonly sorts = this.createSortCollection()
-    .defaultSort('createdAt', 'DESC')
-    .addSort({ name: 'batchCode' })
-    .addSort({ name: 'productionDate' })
-    .addSort({ name: 'expiryDate' })
-    .connectToRoute(this.route);
+  readonly filters = [];
+  readonly sorts = [
+    { name: 'createdAt' },
+    { name: 'batchCode' },
+    { name: 'productionDate' },
+    { name: 'expiryDate' }
+  ];
 
-  readonly filters = this.createFilterCollection()
-    .connectToRoute(this.route);
+  currentPage = 0;
+  itemsPerPage = 10;
 
   constructor(
-    protected route: ActivatedRoute,
     protected router: Router,
+    protected route: ActivatedRoute,
     protected dataService: DataService,
     private notificationService: NotificationService,
     private modalService: ModalService,
     private changeDetector: ChangeDetectorRef
   ) {
-    super();
+    super(router, route);
     
     // Get variantId from parent route
     this.variantId = this.route.parent?.snapshot.params.id || this.route.snapshot.params.id;
+  }
 
-    super.configure({
-      document: GET_NUTRITION_BATCH_LIST,
-      getItems: (data: GetNutritionBatchListQuery) => {
-        console.log('[NutritionBatchTab] nutritionBatches response:', data.nutritionBatches);
-        return {
-          items: data.nutritionBatches.items,
-          totalItems: data.nutritionBatches.totalItems,
-        };
+  protected loadPage(): Observable<{ items: any[]; totalItems: number }> {
+    const options = {
+      skip: this.currentPage * this.itemsPerPage,
+      take: this.itemsPerPage,
+      filter: {
+        batchCode: {
+          contains: this.searchTermControl.value || undefined,
+        },
       },
-      setVariables: (skip: number, take: number) => {
-        console.log('[NutritionBatchTab] setVariables - variantId:', this.variantId, 'skip:', skip, 'take:', take);
-        return {
-          options: {
-            skip,
-            take,
-            filter: {
-              // search by batch code only
-              batchCode: {
-                contains: this.searchTermControl.value || undefined,
-              },
-              // keep any structured filters
-              ...this.filters.createFilterInput(),
-            },
-            sort: this.sorts.createSortInput(),
-          },
-          variantId: this.variantId,
-        };
-      },
-      refreshListOnChanges: [
-        this.filters.valueChanges,
-        this.sorts.valueChanges,
-        this.searchTermControl.valueChanges,
-      ],
-    });
+      sort: { createdAt: 'DESC' },
+    };
+    
+    return this.dataService
+      .query(GET_NUTRITION_BATCH_LIST, {
+        options,
+        variantId: this.variantId,
+      })
+      .mapSingle((data: any) => ({
+        items: data.nutritionBatches.items,
+        totalItems: data.nutritionBatches.totalItems,
+      }));
   }
 
   ngOnInit() {

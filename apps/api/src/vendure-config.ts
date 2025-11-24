@@ -134,31 +134,31 @@ export const config: VendureConfig = {
             },
         }),
         // AdminUiPlugin temporarily disabled - serve via separate static server
-        // AdminUiPlugin.init({
-        //     route: 'admin',
-        //     port: 3002,
-        //     app: IS_DEV 
-        //         ? compileUiExtensions({
-        //               outputPath: path.join(__dirname, '../admin-ui'),
-        //               extensions: [
-        //                   {
-        //                       extensionPath: path.join(__dirname, '../ui-extensions'),
-        //                       providers: ['providers.ts'],
-        //                   },
-        //                   bundleUiExtension,
-        //                   rewardPointsUiExtension,
-        //                   nutritionBatchUiExtension,
-        //               ],
-        //               devMode: true,
-        //           })
-        //         : {
-        //               path: path.join(__dirname, '../admin-ui'),
-        //           },
-        //     adminUiConfig: {
-        //         apiHost: 'http://localhost',
-        //         apiPort: serverPort,
-        //     },
-        // }),
+        AdminUiPlugin.init({
+            route: 'admin',
+            port: 3002,
+            app: IS_DEV 
+                ? compileUiExtensions({
+                      outputPath: path.join(__dirname, '../admin-ui'),
+                      extensions: [
+                          {
+                              extensionPath: path.join(__dirname, '../ui-extensions'),
+                              providers: ['providers.ts'],
+                          },
+                          bundleUiExtension,
+                          rewardPointsUiExtension,
+                          nutritionBatchUiExtension,
+                      ],
+                      devMode: true,
+                  })
+                : {
+                      path: path.join(__dirname, '../admin-ui'),
+                  },
+            adminUiConfig: {
+                apiHost: 'http://localhost',
+                apiPort: serverPort,
+            },
+        }),
         DashboardPlugin.init({
             route: 'dashboard',
             appDir: path.join(__dirname, '../dist/dashboard'),
