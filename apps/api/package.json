@@ -13,6 +13,8 @@
     "seed:internal": "ts-node ./scripts/seed-internal.ts",
     "build": "tsc",
     "compile:admin-ui": "ts-node compile-admin-ui.ts",
+    "dashboard:dev": "vite",
+    "dashboard:build": "vite build",
     "start:server": "node ./dist/index.js",
     "start:worker": "node ./dist/index-worker.js",
     "start": "concurrently npm:start:*"
