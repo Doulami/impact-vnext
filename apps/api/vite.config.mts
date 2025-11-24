@@ -1,4 +1,5 @@
 import { vendureDashboardPlugin } from '@vendure/dashboard/vite';
+import react from '@vitejs/plugin-react';
 import { join, resolve } from 'path';
 import { pathToFileURL } from 'url';
 import { defineConfig } from 'vite';
@@ -9,6 +10,9 @@ export default defineConfig({
         outDir: join(__dirname, 'dist/dashboard'),
     },
     plugins: [
+        // Use Babel-based React plugin instead of SWC
+        react(),
+        
         vendureDashboardPlugin({
             // The vendureDashboardPlugin will scan your configuration in order
             // to find any plugins which have dashboard extensions, as well as
@@ -22,6 +26,10 @@ export default defineConfig({
             // These types can be used in your dashboard extensions to provide
             // type safety when writing queries and mutations.
             gqlOutputPath: './src/gql',
+            // Tell Vendure not to install its own React/SWC plugin
+            disablePlugins: {
+                react: true,
+            },
         }),
     ],
     resolve: {
