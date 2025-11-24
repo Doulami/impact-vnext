@@ -1,5 +1,4 @@
 import { vendureDashboardPlugin } from '@vendure/dashboard/vite';
-import react from '@vitejs/plugin-react';
 import { join, resolve } from 'path';
 import { pathToFileURL } from 'url';
 import { defineConfig } from 'vite';
@@ -10,7 +9,6 @@ export default defineConfig({
         outDir: join(__dirname, 'dist/dashboard'),
     },
     plugins: [
-        react(),
         vendureDashboardPlugin({
             // The vendureDashboardPlugin will scan your configuration in order
             // to find any plugins which have dashboard extensions, as well as
