@@ -5,9 +5,6 @@ export const GET_BUNDLE_SHELL = gql`
   query GetBundleShell($id: ID!) {
     bundle(id: $id) {
       id
-      name
-      slug
-      assets
       shellProduct {
         id
         name

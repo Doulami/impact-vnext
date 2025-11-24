@@ -116,10 +116,10 @@ export function RelatedProducts({ currentProductId, collections, isCurrentProduc
         return {
           id: bundle.shellProduct?.id || bundle.id,
           productId: bundle.shellProduct?.id || bundle.id,
-          name: bundle.name,
-          slug: bundle.shellProduct?.slug || bundle.slug,
-          description: bundle.description,
-          image: bundle.featuredAsset?.preview,
+          name: bundle.shellProduct?.name,
+          slug: bundle.shellProduct?.slug,
+          description: bundle.shellProduct?.description,
+          image: bundle.shellProduct?.featuredAsset?.preview,
           priceWithTax: bundle.effectivePrice, // Bundle price in cents
           inStock: bundle.status === 'ACTIVE',
           rating: 4.5,

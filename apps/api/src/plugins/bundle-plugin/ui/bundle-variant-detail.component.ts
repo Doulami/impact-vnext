@@ -116,7 +116,7 @@ const GET_SERVER_CONFIG = gql`
       <vdr-action-bar>
         <vdr-ab-left>
           <vdr-page-title
-            [title]="isNew ? 'Create Bundle' : bundle?.name"
+            [title]="isNew ? 'Create Bundle' : 'Edit Bundle'"
           ></vdr-page-title>
           <div *ngIf="!isNew" class="status-badge" [class]="'status-' + bundle?.status">
             {{ bundle?.status }}
@@ -148,36 +148,6 @@ const GET_SERVER_CONFIG = gql`
     </vdr-page-block>
 
     <form [formGroup]="bundleForm" *ngIf="!loading">
-      <!-- Basic Info -->
-      <vdr-page-block>
-        <vdr-card title="Basic Info">
-          <div class="clr-row">
-            <div class="clr-col-md-12">
-              <vdr-form-field label="Bundle Name" for="name">
-                <input
-                  id="name"
-                  type="text"
-                  formControlName="name"
-                  class="clr-input"
-                />
-              </vdr-form-field>
-            </div>
-          </div>
-          <div class="clr-row">
-            <div class="clr-col-md-12">
-              <vdr-form-field label="Description" for="description">
-                <textarea
-                  id="description"
-                  formControlName="description"
-                  class="clr-textarea"
-                  rows="3"
-                ></textarea>
-              </vdr-form-field>
-            </div>
-          </div>
-        </vdr-card>
-      </vdr-page-block>
-
       <!-- Discount Configuration -->
       <vdr-page-block>
         <vdr-card title="Discount Configuration">
@@ -473,9 +443,9 @@ const GET_SERVER_CONFIG = gql`
 export class BundleVariantDetailComponent implements OnInit, OnDestroy {
   bundleForm: FormGroup;
   bundle: BundleFragment | null = null;
-  variantId: string;
-  bundleId: string;
   productId: string;
+  productName: string;
+  bundleId: string;
   isNew = false;
   loading = false;
   saving = false;
@@ -495,8 +465,6 @@ export class BundleVariantDetailComponent implements OnInit, OnDestroy {
       .mapStream((data: any) => data.activeChannel?.defaultCurrencyCode || 'USD');
 
     this.bundleForm = this.formBuilder.group({
-      name: ['', Validators.required],
-      description: [''],
       discountType: ['fixed', Validators.required],
       fixedPrice: [0],
       percentOff: [0],
@@ -513,12 +481,12 @@ export class BundleVariantDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.variantId = this.route.parent?.parent?.snapshot.params.id;
+    this.productId = this.route.parent?.parent?.snapshot.params.id;
 
     this.route.params.pipe(takeUntil(this.destroy$)).subscribe(params => {
       if (params['id'] === 'create') {
         this.isNew = true;
-        this.productId = this.route.snapshot.queryParams['productId'];
+        this.productName = this.route.snapshot.queryParams['productName'];
         this.loading = false;
       } else {
         this.bundleId = params['id'];
@@ -573,8 +541,6 @@ export class BundleVariantDetailComponent implements OnInit, OnDestroy {
     const sortedItems = [...(this.bundle.items || [])].sort((a: any, b: any) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
 
     this.bundleForm.patchValue({
-      name: this.bundle.name,
-      description: this.bundle.description,
       discountType: this.bundle.discountType,
       fixedPrice: this.bundle.fixedPrice,
       percentOff: this.bundle.percentOff,
@@ -614,8 +580,6 @@ export class BundleVariantDetailComponent implements OnInit, OnDestroy {
     const formValue = this.bundleForm.value;
 
     const input: any = {
-      name: formValue.name,
-      description: formValue.description,
       discountType: formValue.discountType,
       fixedPrice: formValue.discountType === 'fixed' ? formValue.fixedPrice : null,
       percentOff: formValue.discountType === 'percent' ? formValue.percentOff : null,
@@ -630,7 +594,9 @@ export class BundleVariantDetailComponent implements OnInit, OnDestroy {
       }))
     };
 
+    // For creation, pass shell product ID and name
     if (this.isNew) {
+      input.name = this.productName || 'Bundle';
       input.shellProductId = this.productId;
     }
 

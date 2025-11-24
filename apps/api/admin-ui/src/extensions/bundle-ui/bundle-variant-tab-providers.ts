@@ -4,7 +4,7 @@ import { BundleVariantDetailComponent } from './bundle-variant-detail.component'
 
 export default [
   registerPageTab({
-    location: 'product-variant-detail',
+    location: 'product-detail',
     tab: 'Bundle',
     tabIcon: 'layers',
     route: 'bundle',

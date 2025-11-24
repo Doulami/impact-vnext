@@ -47,7 +47,7 @@ function toBundleResult(bundle: Bundle): CombinedResult {
     id: bundle.id,
     name: shellProduct?.name || 'Bundle',
     slug: shellProduct?.slug || `bundle-${bundle.id}`,
-    image: '/product-placeholder.svg', // Use placeholder until shell product images are implemented
+    image: shellProduct?.featuredAsset?.preview || '/product-placeholder.svg',
     price: bundlePrice, // Already in cents
     originalPrice: componentTotal,
     savings: savings,
@@ -107,8 +107,10 @@ export function useCombinedSearch(initialInput?: Partial<SearchInput>) {
         // Filter bundles based on search term if provided
         if (searchInput.term) {
           const term = searchInput.term.toLowerCase();
-          return bundle.name.toLowerCase().includes(term) ||
-                 bundle.description?.toLowerCase().includes(term) ||
+          const shellName = bundle.shellProduct?.name || '';
+          const shellDescription = bundle.shellProduct?.description || '';
+          return shellName.toLowerCase().includes(term) ||
+                 shellDescription.toLowerCase().includes(term) ||
                  bundle.items.some(item => 
                    item.productVariant.product.name.toLowerCase().includes(term)
                  );

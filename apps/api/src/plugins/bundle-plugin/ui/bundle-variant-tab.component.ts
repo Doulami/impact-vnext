@@ -3,16 +3,14 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { DataService, SharedModule } from '@vendure/admin-ui/core';
 import { gql } from 'graphql-tag';
 
-const GET_VARIANT_WITH_PRODUCT = gql`
-  query GetVariantWithProduct($id: ID!) {
-    productVariant(id: $id) {
+const GET_PRODUCT = gql`
+  query GetProduct($id: ID!) {
+    product(id: $id) {
       id
-      product {
-        id
-        customFields {
-          isBundle
-          bundleId
-        }
+      name
+      customFields {
+        isBundle
+        bundleId
       }
     }
   }
@@ -29,7 +27,14 @@ const GET_VARIANT_WITH_PRODUCT = gql`
         <clr-spinner>Loading...</clr-spinner>
       </div>
 
-      <div *ngIf="!loading && !isBundle" class="bundle-not-configured">
+      <div *ngIf="!loading && !productId" class="bundle-not-configured">
+        <vdr-alert type="warning">
+          <h3>Product Not Saved</h3>
+          <p>Please save this product before configuring bundle settings.</p>
+        </vdr-alert>
+      </div>
+
+      <div *ngIf="!loading && productId && !isBundle" class="bundle-not-configured">
         <vdr-alert type="info">
           <h3>This product is not configured as a bundle</h3>
           <p>To manage bundles, first mark this product as a bundle in the product settings.</p>
@@ -54,8 +59,8 @@ const GET_VARIANT_WITH_PRODUCT = gql`
   `]
 })
 export class BundleVariantTabComponent implements OnInit {
-  variantId!: string;
   productId!: string;
+  productName!: string;
   isBundle = false;
   bundleId?: string;
   loading = true;
@@ -69,11 +74,12 @@ export class BundleVariantTabComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.variantId = this.route.parent?.snapshot.params['id'];
+    this.productId = this.route.parent?.snapshot.params['id'];
     
-    if (!this.variantId) {
-      console.error('BundleVariantTab: No variantId found in route');
+    if (!this.productId || this.productId === 'create') {
+      console.error('BundleVariantTab: Product not saved yet');
       this.loading = false;
+      this.isBundle = false;
       return;
     }
 
@@ -94,14 +100,14 @@ export class BundleVariantTabComponent implements OnInit {
   }
 
   private loadProductContext() {
-    this.dataService.query(GET_VARIANT_WITH_PRODUCT, { id: this.variantId })
-      .mapStream((data: any) => data.productVariant)
+    this.dataService.query(GET_PRODUCT, { id: this.productId })
+      .mapStream((data: any) => data.product)
       .subscribe({
-        next: (variant) => {
-          if (variant) {
-            this.productId = variant.product.id;
-            this.isBundle = variant.product.customFields?.isBundle || false;
-            this.bundleId = variant.product.customFields?.bundleId;
+        next: (product) => {
+          if (product) {
+            this.productName = product.name;
+            this.isBundle = product.customFields?.isBundle || false;
+            this.bundleId = product.customFields?.bundleId;
             
             // Auto-navigate to bundle form
             const url = this.router.url;
@@ -110,7 +116,7 @@ export class BundleVariantTabComponent implements OnInit {
               if (this.bundleId) {
                 this.router.navigate([this.bundleId], { relativeTo: this.route });
               } else {
-                this.router.navigate(['create'], { relativeTo: this.route, queryParams: { productId: this.productId } });
+                this.router.navigate(['create'], { relativeTo: this.route, queryParams: { productName: this.productName } });
               }
             }
           }
