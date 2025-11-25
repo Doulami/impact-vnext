@@ -13,7 +13,7 @@ import { BundleLifecycleService } from './services/bundle-lifecycle.service';
 import { BundleReservationService } from './services/bundle-reservation.service';
 import { BundlePromotionSetupService } from './services/bundle-promotion-setup.service';
 import { ShopApiBundleResolver, AdminApiBundleResolver } from './api/bundle-v3.resolver';
-import { BundleAdminResolver } from './api/bundle-admin.resolver';
+import { BundleAdminResolver, BundleEntityResolver } from './api/bundle-admin.resolver';
 import { applyBundleLineAdjustments } from './promotions/bundle-line-adjustment.action';
 import { hasBundleLines } from './promotions/has-bundle-lines.condition';
 import { bundleAwarePercentageDiscount } from './promotions/bundle-aware-percentage-discount.action';
@@ -44,6 +44,7 @@ import { BundleTranslationService } from './services/bundle-translation.service'
 @VendurePlugin({
     imports: [PluginCommonModule, ScheduleModule.forRoot()],
     compatibility: '^3.5.0',
+    dashboard: './dashboard/bundle.index.tsx',
     
     // Register custom entities
     entities: [Bundle, BundleItem],
@@ -239,9 +240,6 @@ import { BundleTranslationService } from './services/bundle-translation.service'
                 adjustBundleInOrder(bundleKey: String!, quantity: Int!): Order
                 removeBundleFromOrder(bundleKey: String!): Order
                 publishBundle(id: ID!): BundleLifecycleResult!
-                archiveBundle(id: ID!, reason: String): BundleLifecycleResult!
-                markBundleBroken(id: ID!, reason: String!): BundleLifecycleResult!
-                restoreBundle(id: ID!): BundleLifecycleResult!
             }
 
             extend type Order {
@@ -252,7 +250,7 @@ import { BundleTranslationService } from './services/bundle-translation.service'
     },
 
     adminApiExtensions: {
-        resolvers: [BundleAdminResolver, AdminApiBundleResolver, BundleJobQueueResolver],
+        resolvers: [BundleAdminResolver, BundleEntityResolver, AdminApiBundleResolver, BundleJobQueueResolver],
         schema: gql`
             type Bundle implements Node {
                 id: ID!
@@ -281,6 +279,8 @@ import { BundleTranslationService } from './services/bundle-translation.service'
                 items: [BundleItem!]!
                 # Computed fields
                 isAvailable: Boolean!
+                isExpired: Boolean!
+                isBroken: Boolean!
                 effectivePrice: Money!
                 totalSavings: Money!
             }
@@ -345,16 +345,22 @@ import { BundleTranslationService } from './services/bundle-translation.service'
                 getBundleUsageStats: AdminBundleUsageStats!
             }
 
+            type BundleActivationResponse {
+                success: Boolean!
+                message: String
+            }
+            
             extend type Mutation {
                 createBundle(input: CreateBundleInput!): Bundle!
                 updateBundle(input: UpdateBundleInput!): Bundle!
                 deleteBundle(id: ID!): BundleDeletionResponse!
                 
+                # Bundle activation/deactivation
+                activateProductAsBundle(productId: ID!): BundleActivationResponse!
+                removeProductBundle(productId: ID!, bundleId: ID!): BundleActivationResponse!
+                
                 # Bundle v2 lifecycle operations
                 publishBundle(id: ID!): Bundle!
-                archiveBundle(id: ID!, reason: String): Bundle!
-                markBundleBroken(id: ID!, reason: String!): Bundle!
-                restoreBundle(id: ID!): Bundle!
                 
                 # Phase 4.2: Bundle validation and safety (moved to Query)
                 
@@ -803,6 +809,5 @@ export * from './services/bundle-safety.service';
 export * from './services/bundle-lifecycle.service';
 export * from './promotions/bundle-promotion-interceptor';
 export * from './types/bundle-config.types';
-export * from './ui/bundle-ui-extension';
 
 // Type declarations in types/custom-fields.d.ts are automatically loaded by TypeScript

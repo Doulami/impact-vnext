@@ -214,9 +214,6 @@ export const GET_PRODUCT_BY_SLUG = gql`
       customFields {
         isBundle
         bundleId
-        bundlePrice
-        bundleAvailability
-        bundleComponents
       }
       optionGroups {
         id

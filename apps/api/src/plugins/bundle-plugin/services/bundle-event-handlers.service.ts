@@ -234,11 +234,9 @@ export class BundleEventHandlersService implements OnModuleInit {
             );
             
             // Status changes that require immediate recomputation
+            // Only DRAFT->ACTIVE is valid now (bundles are hard-deleted, not archived)
             const immediateRecomputation = [
-                'DRAFT->ACTIVE',
-                'ACTIVE->BROKEN',
-                'BROKEN->ACTIVE',
-                'ACTIVE->ARCHIVED'
+                'DRAFT->ACTIVE'
             ];
             
             const statusTransition = `${event.oldStatus}->${event.newStatus}`;

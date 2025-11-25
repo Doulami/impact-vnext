@@ -72,9 +72,6 @@ interface Product {
   customFields?: {
     isBundle?: boolean;
     bundleId?: string;
-    bundlePrice?: number;
-    bundleAvailability?: number;
-    bundleComponents?: string;
   };
   optionGroups: ProductOptionGroup[];
   variants: ProductVariant[];
@@ -218,7 +215,7 @@ export default function ProductDetailPage() {
         originalPrice: componentTotal,
         image: product.featuredAsset?.preview || '/product-placeholder.svg',
         slug: product.slug,
-        inStock: (product.customFields?.bundleAvailability || 0) > 0,
+        inStock: bundle.items.length > 0, // Bundle is in stock if it has components
         quantity: quantity,
         isBundle: true,
         bundleId: bundleId,

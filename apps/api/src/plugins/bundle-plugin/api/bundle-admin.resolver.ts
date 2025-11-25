@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ResolveField, Parent } from '@nestjs/graphql';
 import { Transaction, Allow, Permission, RequestContext, ID, Logger, Ctx } from '@vendure/core';
 import { BundleService } from '../services/bundle.service';
 import { BundleConfigService } from '../services/bundle-config.service';
@@ -78,7 +78,8 @@ export class BundleAdminResolver {
                 this.validateBundleItems(args.input.items);
             }
 
-            return await this.bundleService.update(ctx, args.input);
+            const result = await this.bundleService.update(ctx, args.input);
+            return result;
         } catch (error) {
             throw new Error(
                 error instanceof Error 
@@ -107,6 +108,50 @@ export class BundleAdminResolver {
             return {
                 result: 'NOT_DELETED' as any,
                 message: error instanceof Error ? error.message : 'Failed to delete bundle',
+            };
+        }
+    }
+
+    /**
+     * Activate a product as a bundle
+     * Sets isBundle=true and links/creates bundle
+     */
+    @Mutation()
+    @Transaction()
+    @Allow(Permission.UpdateCatalog)
+    async activateProductAsBundle(
+        @Ctx() ctx: RequestContext,
+        @Args() args: { productId: ID }
+    ): Promise<{ success: boolean; message?: string }> {
+        try {
+            await this.bundleService.activateProductAsBundle(ctx, args.productId);
+            return { success: true };
+        } catch (error) {
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : 'Failed to activate bundle'
+            };
+        }
+    }
+
+    /**
+     * Remove a product bundle
+     * Hard deletes bundle entity and clears isBundle/bundleId fields
+     */
+    @Mutation()
+    @Transaction()
+    @Allow(Permission.UpdateCatalog)
+    async removeProductBundle(
+        @Ctx() ctx: RequestContext,
+        @Args() args: { productId: ID; bundleId: ID }
+    ): Promise<{ success: boolean; message?: string }> {
+        try {
+            await this.bundleService.removeProductBundle(ctx, args.productId, args.bundleId);
+            return { success: true };
+        } catch (error) {
+            return {
+                success: false,
+                message: error instanceof Error ? error.message : 'Failed to remove bundle'
             };
         }
     }
@@ -238,6 +283,28 @@ export class BundleAdminResolver {
                 throw new Error('Component unit prices cannot be negative');
             }
         }
+    }
+}
+
+/**
+ * Bundle Entity Field Resolver
+ * Resolves computed properties on Bundle entity
+ */
+@Resolver('Bundle')
+export class BundleEntityResolver {
+    @ResolveField()
+    isExpired(@Parent() bundle: Bundle): boolean {
+        return bundle.isExpired;
+    }
+
+    @ResolveField()
+    isBroken(@Parent() bundle: Bundle): boolean {
+        return bundle.isBroken;
+    }
+
+    @ResolveField()
+    isAvailable(@Parent() bundle: Bundle): boolean {
+        return bundle.isAvailable;
     }
 }
 

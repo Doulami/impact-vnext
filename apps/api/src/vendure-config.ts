@@ -16,10 +16,11 @@ import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
 import 'dotenv/config';
 import path from 'path';
 import { CustomerAdminVerificationPlugin } from './plugins/customer-admin-verification.plugin';
-import { BundlePlugin, bundleUiExtension } from './plugins/bundle-plugin/bundle.plugin';
-import { RewardPointsPlugin, rewardPointsUiExtension } from './plugins/reward-points-plugin';
+import { BundlePlugin } from './plugins/bundle-plugin/bundle.plugin';
+import { RewardPointsPlugin } from './plugins/reward-points-plugin';
 import { FeaturedCollectionPlugin } from './plugins/featured-collection.plugin';
 import { autoExpireBundlesTask } from './plugins/bundle-plugin/tasks/auto-expire-bundles.task';
+import { bundleConsistencyCheckTask } from './plugins/bundle-plugin/tasks/bundle-consistency-check.task';
 import { NutritionBatchPlugin, nutritionBatchUiExtension } from './plugins/nutrition-batch-plugin/nutrition-batch.plugin';
 import { ClicToPayPlugin } from './plugins/clictopay-plugin/clictopay.plugin';
 
@@ -73,6 +74,7 @@ export const config: VendureConfig = {
         // Register scheduled tasks for Admin UI visibility
         tasks: [
             autoExpireBundlesTask,
+            bundleConsistencyCheckTask,
         ],
     },
     paymentOptions: {
@@ -89,47 +91,17 @@ export const config: VendureConfig = {
                 nullable: true, 
                 defaultValue: false, 
                 label: [{ languageCode: LanguageCode.en, value: 'Is Bundle' }], 
-                description: [{ languageCode: LanguageCode.en, value: 'Marks this product as a bundle shell for SEO/PLP' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Managed by Bundle plugin – use Configure/Remove Bundle buttons in dashboard' }],
                 public: true,
-                readonly: false // Editable for activation, but managed via Bundle tab
+                readonly: true,
+                ui: { component: 'readonly-text-form-input' }
             },
             { 
                 name: 'bundleId', 
                 type: 'string', 
                 nullable: true, 
                 label: [{ languageCode: LanguageCode.en, value: 'Bundle ID' }], 
-                description: [{ languageCode: LanguageCode.en, value: 'Managed by Bundle plugin – see Bundle tab' }],
-                public: true,
-                readonly: true,
-                ui: { component: 'readonly-text-form-input' }
-            },
-            // Phase 5: Shell sync fields (all readonly - managed by Bundle plugin)
-            { 
-                name: 'bundlePrice', 
-                type: 'int', 
-                nullable: true, 
-                label: [{ languageCode: LanguageCode.en, value: 'Bundle Price' }], 
-                description: [{ languageCode: LanguageCode.en, value: 'Computed bundle price (cents, synced from Bundle) – see Bundle tab' }],
-                public: true,
-                readonly: true,
-                ui: { component: 'readonly-text-form-input' }
-            },
-            { 
-                name: 'bundleAvailability', 
-                type: 'int', 
-                nullable: true, 
-                label: [{ languageCode: LanguageCode.en, value: 'Bundle Availability' }], 
-                description: [{ languageCode: LanguageCode.en, value: 'Computed availability (synced from Bundle) – see Bundle tab' }],
-                public: true,
-                readonly: true,
-                ui: { component: 'readonly-text-form-input' }
-            },
-            { 
-                name: 'bundleComponents', 
-                type: 'string', 
-                nullable: true, 
-                label: [{ languageCode: LanguageCode.en, value: 'Bundle Components' }], 
-                description: [{ languageCode: LanguageCode.en, value: 'JSON: [{variantId, qty}] (managed by Bundle plugin) – see Bundle tab' }],
+                description: [{ languageCode: LanguageCode.en, value: 'Managed automatically by Bundle plugin' }],
                 public: true,
                 readonly: true,
                 ui: { component: 'readonly-text-form-input' }
@@ -190,8 +162,8 @@ export const config: VendureConfig = {
                               extensionPath: path.join(__dirname, '../ui-extensions'),
                               providers: ['providers.ts'],
                           },
-                          bundleUiExtension,
-                          rewardPointsUiExtension,
+                          // bundleUiExtension, // Removed - migrated to React Dashboard
+                          // rewardPointsUiExtension, // Removed - migrated to React Dashboard
                           nutritionBatchUiExtension,
                       ],
                       devMode: true,
