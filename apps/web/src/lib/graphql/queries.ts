@@ -218,6 +218,16 @@ export const GET_PRODUCT_BY_SLUG = gql`
         bundleAvailability
         bundleComponents
       }
+      optionGroups {
+        id
+        name
+        code
+        options {
+          id
+          name
+          code
+        }
+      }
       variants {
         id
         name
@@ -228,6 +238,12 @@ export const GET_PRODUCT_BY_SLUG = gql`
         featuredAsset {
           id
           preview
+        }
+        options {
+          id
+          name
+          code
+          groupId
         }
         currentNutritionBatch {
           ...NutritionBatchFields

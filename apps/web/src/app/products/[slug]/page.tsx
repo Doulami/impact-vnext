@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import React, { useState, Fragment } from 'react';
+import React, { useState, Fragment, useEffect } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { GET_PRODUCT_BY_SLUG, GET_BUNDLE } from '@/lib/graphql/queries';
 import { Star, Heart, Share2, Truck, Shield, RotateCcw, Plus, Minus, ArrowLeft, ShoppingCart, Package, ChevronDown } from 'lucide-react';
@@ -16,6 +16,24 @@ import Footer from '@/components/Footer';
 import Button from '@/components/Button';
 import type { Bundle, BundleItem, NutritionBatch } from '@/lib/types/product';
 
+interface ProductOption {
+  id: string;
+  name: string;
+  code: string;
+  groupId: string;
+}
+
+interface ProductOptionGroup {
+  id: string;
+  name: string;
+  code: string;
+  options: Array<{
+    id: string;
+    name: string;
+    code: string;
+  }>;
+}
+
 interface ProductVariant {
   id: string;
   name: string;
@@ -27,6 +45,7 @@ interface ProductVariant {
     id: string;
     preview: string;
   };
+  options: ProductOption[];
   currentNutritionBatch?: NutritionBatch;
 }
 
@@ -57,6 +76,7 @@ interface Product {
     bundleAvailability?: number;
     bundleComponents?: string;
   };
+  optionGroups: ProductOptionGroup[];
   variants: ProductVariant[];
 }
 
@@ -69,6 +89,7 @@ export default function ProductDetailPage() {
   const { language } = useLanguage();
   
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
+  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedBundleComponentIndex, setSelectedBundleComponentIndex] = useState(0);
@@ -104,22 +125,78 @@ export default function ProductDetailPage() {
   const bundle = bundleData?.bundle;
   const loading = productLoading;
   const error = productError;
-  const selectedVariant = product?.variants.find(v => v.id === selectedVariantId) || product?.variants[0];
+  
+  // Helper function to find variant by selected options
+  const findVariantByOptions = (optionsMap: Record<string, string>) => {
+    if (!product?.variants) return null;
+    
+    return product.variants.find(variant => {
+      // Check if this variant matches all selected options
+      return Object.entries(optionsMap).every(([groupId, optionId]) => {
+        return variant.options.some(opt => opt.groupId === groupId && opt.id === optionId);
+      });
+    });
+  };
+  
+  // Get selected variant based on selected options
+  const selectedVariant = selectedVariantId 
+    ? product?.variants.find(v => v.id === selectedVariantId)
+    : findVariantByOptions(selectedOptions) || product?.variants[0];
 
-  // Set default variant when product loads
-  if (product && !selectedVariantId && product.variants.length > 0) {
-    setSelectedVariantId(product.variants[0].id);
+  // Initialize default options when product loads
+  if (product && Object.keys(selectedOptions).length === 0 && product.variants.length > 0 && product.optionGroups?.length > 0) {
+    const defaultVariant = product.variants[0];
+    const defaultOptionsMap: Record<string, string> = {};
+    
+    defaultVariant.options.forEach(opt => {
+      defaultOptionsMap[opt.groupId] = opt.id;
+    });
+    
+    setSelectedOptions(defaultOptionsMap);
+    setSelectedVariantId(defaultVariant.id);
   }
 
   // Get images from product (works for both regular products and bundle shells)
-  const allImages = [
-    product?.featuredAsset?.preview,
-    ...(product?.assets?.map(a => a.preview) || []),
-    ...(product?.variants.map(v => v.featuredAsset?.preview).filter(Boolean) || [])
-  ].filter(Boolean) as string[];
+  // For regular products with variants, prioritize selected variant's image
+  const getProductImages = () => {
+    const imageList: string[] = [];
+    
+    // For non-bundle products, show selected variant image first if available
+    if (!isBundle && selectedVariant?.featuredAsset?.preview) {
+      imageList.push(selectedVariant.featuredAsset.preview);
+    }
+    
+    // Add product featured asset
+    if (product?.featuredAsset?.preview) {
+      imageList.push(product.featuredAsset.preview);
+    }
+    
+    // Add other product assets
+    if (product?.assets) {
+      imageList.push(...product.assets.map(a => a.preview));
+    }
+    
+    // Add other variant images (excluding the selected one)
+    if (product?.variants) {
+      product.variants.forEach(v => {
+        if (v.featuredAsset?.preview && v.id !== selectedVariant?.id) {
+          imageList.push(v.featuredAsset.preview);
+        }
+      });
+    }
+    
+    // Deduplicate and filter out undefined
+    return Array.from(new Set(imageList.filter(Boolean)));
+  };
   
-  // Deduplicate images by URL
-  const images = Array.from(new Set(allImages));
+  const images = getProductImages();
+  
+  // Reset image index to 0 when variant changes (to show variant image)
+  useEffect(() => {
+    if (!isBundle && selectedVariant) {
+      setSelectedImageIndex(0);
+    }
+  }, [selectedVariant?.id, isBundle]);
 
   const handleQuantityChange = (delta: number) => {
     setQuantity(Math.max(1, quantity + delta));
@@ -727,25 +804,47 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* Variant Selection */}
-            {product?.variants && product.variants.length > 1 && (
-              <div>
-                <h3 className="font-semibold mb-3">Variant:</h3>
-                <div className="flex flex-wrap gap-2">
-                  {product?.variants?.map((variant) => (
-                    <button
-                      key={variant.id}
-                      onClick={() => setSelectedVariantId(variant.id)}
-                      className={`px-4 py-2 rounded border text-sm font-medium ${
-                        selectedVariantId === variant.id
-                          ? 'border-black bg-black text-white'
-                          : 'border-gray-300 bg-white text-black hover:border-gray-400'
-                      }`}
-                    >
-                      {variant.name}
-                    </button>
-                  ))}
-                </div>
+            {/* Variant Selection - Dropdown per Option Group */}
+            {!isBundle && product?.optionGroups && product.optionGroups.length > 0 && (
+              <div className="space-y-4">
+                {product.optionGroups.map((optionGroup) => {
+                  const selectedOptionId = selectedOptions[optionGroup.id];
+                  const selectedOption = optionGroup.options.find(opt => opt.id === selectedOptionId);
+                  
+                  return (
+                    <div key={optionGroup.id}>
+                      <label className="block text-sm font-semibold mb-2">
+                        {optionGroup.name}:
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={selectedOptionId || ''}
+                          onChange={(e) => {
+                            const newOptions = {
+                              ...selectedOptions,
+                              [optionGroup.id]: e.target.value
+                            };
+                            setSelectedOptions(newOptions);
+                            
+                            // Find matching variant
+                            const matchingVariant = findVariantByOptions(newOptions);
+                            if (matchingVariant) {
+                              setSelectedVariantId(matchingVariant.id);
+                            }
+                          }}
+                          className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg bg-white text-base font-medium focus:ring-2 focus:ring-black focus:border-transparent appearance-none cursor-pointer"
+                        >
+                          {optionGroup.options.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.name}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 pointer-events-none" />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
             
