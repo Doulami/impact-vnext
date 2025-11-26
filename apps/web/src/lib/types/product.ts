@@ -226,6 +226,12 @@ export interface BundleItem {
       id: string;
       preview: string;
     };
+    options: Array<{
+      id: string;
+      name: string;
+      code: string;
+      groupId: string;
+    }>;
     product: {
       id: string;
       name: string;
@@ -234,6 +240,34 @@ export interface BundleItem {
         id: string;
         preview: string;
       };
+      optionGroups?: Array<{
+        id: string;
+        code: string;
+        name: string;
+        options: Array<{
+          id: string;
+          code: string;
+          name: string;
+        }>;
+      }>;
+      variants?: Array<{
+        id: string;
+        name: string;
+        sku: string;
+        price: number;
+        priceWithTax: number;
+        stockLevel: string;
+        featuredAsset?: {
+          id: string;
+          preview: string;
+        };
+        options: Array<{
+          id: string;
+          name: string;
+          code: string;
+          groupId: string;
+        }>;
+      }>;
     };
     currentNutritionBatch?: NutritionBatch;
   };

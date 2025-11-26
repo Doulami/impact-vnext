@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import React, { useState, Fragment, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { GET_PRODUCT_BY_SLUG, GET_BUNDLE } from '@/lib/graphql/queries';
 import { Star, Heart, Share2, Truck, Shield, RotateCcw, Plus, Minus, ArrowLeft, ShoppingCart, Package, ChevronDown } from 'lucide-react';
@@ -338,6 +338,7 @@ export default function ProductDetailPage() {
   const price = selectedVariant?.priceWithTax || 0;
   
   // Calculate component total for display (use priceWithTax from variants for consistency)
+  // NOTE: This is for display only - shows the original component prices, not selected variants
   const componentTotal = isBundle && bundle
     ? bundle.items.reduce((sum, item) => sum + (item.productVariant.priceWithTax * item.quantity), 0)
     : 0;
@@ -836,26 +837,60 @@ export default function ProductDetailPage() {
                   {[...bundle.items]
                     .sort((a, b) => a.displayOrder - b.displayOrder)
                     .map((item) => {
+                      // Get the selected variant ID (or default to the item's original variant)
+                      const currentVariantId = bundleComponentVariants[item.id] || item.productVariant.id;
+                      // Find the full variant object from the product's variants
+                      const currentVariant = item.productVariant.product?.variants?.find(v => v.id === currentVariantId) || item.productVariant;
+                      
                       // Use priceWithTax for consistency with regular products (already in cents)
-                      const itemTotal = item.productVariant.priceWithTax * item.quantity;
-                      const itemImage = item.productVariant.featuredAsset?.preview || item.productVariant.product?.featuredAsset?.preview;
+                      const itemTotal = currentVariant.priceWithTax * item.quantity;
+                      const itemImage = currentVariant.featuredAsset?.preview || item.productVariant.product?.featuredAsset?.preview;
+                      const hasMultipleVariants = (item.productVariant.product?.variants?.length || 0) > 1;
+                      
                       return (
-                        <div key={item.id} className="flex items-center gap-4 p-3 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
-                          <div className="w-14 h-14 bg-gray-50 rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
-                            {itemImage ? (
-                              <img src={itemImage} alt={item.productVariant.name} className="w-full h-full object-cover" />
-                            ) : (
-                              <Package className="w-8 h-8 text-gray-400" />
-                            )}
+                        <div key={item.id} className="p-3 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+                          <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 bg-gray-50 rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {itemImage ? (
+                                <img src={itemImage} alt={currentVariant.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <Package className="w-8 h-8 text-gray-400" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-sm">{item.productVariant.product?.name || currentVariant.name}</h4>
+                              {hasMultipleVariants && (
+                                <p className="text-xs text-gray-500 mt-0.5">{currentVariant.name}</p>
+                              )}
+                              {!hasMultipleVariants && (
+                                <p className="text-xs text-gray-500 mt-0.5">SKU: {currentVariant.sku}</p>
+                              )}
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <div className="text-sm font-medium">${(itemTotal / 100).toFixed(2)}</div>
+                              <div className="text-xs text-gray-500">Qty: {item.quantity}</div>
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-sm">{item.productVariant.name}</h4>
-                            <p className="text-xs text-gray-500 mt-0.5">SKU: {item.productVariant.sku}</p>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <div className="text-sm font-medium">${(itemTotal / 100).toFixed(2)}</div>
-                            <div className="text-xs text-gray-500">Qty: {item.quantity}</div>
-                          </div>
+                          
+                          {/* Variant Selector - Show if product has multiple variants */}
+                          {hasMultipleVariants && item.productVariant.product?.optionGroups && (
+                            <div className="mt-3 pt-3 border-t border-gray-100">
+                              <VariantSelector
+                                optionGroups={item.productVariant.product.optionGroups}
+                                variants={item.productVariant.product.variants!}
+                                selectedOptions={currentVariant.options.reduce((acc, opt) => {
+                                  acc[opt.groupId] = opt.id;
+                                  return acc;
+                                }, {} as Record<string, string>)}
+                                onVariantChange={(variantId) => {
+                                  setBundleComponentVariants(prev => ({
+                                    ...prev,
+                                    [item.id]: variantId
+                                  }));
+                                }}
+                              />
+                            </div>
+                          )}
                         </div>
                       );
                     })}
