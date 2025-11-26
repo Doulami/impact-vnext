@@ -238,5 +238,8 @@ msgstr "ابدأ الكتابة للبحث عن منتجات"
 msgid "Qty"
 msgstr "الكمية"
 
-msgid "{selectedVariants.size} variant(s) selected"
-msgstr "{selectedVariants.size} متغير(ات) محددة"
+msgid "{product.variants.length} variants"
+msgstr "{product.variants.length} متغيرات"
+
+msgid "{selectedVariants.size} variants selected"
+msgstr "{selectedVariants.size} متغيرات محددة"

@@ -329,5 +329,8 @@ msgstr "Commencez à taper pour rechercher des produits"
 msgid "Qty"
 msgstr "Qté"
 
-msgid "{selectedVariants.size} variant(s) selected"
-msgstr "{selectedVariants.size} variante(s) sélectionnée(s)"
+msgid "{product.variants.length} variants"
+msgstr "{product.variants.length} variantes"
+
+msgid "{selectedVariants.size} variants selected"
+msgstr "{selectedVariants.size} variantes sélectionnées"

@@ -329,5 +329,8 @@ msgstr "Start typing to search for products"
 msgid "Qty"
 msgstr "Qty"
 
-msgid "{selectedVariants.size} variant(s) selected"
-msgstr "{selectedVariants.size} variant(s) selected"
+msgid "{product.variants.length} variants"
+msgstr "{product.variants.length} variants"
+
+msgid "{selectedVariants.size} variants selected"
+msgstr "{selectedVariants.size} variants selected"

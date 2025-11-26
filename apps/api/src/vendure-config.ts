@@ -90,8 +90,16 @@ export const config: VendureConfig = {
                 type: 'boolean', 
                 nullable: true, 
                 defaultValue: false, 
-                label: [{ languageCode: LanguageCode.en, value: 'Is Bundle' }], 
-                description: [{ languageCode: LanguageCode.en, value: 'Managed by Bundle plugin – use Configure/Remove Bundle buttons in dashboard' }],
+                label: [
+                    { languageCode: LanguageCode.en, value: 'Is Bundle' },
+                    { languageCode: LanguageCode.fr, value: 'Est un produit groupé' },
+                    { languageCode: LanguageCode.ar, value: 'منتج مجمّع' }
+                ], 
+                description: [
+                    { languageCode: LanguageCode.en, value: 'Managed by Bundle plugin – use Configure/Remove Bundle buttons in dashboard' },
+                    { languageCode: LanguageCode.fr, value: 'Géré par le plugin Bundle – utilisez les boutons Configurer/Supprimer dans le tableau de bord' },
+                    { languageCode: LanguageCode.ar, value: 'يُدار بواسطة ملحق الحزم - استخدم أزرار التكوين/الإزالة في لوحة التحكم' }
+                ],
                 public: true,
                 readonly: true,
                 ui: { component: 'readonly-text-form-input' }
@@ -100,8 +108,16 @@ export const config: VendureConfig = {
                 name: 'bundleId', 
                 type: 'string', 
                 nullable: true, 
-                label: [{ languageCode: LanguageCode.en, value: 'Bundle ID' }], 
-                description: [{ languageCode: LanguageCode.en, value: 'Managed automatically by Bundle plugin' }],
+                label: [
+                    { languageCode: LanguageCode.en, value: 'Bundle ID' },
+                    { languageCode: LanguageCode.fr, value: 'ID du produit groupé' },
+                    { languageCode: LanguageCode.ar, value: 'معرف المنتج المجمّع' }
+                ], 
+                description: [
+                    { languageCode: LanguageCode.en, value: 'Managed automatically by Bundle plugin' },
+                    { languageCode: LanguageCode.fr, value: 'Géré automatiquement par le plugin Bundle' },
+                    { languageCode: LanguageCode.ar, value: 'يُدار تلقائياً بواسطة ملحق الحزم' }
+                ],
                 public: true,
                 readonly: true,
                 ui: { component: 'readonly-text-form-input' }

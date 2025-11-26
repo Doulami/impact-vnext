@@ -672,7 +672,7 @@ function AddComponentsDialog({ isOpen, onClose, onAdd, existingVariantIds }: Add
                                     <div className="flex-1">
                                         <div className="font-medium">{product.productName}</div>
                                         <div className="text-xs text-muted-foreground">
-                                            {product.variants.length} variants
+                                            <Trans>{product.variants.length} variants</Trans>
                                         </div>
                                     </div>
                                     <Button
@@ -724,7 +724,7 @@ function AddComponentsDialog({ isOpen, onClose, onAdd, existingVariantIds }: Add
 
                 <div className="p-4 border-t flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">
-                        <Trans>{selectedVariants.size} variant(s) selected</Trans>
+                        <Trans>{selectedVariants.size} variants selected</Trans>
                     </span>
                     <div className="flex gap-2">
                         <Button variant="outline" onClick={onClose}>

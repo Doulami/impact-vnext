@@ -143,7 +143,8 @@ export class NutritionBatchRowService {
             {
                 translations: [
                     { languageCode: LanguageCode.en, name: 'Energy' },
-                    { languageCode: LanguageCode.fr, name: 'Énergie' }
+                    { languageCode: LanguageCode.fr, name: 'Énergie' },
+                    { languageCode: LanguageCode.ar, name: 'الطاقة' }
                 ],
                 group: NutrientGroup.MACRO,
                 unit: 'kcal',
@@ -152,7 +153,8 @@ export class NutritionBatchRowService {
             {
                 translations: [
                     { languageCode: LanguageCode.en, name: 'Energy' },
-                    { languageCode: LanguageCode.fr, name: 'Énergie' }
+                    { languageCode: LanguageCode.fr, name: 'Énergie' },
+                    { languageCode: LanguageCode.ar, name: 'الطاقة' }
                 ],
                 group: NutrientGroup.MACRO,
                 unit: 'kJ',
@@ -161,7 +163,8 @@ export class NutritionBatchRowService {
             {
                 translations: [
                     { languageCode: LanguageCode.en, name: 'Fat' },
-                    { languageCode: LanguageCode.fr, name: 'Matières grasses' }
+                    { languageCode: LanguageCode.fr, name: 'Matières grasses' },
+                    { languageCode: LanguageCode.ar, name: 'الدهون' }
                 ],
                 group: NutrientGroup.MACRO,
                 unit: 'g',
@@ -170,7 +173,8 @@ export class NutritionBatchRowService {
             {
                 translations: [
                     { languageCode: LanguageCode.en, name: 'Carbohydrates' },
-                    { languageCode: LanguageCode.fr, name: 'Glucides' }
+                    { languageCode: LanguageCode.fr, name: 'Glucides' },
+                    { languageCode: LanguageCode.ar, name: 'الكربوهيدرات' }
                 ],
                 group: NutrientGroup.MACRO,
                 unit: 'g',
@@ -179,7 +183,8 @@ export class NutritionBatchRowService {
             {
                 translations: [
                     { languageCode: LanguageCode.en, name: 'Protein' },
-                    { languageCode: LanguageCode.fr, name: 'Protéines' }
+                    { languageCode: LanguageCode.fr, name: 'Protéines' },
+                    { languageCode: LanguageCode.ar, name: 'البروتين' }
                 ],
                 group: NutrientGroup.MACRO,
                 unit: 'g',
@@ -188,7 +193,8 @@ export class NutritionBatchRowService {
             {
                 translations: [
                     { languageCode: LanguageCode.en, name: 'Salt' },
-                    { languageCode: LanguageCode.fr, name: 'Sel' }
+                    { languageCode: LanguageCode.fr, name: 'Sel' },
+                    { languageCode: LanguageCode.ar, name: 'الملح' }
                 ],
                 group: NutrientGroup.MACRO,
                 unit: 'g',
