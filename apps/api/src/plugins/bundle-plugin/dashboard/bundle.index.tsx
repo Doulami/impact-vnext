@@ -106,6 +106,15 @@ const bundleQuery = graphql(`
                     id
                     name
                     sku
+                    product {
+                        id
+                        name
+                        slug
+                        featuredAsset {
+                            id
+                            preview
+                        }
+                    }
                 }
                 quantity
                 displayOrder
@@ -192,6 +201,37 @@ const searchProductVariantsQuery = graphql(`
                         value
                     }
                 }
+            }
+        }
+    }
+`);
+
+const searchProductsQuery = graphql(`
+    query SearchProducts($term: String!, $take: Int) {
+        search(input: { term: $term, take: $take, groupByProduct: true }) {
+            items {
+                productId
+                productName
+                slug
+                productAsset {
+                    id
+                    preview
+                }
+            }
+        }
+    }
+`);
+
+const getProductWithVariantsQuery = graphql(`
+    query GetProductWithVariants($id: ID!) {
+        product(id: $id) {
+            id
+            name
+            variants {
+                id
+                name
+                sku
+                price
             }
         }
     }
@@ -386,6 +426,231 @@ function BundleStatusBlock({ context }: ProductBlockProps) {
 }
 
 // ============================================================================
+// Add Components Dialog
+// ============================================================================
+
+interface AddComponentsDialogProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onAdd: (variants: Array<{ variantId: string; variantName: string; quantity: number }>) => void;
+}
+
+function AddComponentsDialog({ isOpen, onClose, onAdd }: AddComponentsDialogProps) {
+    const { _ } = useLingui();
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [selectedVariants, setSelectedVariants] = useState<Map<string, { name: string; quantity: number }>>(new Map());
+    const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
+
+    const handleSearch = async (term: string) => {
+        setSearchTerm(term);
+        if (!term || term.length < 2) {
+            setSearchResults([]);
+            return;
+        }
+        try {
+            const data = await api.query(searchProductsQuery, { term, take: 20 });
+            const resultsWithVariants = await Promise.all(
+                (data.search?.items || []).map(async (item: any) => {
+                    const productData = await api.query(getProductWithVariantsQuery, { id: item.productId });
+                    return {
+                        ...item,
+                        variants: productData.product?.variants || []
+                    };
+                })
+            );
+            setSearchResults(resultsWithVariants);
+        } catch (error) {
+            console.error('Failed to search:', error);
+        }
+    };
+
+    const toggleProduct = (productId: string) => {
+        const newExpanded = new Set(expandedProducts);
+        if (newExpanded.has(productId)) {
+            newExpanded.delete(productId);
+        } else {
+            newExpanded.add(productId);
+        }
+        setExpandedProducts(newExpanded);
+    };
+
+    const toggleVariant = (variantId: string, variantName: string) => {
+        const newSelected = new Map(selectedVariants);
+        if (newSelected.has(variantId)) {
+            newSelected.delete(variantId);
+        } else {
+            newSelected.set(variantId, { name: variantName, quantity: 1 });
+        }
+        setSelectedVariants(newSelected);
+    };
+
+    const toggleAllVariants = (product: any) => {
+        const newSelected = new Map(selectedVariants);
+        const allSelected = product.variants.every((v: any) => newSelected.has(v.id));
+        
+        if (allSelected) {
+            // Deselect all
+            product.variants.forEach((v: any) => newSelected.delete(v.id));
+        } else {
+            // Select all
+            product.variants.forEach((v: any) => {
+                if (!newSelected.has(v.id)) {
+                    newSelected.set(v.id, { name: v.name, quantity: 1 });
+                }
+            });
+        }
+        setSelectedVariants(newSelected);
+    };
+
+    const updateQuantity = (variantId: string, quantity: number) => {
+        const newSelected = new Map(selectedVariants);
+        const variant = newSelected.get(variantId);
+        if (variant) {
+            newSelected.set(variantId, { ...variant, quantity });
+            setSelectedVariants(newSelected);
+        }
+    };
+
+    const handleAdd = () => {
+        const variants = Array.from(selectedVariants.entries()).map(([variantId, data]) => ({
+            variantId,
+            variantName: data.name,
+            quantity: data.quantity
+        }));
+        onAdd(variants);
+        setSelectedVariants(new Map());
+        setSearchTerm('');
+        setSearchResults([]);
+        onClose();
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[80vh] flex flex-col">
+                <div className="flex items-center justify-between p-4 border-b">
+                    <h2 className="text-lg font-semibold"><Trans>Add Bundle Components</Trans></h2>
+                    <Button variant="ghost" size="sm" onClick={onClose}>×</Button>
+                </div>
+
+                <div className="p-4 border-b">
+                    <Input
+                        placeholder={_(/* @lingui/macro */ 'Search products...')}
+                        value={searchTerm}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className="w-full"
+                    />
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                    {searchResults.length === 0 && searchTerm.length >= 2 && (
+                        <p className="text-sm text-muted-foreground text-center py-8">
+                            <Trans>No products found</Trans>
+                        </p>
+                    )}
+                    {searchResults.length === 0 && searchTerm.length < 2 && (
+                        <p className="text-sm text-muted-foreground text-center py-8">
+                            <Trans>Start typing to search for products</Trans>
+                        </p>
+                    )}
+                    {searchResults.map((product: any) => {
+                        const isExpanded = expandedProducts.has(product.productId);
+                        const allVariantsSelected = product.variants.every((v: any) => selectedVariants.has(v.id));
+                        const someVariantsSelected = product.variants.some((v: any) => selectedVariants.has(v.id));
+                        
+                        return (
+                            <div key={product.productId} className="border rounded-lg overflow-hidden">
+                                <div className="bg-muted/30 p-3 flex items-center gap-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={allVariantsSelected}
+                                        onChange={() => toggleAllVariants(product)}
+                                        className="rounded"
+                                        style={{ accentColor: someVariantsSelected && !allVariantsSelected ? 'orange' : undefined }}
+                                    />
+                                    {product.productAsset && (
+                                        <img
+                                            src={product.productAsset.preview}
+                                            alt={product.productName}
+                                            className="w-10 h-10 object-cover rounded"
+                                        />
+                                    )}
+                                    <div className="flex-1">
+                                        <div className="font-medium">{product.productName}</div>
+                                        <div className="text-xs text-muted-foreground">
+                                            {product.variants.length} variant{product.variants.length !== 1 ? 's' : ''}
+                                        </div>
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => toggleProduct(product.productId)}
+                                    >
+                                        {isExpanded ? '▲' : '▼'}
+                                    </Button>
+                                </div>
+                                {isExpanded && (
+                                    <div className="p-2 space-y-1">
+                                        {product.variants.map((variant: any) => (
+                                            <div
+                                                key={variant.id}
+                                                className="flex items-center gap-3 p-2 hover:bg-muted/20 rounded"
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedVariants.has(variant.id)}
+                                                    onChange={() => toggleVariant(variant.id, variant.name)}
+                                                    className="rounded ml-6"
+                                                />
+                                                <div className="flex-1">
+                                                    <div className="text-sm">{variant.name}</div>
+                                                    <div className="text-xs text-muted-foreground">{variant.sku}</div>
+                                                </div>
+                                                {selectedVariants.has(variant.id) && (
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-xs text-muted-foreground"><Trans>Qty</Trans>:</span>
+                                                        <Input
+                                                            type="number"
+                                                            min="1"
+                                                            value={selectedVariants.get(variant.id)?.quantity || 1}
+                                                            onChange={(e) => updateQuantity(variant.id, parseInt(e.target.value) || 1)}
+                                                            className="w-16 h-7 text-center text-sm"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <div className="p-4 border-t flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                        <Trans>{selectedVariants.size} variant(s) selected</Trans>
+                    </span>
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={onClose}>
+                            <Trans>Cancel</Trans>
+                        </Button>
+                        <Button
+                            onClick={handleAdd}
+                            disabled={selectedVariants.size === 0}
+                        >
+                            <Trans>Add to Bundle</Trans>
+                        </Button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ============================================================================
 // Bundle Form Component
 // ============================================================================
 
@@ -399,9 +664,7 @@ interface BundleFormProps {
 
 function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleFormProps) {
     const { _ } = useLingui();
-    const [searchTerm, setSearchTerm] = useState<{[key: number]: string}>({});
-    const [searchResults, setSearchResults] = useState<{[key: number]: any[]}>({});
-    const [activeSearchIndex, setActiveSearchIndex] = useState<number | null>(null);
+    const [showAddDialog, setShowAddDialog] = useState(false);
 
     const [formData, setFormData] = useState({
         discountType: bundle?.discountType || 'fixed',
@@ -419,34 +682,14 @@ function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleF
         })),
     });
 
-    const handleSearchVariant = async (term: string, index: number) => {
-        setSearchTerm({ ...searchTerm, [index]: term });
-        setActiveSearchIndex(index);
-
-        if (!term || term.length < 2) {
-            setSearchResults({ ...searchResults, [index]: [] });
-            return;
-        }
-
-        try {
-            const data = await api.query(searchProductVariantsQuery, { term, take: 10 });
-            setSearchResults({ ...searchResults, [index]: data.search?.items || [] });
-        } catch (error) {
-            console.error('Failed to search variants:', error);
-        }
-    };
-
-    const handleSelectVariant = (variant: any, index: number) => {
-        const items = [...formData.items];
-        items[index] = {
-            ...items[index],
-            productVariantId: variant.productVariantId,
-            productVariantName: variant.productVariantName,
-        };
-        setFormData({ ...formData, items });
-        setSearchTerm({ ...searchTerm, [index]: variant.productVariantName });
-        setSearchResults({ ...searchResults, [index]: [] });
-        setActiveSearchIndex(null);
+    const handleAddVariants = (variants: Array<{ variantId: string; variantName: string; quantity: number }>) => {
+        const newItems = variants.map((v, index) => ({
+            productVariantId: v.variantId,
+            productVariantName: v.variantName,
+            quantity: v.quantity,
+            displayOrder: formData.items.length + index,
+        }));
+        setFormData({ ...formData, items: [...formData.items, ...newItems] });
     };
 
     const handleSubmit = async () => {
@@ -589,28 +832,32 @@ function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleF
                 </div>
             </div>
 
+            <AddComponentsDialog
+                isOpen={showAddDialog}
+                onClose={() => setShowAddDialog(false)}
+                onAdd={handleAddVariants}
+            />
+            
             <div>
                 <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium"><Trans>Components</Trans></label>
                     <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setFormData({
-                            ...formData,
-                            items: [...formData.items, { productVariantId: '', quantity: 1, displayOrder: (formData.items?.length || 0) }],
-                        })}
+                        onClick={() => setShowAddDialog(true)}
                     >
-                        <Trans>Add Component</Trans>
+                        <Trans>Add Components</Trans>
                     </Button>
                 </div>
+                
                 {formData.items.length === 0 ? (
-                    <p className="text-sm text-muted-foreground"><Trans>No components yet</Trans></p>
+                    <p className="text-sm text-muted-foreground"><Trans>No components yet. Click "Add Components" to get started.</Trans></p>
                 ) : (
-                    <div className="border rounded-md overflow-visible">
+                    <div className="border rounded-md">
                         <table className="w-full text-sm">
                             <thead className="bg-muted/50 border-b">
                                 <tr>
-                                    <th className="px-3 py-2 text-left font-medium"><Trans>Variant ID</Trans></th>
+                                    <th className="px-3 py-2 text-left font-medium"><Trans>Variant</Trans></th>
                                     <th className="px-3 py-2 text-center font-medium w-24"><Trans>Quantity</Trans></th>
                                     <th className="px-3 py-2 text-center font-medium w-24"><Trans>Order</Trans></th>
                                     <th className="px-3 py-2 text-center font-medium w-20"></th>
@@ -619,35 +866,7 @@ function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleF
                             <tbody>
                                 {formData.items.map((item: any, index: number) => (
                                     <tr key={index} className="border-b last:border-b-0">
-                                        <td className="px-3 py-2 relative">
-                                            <div className="relative">
-                                                <Input
-                                                    placeholder={_(/* @lingui/macro */ 'Search variant...')}
-                                                    value={searchTerm[index] || item.productVariantName || ''}
-                                                    onChange={(e) => handleSearchVariant(e.target.value, index)}
-                                                    onFocus={() => setActiveSearchIndex(index)}
-                                                    onBlur={() => setTimeout(() => setActiveSearchIndex(null), 200)}
-                                                    className="h-8"
-                                                />
-                                                {activeSearchIndex === index && searchResults[index]?.length > 0 && (
-                                                    <div className="absolute z-[9999] mt-1 left-0 right-0 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
-                                                        {searchResults[index].map((variant: any, vIndex: number) => (
-                                                            <button
-                                                                key={vIndex}
-                                                                type="button"
-                                                                onClick={() => handleSelectVariant(variant, index)}
-                                                                className="w-full text-left px-3 py-2 hover:bg-gray-100 border-b last:border-b-0"
-                                                            >
-                                                                <div className="font-medium text-sm">{variant.productVariantName}</div>
-                                                                <div className="text-xs text-muted-foreground">
-                                                                    <Trans>SKU</Trans>: {variant.sku} • ${(variant.price?.value || 0) / 100}
-                                                                </div>
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </td>
+                                        <td className="px-3 py-2">{item.productVariantName}</td>
                                         <td className="px-3 py-2">
                                             <Input
                                                 type="number"
@@ -848,25 +1067,55 @@ function BundleConfigurationBlock({ context }: ProductBlockProps) {
                                 <Trans>Components ({bundle.items?.length || 0})</Trans>
                             </div>
                             {bundle.items && bundle.items.length > 0 ? (
-                                <div className="border rounded-md">
-                                    <table className="w-full text-sm">
-                                        <thead className="bg-muted/50 border-b">
-                                            <tr>
-                                                <th className="px-3 py-2 text-left font-medium"><Trans>Variant</Trans></th>
-                                                <th className="px-3 py-2 text-center font-medium"><Trans>Quantity</Trans></th>
-                                                <th className="px-3 py-2 text-center font-medium"><Trans>Order</Trans></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {bundle.items.map((item) => (
-                                                <tr key={item.id} className="border-b last:border-b-0">
-                                                    <td className="px-3 py-2">{item.productVariant.name}</td>
-                                                    <td className="px-3 py-2 text-center">{item.quantity}</td>
-                                                    <td className="px-3 py-2 text-center">{item.displayOrder}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                <div className="border rounded-md space-y-0">
+                                    {(() => {
+                                        // Group items by parent product
+                                        const grouped = bundle.items.reduce((acc: any, item: any) => {
+                                            const productId = item.productVariant.product.id;
+                                            if (!acc[productId]) {
+                                                acc[productId] = {
+                                                    product: item.productVariant.product,
+                                                    variants: []
+                                                };
+                                            }
+                                            acc[productId].variants.push(item);
+                                            return acc;
+                                        }, {});
+                                        
+                                        return Object.values(grouped).map((group: any) => {
+                                            const hasMultipleVariants = group.variants.length > 1;
+                                            
+                                            return (
+                                                <div key={group.product.id} className="border-b last:border-b-0">
+                                                    {hasMultipleVariants && (
+                                                        <div className="bg-muted/30 px-3 py-2 font-medium text-sm flex items-center gap-2">
+                                                            {group.product.featuredAsset && (
+                                                                <img 
+                                                                    src={group.product.featuredAsset.preview} 
+                                                                    alt={group.product.name}
+                                                                    className="w-8 h-8 object-cover rounded"
+                                                                />
+                                                            )}
+                                                            {group.product.name}
+                                                        </div>
+                                                    )}
+                                                    <table className="w-full text-sm">
+                                                        <tbody>
+                                                            {group.variants.map((item: any) => (
+                                                                <tr key={item.id} className="border-b last:border-b-0">
+                                                                    <td className={`px-3 py-2 ${hasMultipleVariants ? 'pl-6' : ''}`}>
+                                                                        {item.productVariant.name}
+                                                                    </td>
+                                                                    <td className="px-3 py-2 text-center w-24"><Trans>Qty</Trans>: {item.quantity}</td>
+                                                                    <td className="px-3 py-2 text-center w-24 text-muted-foreground">#{item.displayOrder}</td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            );
+                                        });
+                                    })()}
                                 </div>
                             ) : (
                                 <p className="text-sm text-muted-foreground"><Trans>No components</Trans></p>
