@@ -435,15 +435,45 @@ function BundleStatusBlock({ context }: ProductBlockProps) {
 interface AddComponentsDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    onAdd: (variants: Array<{ variantId: string; variantName: string; quantity: number }>) => void;
+    onAdd: (variants: Array<{ variantId: string; variantName: string; productId: string; productName: string; productImage?: string; quantity: number }>) => void;
+    existingVariantIds: string[];
 }
 
-function AddComponentsDialog({ isOpen, onClose, onAdd }: AddComponentsDialogProps) {
+function AddComponentsDialog({ isOpen, onClose, onAdd, existingVariantIds }: AddComponentsDialogProps) {
     const { _ } = useLingui();
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
-    const [selectedVariants, setSelectedVariants] = useState<Map<string, { name: string; quantity: number }>>(new Map());
+    const [selectedVariants, setSelectedVariants] = useState<Map<string, { name: string; productId: string; productName: string; productImage?: string; quantity: number }>>(new Map());
     const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
+
+    // Auto-expand and pre-select products that have existing variants
+    useEffect(() => {
+        if (searchResults.length > 0 && existingVariantIds.length > 0) {
+            const newExpanded = new Set<string>();
+            const newSelected = new Map(selectedVariants);
+
+            searchResults.forEach((product: any) => {
+                const hasExistingVariants = product.variants.some((v: any) => existingVariantIds.includes(v.id));
+                if (hasExistingVariants) {
+                    newExpanded.add(product.productId);
+                    product.variants.forEach((v: any) => {
+                        if (existingVariantIds.includes(v.id) && !newSelected.has(v.id)) {
+                            newSelected.set(v.id, {
+                                name: v.name,
+                                productId: product.productId,
+                                productName: product.productName,
+                                productImage: product.productAsset?.preview,
+                                quantity: 1
+                            });
+                        }
+                    });
+                }
+            });
+
+            setExpandedProducts(newExpanded);
+            setSelectedVariants(newSelected);
+        }
+    }, [searchResults, existingVariantIds]);
 
     const handleSearch = async (term: string) => {
         setSearchTerm(term);
@@ -483,12 +513,12 @@ function AddComponentsDialog({ isOpen, onClose, onAdd }: AddComponentsDialogProp
         setExpandedProducts(newExpanded);
     };
 
-    const toggleVariant = (variantId: string, variantName: string) => {
+    const toggleVariant = (variantId: string, variantName: string, productId: string, productName: string, productImage?: string) => {
         const newSelected = new Map(selectedVariants);
         if (newSelected.has(variantId)) {
             newSelected.delete(variantId);
         } else {
-            newSelected.set(variantId, { name: variantName, quantity: 1 });
+            newSelected.set(variantId, { name: variantName, productId, productName, productImage, quantity: 1 });
         }
         setSelectedVariants(newSelected);
     };
@@ -504,7 +534,13 @@ function AddComponentsDialog({ isOpen, onClose, onAdd }: AddComponentsDialogProp
             // Select all
             product.variants.forEach((v: any) => {
                 if (!newSelected.has(v.id)) {
-                    newSelected.set(v.id, { name: v.name, quantity: 1 });
+                    newSelected.set(v.id, {
+                        name: v.name,
+                        productId: product.productId,
+                        productName: product.productName,
+                        productImage: product.productAsset?.preview,
+                        quantity: 1
+                    });
                 }
             });
         }
@@ -521,11 +557,16 @@ function AddComponentsDialog({ isOpen, onClose, onAdd }: AddComponentsDialogProp
     };
 
     const handleAdd = () => {
-        const variants = Array.from(selectedVariants.entries()).map(([variantId, data]) => ({
-            variantId,
-            variantName: data.name,
-            quantity: data.quantity
-        }));
+        const variants = Array.from(selectedVariants.entries())
+            .filter(([variantId]) => !existingVariantIds.includes(variantId)) // Only add new variants
+            .map(([variantId, data]) => ({
+                variantId,
+                variantName: data.name,
+                productId: data.productId,
+                productName: data.productName,
+                productImage: data.productImage,
+                quantity: data.quantity
+            }));
         onAdd(variants);
         setSelectedVariants(new Map());
         setSearchTerm('');
@@ -609,8 +650,9 @@ function AddComponentsDialog({ isOpen, onClose, onAdd }: AddComponentsDialogProp
                                                 <input
                                                     type="checkbox"
                                                     checked={selectedVariants.has(variant.id)}
-                                                    onChange={() => toggleVariant(variant.id, variant.name)}
+                                                    onChange={() => toggleVariant(variant.id, variant.name, product.productId, product.productName, product.productAsset?.preview)}
                                                     className="rounded ml-6"
+                                                    disabled={existingVariantIds.includes(variant.id)}
                                                 />
                                                 <div className="flex-1">
                                                     <div className="text-sm">{variant.name}</div>
@@ -685,15 +727,21 @@ function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleF
         items: (bundle?.items || []).map((it: any) => ({
             productVariantId: it.productVariant?.id ?? it.productVariantId,
             productVariantName: it.productVariant?.name ?? it.productVariantName,
+            productId: it.productVariant?.product?.id,
+            productName: it.productVariant?.product?.name,
+            productImage: it.productVariant?.product?.featuredAsset?.preview,
             quantity: it.quantity,
             displayOrder: it.displayOrder ?? 0,
         })),
     });
 
-    const handleAddVariants = (variants: Array<{ variantId: string; variantName: string; quantity: number }>) => {
+    const handleAddVariants = (variants: Array<{ variantId: string; variantName: string; productId: string; productName: string; productImage?: string; quantity: number }>) => {
         const newItems = variants.map((v, index) => ({
             productVariantId: v.variantId,
             productVariantName: v.variantName,
+            productId: v.productId,
+            productName: v.productName,
+            productImage: v.productImage,
             quantity: v.quantity,
             displayOrder: formData.items.length + index,
         }));
@@ -844,6 +892,7 @@ function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleF
                 isOpen={showAddDialog}
                 onClose={() => setShowAddDialog(false)}
                 onAdd={handleAddVariants}
+                existingVariantIds={formData.items.map((item: any) => item.productVariantId)}
             />
             
             <div>
@@ -863,31 +912,43 @@ function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleF
                 ) : (
                     <div className="border rounded-md space-y-0">
                         {(() => {
-                            // Group items by product name (extract from variant name)
+                            // Group items by product ID
                             const grouped: Record<string, any> = {};
                             formData.items.forEach((item: any, originalIndex: number) => {
-                                // Try to extract product name from variant name
-                                // Assume variant name format like "Product Name - Variant" or just "Product Name"
-                                const productName = item.productVariantName;
-                                if (!grouped[productName]) {
-                                    grouped[productName] = [];
+                                const productId = item.productId || item.productVariantId;
+                                if (!grouped[productId]) {
+                                    grouped[productId] = {
+                                        product: {
+                                            id: item.productId,
+                                            name: item.productName || item.productVariantName,
+                                            image: item.productImage
+                                        },
+                                        variants: []
+                                    };
                                 }
-                                grouped[productName].push({ ...item, originalIndex });
+                                grouped[productId].variants.push({ ...item, originalIndex });
                             });
 
-                            return Object.entries(grouped).map(([productName, items]) => {
-                                const hasMultipleVariants = items.length > 1;
+                            return Object.values(grouped).map((group: any) => {
+                                const hasMultipleVariants = group.variants.length > 1;
 
                                 return (
-                                    <div key={productName} className="border-b last:border-b-0">
+                                    <div key={group.product.id} className="border-b last:border-b-0">
                                         {hasMultipleVariants && (
-                                            <div className="bg-muted/30 px-3 py-2 font-medium text-sm">
-                                                {productName}
+                                            <div className="bg-muted/30 px-3 py-2 font-medium text-sm flex items-center gap-2">
+                                                {group.product.image && (
+                                                    <img
+                                                        src={group.product.image}
+                                                        alt={group.product.name}
+                                                        className="w-8 h-8 object-cover rounded"
+                                                    />
+                                                )}
+                                                {group.product.name}
                                             </div>
                                         )}
                                         <table className="w-full text-sm">
                                             <tbody>
-                                                {items.map((item: any) => (
+                                                {group.variants.map((item: any) => (
                                                     <tr key={item.originalIndex} className="border-b last:border-b-0">
                                                         <td className={`px-3 py-2 ${hasMultipleVariants ? 'pl-6' : ''}`}>
                                                             {item.productVariantName}
