@@ -605,10 +605,53 @@ function AddComponentsDialog({ isOpen, onClose, onAdd, existingVariantIds }: Add
                         </p>
                     )}
                     {searchResults.map((product: any) => {
+                        const hasMultipleVariants = product.variants.length > 1;
                         const isExpanded = expandedProducts.has(product.productId);
                         const allVariantsSelected = product.variants.every((v: any) => selectedVariants.has(v.id));
                         const someVariantsSelected = product.variants.some((v: any) => selectedVariants.has(v.id));
                         
+                        // For single-variant products, show non-grouped layout
+                        if (!hasMultipleVariants) {
+                            const variant = product.variants[0];
+                            return (
+                                <div key={product.productId} className="border rounded-lg p-3 hover:bg-muted/20">
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedVariants.has(variant.id)}
+                                            onChange={() => toggleVariant(variant.id, variant.name, product.productId, product.productName, product.productAsset?.preview)}
+                                            className="rounded"
+                                            disabled={existingVariantIds.includes(variant.id)}
+                                        />
+                                        {product.productAsset && (
+                                            <img
+                                                src={product.productAsset.preview}
+                                                alt={product.productName}
+                                                className="w-10 h-10 object-cover rounded"
+                                            />
+                                        )}
+                                        <div className="flex-1">
+                                            <div className="font-medium">{product.productName}</div>
+                                            <div className="text-xs text-muted-foreground">{variant.sku}</div>
+                                        </div>
+                                        {selectedVariants.has(variant.id) && (
+                                            <div className="flex items-center gap-1">
+                                                <span className="text-xs text-muted-foreground"><Trans>Qty</Trans>:</span>
+                                                <Input
+                                                    type="number"
+                                                    min="1"
+                                                    value={selectedVariants.get(variant.id)?.quantity || 1}
+                                                    onChange={(e) => updateQuantity(variant.id, parseInt(e.target.value) || 1)}
+                                                    className="w-16 h-7 text-center text-sm"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        }
+                        
+                        // For multi-variant products, show grouped/expandable layout
                         return (
                             <div key={product.productId} className="border rounded-lg overflow-hidden">
                                 <div className="bg-muted/30 p-3 flex items-center gap-3">
@@ -629,7 +672,7 @@ function AddComponentsDialog({ isOpen, onClose, onAdd, existingVariantIds }: Add
                                     <div className="flex-1">
                                         <div className="font-medium">{product.productName}</div>
                                         <div className="text-xs text-muted-foreground">
-                                            {product.variants.length} variant{product.variants.length !== 1 ? 's' : ''}
+                                            {product.variants.length} variants
                                         </div>
                                     </div>
                                     <Button
@@ -948,65 +991,79 @@ function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleF
                                         )}
                                         <table className="w-full text-sm">
                                             <tbody>
-                                                {group.variants.map((item: any) => (
-                                                    <tr key={item.originalIndex} className="border-b last:border-b-0">
-                                                        <td className={`px-3 py-2 ${hasMultipleVariants ? 'pl-6' : ''}`}>
-                                                            {item.productVariantName}
-                                                        </td>
-                                                        <td className="px-3 py-2 w-28">
-                                                            <div className="flex items-center gap-1">
-                                                                <span className="text-xs text-muted-foreground"><Trans>Qty</Trans>:</span>
-                                                                <Input
-                                                                    type="number"
-                                                                    min="1"
-                                                                    value={item.quantity}
-                                                                    onChange={(e) => {
+                                                {group.variants.map((item: any) => {
+                                                    // For single-variant products, show image alongside variant name
+                                                    const showImageInline = !hasMultipleVariants && group.product.image;
+                                                    return (
+                                                        <tr key={item.originalIndex} className="border-b last:border-b-0">
+                                                            <td className={`px-3 py-2 ${hasMultipleVariants ? 'pl-6' : ''}`}>
+                                                                {showImageInline && (
+                                                                    <div className="flex items-center gap-2">
+                                                                        <img
+                                                                            src={group.product.image}
+                                                                            alt={group.product.name}
+                                                                            className="w-8 h-8 object-cover rounded"
+                                                                        />
+                                                                        <span>{item.productVariantName}</span>
+                                                                    </div>
+                                                                )}
+                                                                {!showImageInline && item.productVariantName}
+                                                            </td>
+                                                            <td className="px-3 py-2 w-28">
+                                                                <div className="flex items-center gap-1">
+                                                                    <span className="text-xs text-muted-foreground"><Trans>Qty</Trans>:</span>
+                                                                    <Input
+                                                                        type="number"
+                                                                        min="1"
+                                                                        value={item.quantity}
+                                                                        onChange={(e) => {
+                                                                            const updatedItems = [...formData.items];
+                                                                            updatedItems[item.originalIndex] = {
+                                                                                ...updatedItems[item.originalIndex],
+                                                                                quantity: parseInt(e.target.value, 10) || 1,
+                                                                            };
+                                                                            setFormData({ ...formData, items: updatedItems });
+                                                                        }}
+                                                                        className="h-7 text-center w-14"
+                                                                    />
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-3 py-2 w-28">
+                                                                <div className="flex items-center gap-1">
+                                                                    <span className="text-xs text-muted-foreground">#</span>
+                                                                    <Input
+                                                                        type="number"
+                                                                        min="0"
+                                                                        value={item.displayOrder !== null && item.displayOrder !== undefined ? item.displayOrder : 0}
+                                                                        onChange={(e) => {
+                                                                            const updatedItems = [...formData.items];
+                                                                            updatedItems[item.originalIndex] = {
+                                                                                ...updatedItems[item.originalIndex],
+                                                                                displayOrder: parseInt(e.target.value, 10) || 0,
+                                                                            };
+                                                                            setFormData({ ...formData, items: updatedItems });
+                                                                        }}
+                                                                        className="h-7 text-center w-14"
+                                                                    />
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-3 py-2 text-center w-16">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => {
                                                                         const updatedItems = [...formData.items];
-                                                                        updatedItems[item.originalIndex] = {
-                                                                            ...updatedItems[item.originalIndex],
-                                                                            quantity: parseInt(e.target.value, 10) || 1,
-                                                                        };
+                                                                        updatedItems.splice(item.originalIndex, 1);
                                                                         setFormData({ ...formData, items: updatedItems });
                                                                     }}
-                                                                    className="h-7 text-center w-14"
-                                                                />
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-3 py-2 w-28">
-                                                            <div className="flex items-center gap-1">
-                                                                <span className="text-xs text-muted-foreground">#</span>
-                                                                <Input
-                                                                    type="number"
-                                                                    min="0"
-                                                                    value={item.displayOrder !== null && item.displayOrder !== undefined ? item.displayOrder : 0}
-                                                                    onChange={(e) => {
-                                                                        const updatedItems = [...formData.items];
-                                                                        updatedItems[item.originalIndex] = {
-                                                                            ...updatedItems[item.originalIndex],
-                                                                            displayOrder: parseInt(e.target.value, 10) || 0,
-                                                                        };
-                                                                        setFormData({ ...formData, items: updatedItems });
-                                                                    }}
-                                                                    className="h-7 text-center w-14"
-                                                                />
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-3 py-2 text-center w-16">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => {
-                                                                    const updatedItems = [...formData.items];
-                                                                    updatedItems.splice(item.originalIndex, 1);
-                                                                    setFormData({ ...formData, items: updatedItems });
-                                                                }}
-                                                                className="h-7 w-7 p-0 text-lg"
-                                                            >
-                                                                ×
-                                                            </Button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
+                                                                    className="h-7 w-7 p-0 text-lg"
+                                                                >
+                                                                    ×
+                                                                </Button>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
                                             </tbody>
                                         </table>
                                     </div>
@@ -1203,15 +1260,29 @@ function BundleConfigurationBlock({ context }: ProductBlockProps) {
                                                     )}
                                                     <table className="w-full text-sm">
                                                         <tbody>
-                                                            {group.variants.map((item: any) => (
-                                                                <tr key={item.id} className="border-b last:border-b-0">
-                                                                    <td className={`px-3 py-2 ${hasMultipleVariants ? 'pl-6' : ''}`}>
-                                                                        {item.productVariant.name}
-                                                                    </td>
-                                                                    <td className="px-3 py-2 text-center w-24"><Trans>Qty</Trans>: {item.quantity}</td>
-                                                                    <td className="px-3 py-2 text-center w-24 text-muted-foreground">#{item.displayOrder}</td>
-                                                                </tr>
-                                                            ))}
+                                                            {group.variants.map((item: any) => {
+                                                                // For single-variant products, show image alongside variant name
+                                                                const showImageInline = !hasMultipleVariants && group.product.featuredAsset;
+                                                                return (
+                                                                    <tr key={item.id} className="border-b last:border-b-0">
+                                                                        <td className={`px-3 py-2 ${hasMultipleVariants ? 'pl-6' : ''}`}>
+                                                                            {showImageInline && (
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <img 
+                                                                                        src={group.product.featuredAsset.preview} 
+                                                                                        alt={group.product.name}
+                                                                                        className="w-8 h-8 object-cover rounded"
+                                                                                    />
+                                                                                    <span>{item.productVariant.name}</span>
+                                                                                </div>
+                                                                            )}
+                                                                            {!showImageInline && item.productVariant.name}
+                                                                        </td>
+                                                                        <td className="px-3 py-2 text-center w-24"><Trans>Qty</Trans>: {item.quantity}</td>
+                                                                        <td className="px-3 py-2 text-center w-24 text-muted-foreground">#{item.displayOrder}</td>
+                                                                    </tr>
+                                                                );
+                                                            })}
                                                         </tbody>
                                                     </table>
                                                 </div>

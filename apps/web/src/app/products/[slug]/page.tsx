@@ -338,15 +338,34 @@ export default function ProductDetailPage() {
   const price = selectedVariant?.priceWithTax || 0;
   
   // Calculate component total for display (use priceWithTax from variants for consistency)
-  // NOTE: This is for display only - shows the original component prices, not selected variants
+  // NOTE: This reflects the selected variant prices, not just the default variants
   const componentTotal = isBundle && bundle
-    ? bundle.items.reduce((sum, item) => sum + (item.productVariant.priceWithTax * item.quantity), 0)
+    ? bundle.items.reduce((sum, item) => {
+        // Get the selected variant ID (or default to the item's original variant)
+        const currentVariantId = bundleComponentVariants[item.id] || item.productVariant.id;
+        // Find the full variant object from the product's variants
+        const currentVariant = item.productVariant.product?.variants?.find(v => v.id === currentVariantId) || item.productVariant;
+        return sum + (currentVariant.priceWithTax * item.quantity);
+      }, 0)
     : 0;
   
-  // Get bundle savings from backend (now correctly calculated with tax)
+  // Calculate bundle savings dynamically based on selected variants
+  // Savings = Individual Total (selected variants) - Bundle Price (fixed)
   const bundleSavings = isBundle && bundle
-    ? bundle.totalSavings || 0
+    ? componentTotal - price
     : 0;
+  
+  // Determine if all multi-variant components have been selected
+  // If any component has multiple variants but no selection made, hide pricing until selected
+  const areAllVariantsSelected = isBundle && bundle
+    ? bundle.items.every((item) => {
+        const hasMultipleVariants = (item.productVariant.product?.variants?.length || 0) > 1;
+        // If single variant, always considered "selected"
+        if (!hasMultipleVariants) return true;
+        // If multiple variants, check if user has made a selection
+        return bundleComponentVariants[item.id] !== undefined;
+      })
+    : true; // For non-bundles, always show pricing
 
   // Get current nutrition batch for selected variant
   const currentNutritionBatch = selectedVariant?.currentNutritionBatch;
@@ -788,23 +807,25 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* Price */}
-            <div>
-              <div className="text-3xl font-bold">
-                ${(price / 100).toFixed(2)}
-              </div>
-              {isBundle && componentTotal > price && (
-                <div className="text-lg text-gray-500 line-through mt-1">
-                  ${(componentTotal / 100).toFixed(2)}
+            {/* Price - Only show for non-bundles or bundles with all variants selected */}
+            {areAllVariantsSelected && (
+              <div>
+                <div className="text-3xl font-bold">
+                  ${(price / 100).toFixed(2)}
                 </div>
-              )}
-              {!isBundle && selectedVariant?.sku && (
-                <span className="text-sm text-gray-600 mt-2 block">SKU: {selectedVariant.sku}</span>
-              )}
-            </div>
+                {isBundle && componentTotal > price && (
+                  <div className="text-lg text-gray-500 line-through mt-1">
+                    ${(componentTotal / 100).toFixed(2)}
+                  </div>
+                )}
+                {!isBundle && selectedVariant?.sku && (
+                  <span className="text-sm text-gray-600 mt-2 block">SKU: {selectedVariant.sku}</span>
+                )}
+              </div>
+            )}
             
-            {/* Bundle Savings */}
-            {isBundle && bundleSavings > 0 && (
+            {/* Bundle Savings - Only show when all variants selected */}
+            {isBundle && bundleSavings > 0 && areAllVariantsSelected && (
               <div className="bg-[var(--success)]/10 border border-[var(--success)]/20 rounded-lg p-4">
                 <div className="flex items-center gap-2 text-[var(--success)] font-semibold">
                   <Package className="w-5 h-5" />
@@ -895,20 +916,23 @@ export default function ProductDetailPage() {
                       );
                     })}
                 </div>
-                <div className="mt-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
-                  <div className="flex justify-between items-center text-sm mb-2">
-                    <span className="text-gray-700">Individual Total:</span>
-                    <span className="font-semibold text-gray-900">${(componentTotal / 100).toFixed(2)}</span>
+                {/* Pricing Summary - Only show when all variants selected */}
+                {areAllVariantsSelected && (
+                  <div className="mt-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
+                    <div className="flex justify-between items-center text-sm mb-2">
+                      <span className="text-gray-700">Individual Total:</span>
+                      <span className="font-semibold text-gray-900">${(componentTotal / 100).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-base mb-2">
+                      <span className="text-gray-900 font-medium">Bundle Price:</span>
+                      <span className="font-bold text-gray-900">${(price / 100).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-base font-bold text-[var(--success)] border-t border-gray-300 pt-3 mt-2">
+                      <span>You Save:</span>
+                      <span className="text-xl">${(bundleSavings / 100).toFixed(2)}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center text-base mb-2">
-                    <span className="text-gray-900 font-medium">Bundle Price:</span>
-                    <span className="font-bold text-gray-900">${(price / 100).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-base font-bold text-[var(--success)] border-t border-gray-300 pt-3 mt-2">
-                    <span>You Save:</span>
-                    <span className="text-xl">${(bundleSavings / 100).toFixed(2)}</span>
-                  </div>
-                </div>
+                )}
               </div>
             )}
 
