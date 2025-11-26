@@ -14,6 +14,7 @@ import { useLanguage } from '@/lib/contexts/LanguageContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Button from '@/components/Button';
+import { VariantSelector } from '@/components/VariantSelector';
 import type { Bundle, BundleItem, NutritionBatch } from '@/lib/types/product';
 
 interface ProductOption {
@@ -90,6 +91,8 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedBundleComponentIndex, setSelectedBundleComponentIndex] = useState(0);
+  // Track selected variant per bundle component (key: bundleItemId, value: variantId)
+  const [bundleComponentVariants, setBundleComponentVariants] = useState<Record<string, string>>({});
   const [isOverviewAccordionOpen, setIsOverviewAccordionOpen] = useState(false);
   const [isNutritionAccordionOpen, setIsNutritionAccordionOpen] = useState(false);
   const [isRecommendedUseAccordionOpen, setIsRecommendedUseAccordionOpen] = useState(false);
@@ -139,6 +142,17 @@ export default function ProductDetailPage() {
   const selectedVariant = selectedVariantId 
     ? product?.variants.find(v => v.id === selectedVariantId)
     : findVariantByOptions(selectedOptions) || product?.variants[0];
+  
+  // Initialize bundle component variants when bundle loads
+  useEffect(() => {
+    if (bundle?.items && Object.keys(bundleComponentVariants).length === 0) {
+      const initialVariants: Record<string, string> = {};
+      bundle.items.forEach(item => {
+        initialVariants[item.id] = item.productVariant.id;
+      });
+      setBundleComponentVariants(initialVariants);
+    }
+  }, [bundle?.items]);
 
   // Initialize default options when product loads
   if (product && Object.keys(selectedOptions).length === 0 && product.variants.length > 0 && product.optionGroups?.length > 0) {
@@ -802,47 +816,16 @@ export default function ProductDetailPage() {
             )}
 
             {/* Variant Selection - Dropdown per Option Group */}
-            {!isBundle && product?.optionGroups && product.optionGroups.length > 0 && (
-              <div className="space-y-4">
-                {product.optionGroups.map((optionGroup) => {
-                  const selectedOptionId = selectedOptions[optionGroup.id];
-                  const selectedOption = optionGroup.options.find(opt => opt.id === selectedOptionId);
-                  
-                  return (
-                    <div key={optionGroup.id}>
-                      <label className="block text-sm font-semibold mb-2">
-                        {optionGroup.name}:
-                      </label>
-                      <div className="relative">
-                        <select
-                          value={selectedOptionId || ''}
-                          onChange={(e) => {
-                            const newOptions = {
-                              ...selectedOptions,
-                              [optionGroup.id]: e.target.value
-                            };
-                            setSelectedOptions(newOptions);
-                            
-                            // Find matching variant
-                            const matchingVariant = findVariantByOptions(newOptions);
-                            if (matchingVariant) {
-                              setSelectedVariantId(matchingVariant.id);
-                            }
-                          }}
-                          className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg bg-white text-base font-medium focus:ring-2 focus:ring-black focus:border-transparent appearance-none cursor-pointer"
-                        >
-                          {optionGroup.options.map((option) => (
-                            <option key={option.id} value={option.id}>
-                              {option.name}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 pointer-events-none" />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+            {!isBundle && product?.optionGroups && product.optionGroups.length > 0 && product.variants && (
+              <VariantSelector
+                optionGroups={product.optionGroups}
+                variants={product.variants}
+                selectedOptions={selectedOptions}
+                onVariantChange={(variantId, newOptions) => {
+                  setSelectedVariantId(variantId);
+                  setSelectedOptions(newOptions);
+                }}
+              />
             )}
             
             {/* Bundle Components - Show before Add to Cart */}

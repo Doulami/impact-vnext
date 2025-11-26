@@ -25,7 +25,7 @@ function MediaBlockComponent({ block }: { block: MediaBlock }) {
     ? getStrapiMediaUrl(block.file.data.attributes.url)
     : null;
 
-  if (!mediaUrl) return null;
+  if (!mediaUrl || !block.file?.data?.attributes) return null;
 
   const isVideo = block.file.data.attributes.mime.startsWith('video/');
 

@@ -423,6 +423,34 @@ export const BUNDLE_FRAGMENT = gql`
             id
             preview
           }
+          optionGroups {
+            id
+            name
+            code
+            options {
+              id
+              name
+              code
+            }
+          }
+          variants {
+            id
+            name
+            sku
+            price
+            priceWithTax
+            stockLevel
+            featuredAsset {
+              id
+              preview
+            }
+            options {
+              id
+              name
+              code
+              groupId
+            }
+          }
         }
         currentNutritionBatch {
           ...NutritionBatchFields

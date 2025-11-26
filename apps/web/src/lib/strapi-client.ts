@@ -166,7 +166,7 @@ export async function getArticles(): Promise<ArticleListItem[]> {
     // Filter out articles without categories and transform
     return result.data
       .map(transformArticleListItem)
-      .filter(article => article.category !== null);
+      .filter((article: any) => article.category !== null);
   } catch (error) {
     console.error('Error fetching articles:', error);
     return [];
