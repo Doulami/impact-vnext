@@ -295,6 +295,7 @@ function HeaderContent({
             </li>
             <li><Link href="/#goals-section" className="nav-text">SHOP BY GOALS</Link></li>
             <li><Link href="/bundles" className="nav-text">BUNDLES</Link></li>
+            <li><Link href="/blog" className="nav-text">BLOG</Link></li>
             <li><a href="#" className="nav-text">ATHLETES</a></li>
             <li>
               <a href="#" className="bg-white text-[var(--brand-primary)] px-4 py-1.5 rounded-md hover:bg-gray-100 transition-colors font-bold shadow-lg">
@@ -346,6 +347,7 @@ export default function Header(props: HeaderProps) {
               </li>
               <li><Link href="/#goals-section" className="nav-text">SHOP BY GOALS</Link></li>
               <li><Link href="/bundles" className="nav-text">BUNDLES</Link></li>
+              <li><Link href="/blog" className="nav-text">BLOG</Link></li>
               <li><a href="#" className="nav-text">ATHLETES</a></li>
               <li>
                 <a href="#" className="bg-white text-[var(--brand-primary)] px-4 py-1.5 rounded-md hover:bg-gray-100 transition-colors font-bold shadow-lg">

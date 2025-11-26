@@ -1,0 +1,26 @@
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  const response = NextResponse.next();
+
+  // Get the Strapi URL from environment or use default
+  const strapiUrl = process.env.NEXT_PUBLIC_CMS_URL || 'http://localhost:1337';
+  
+  // Allow the frontend to be embedded in an iframe from Strapi admin panel
+  // This is necessary for the preview feature to work
+  response.headers.set(
+    'Content-Security-Policy',
+    `frame-ancestors 'self' ${strapiUrl}`
+  );
+
+  return response;
+}
+
+// Configure which paths the middleware should run on
+export const config = {
+  matcher: [
+    // Match all blog pages for preview functionality
+    '/blog/:path*',
+  ],
+};

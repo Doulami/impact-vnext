@@ -6,10 +6,14 @@
   },
   "options": {},
   "attributes": {
-    "file": {
-      "allowedTypes": ["images", "files", "videos"],
+    "Image": {
       "type": "media",
-      "multiple": false
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos"
+      ]
     }
   }
 }

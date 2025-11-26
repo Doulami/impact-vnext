@@ -15,25 +15,22 @@
     "title": {
       "type": "string"
     },
-    "description": {
-      "type": "text",
-      "maxLength": 80
-    },
-    "slug": {
-      "type": "uid",
-      "targetField": "title"
-    },
     "cover": {
       "type": "media",
       "multiple": false,
       "required": false,
-      "allowedTypes": ["images", "files", "videos"]
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos"
+      ]
     },
-    "author": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::author.author",
-      "inversedBy": "articles"
+    "description": {
+      "type": "text"
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "title"
     },
     "category": {
       "type": "relation",
@@ -41,9 +38,23 @@
       "target": "api::category.category",
       "inversedBy": "articles"
     },
+    "author": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::author.author",
+      "inversedBy": "articles"
+    },
     "blocks": {
       "type": "dynamiczone",
-      "components": ["shared.media", "shared.quote", "shared.rich-text", "shared.slider"]
+      "components": [
+        "shared.quote",
+        "shared.rich-text",
+        "shared.slider",
+        "shared.media"
+      ]
+    },
+    "descriptionlong": {
+      "type": "blocks"
     }
   }
 }
