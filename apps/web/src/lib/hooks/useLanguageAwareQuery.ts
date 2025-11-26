@@ -1,6 +1,7 @@
 'use client';
 
-import { useQuery, type QueryHookOptions, type DocumentNode } from '@apollo/client/react';
+import { useQuery, type QueryHookOptions } from '@apollo/client/react';
+import { type DocumentNode } from 'graphql';
 import { useLocale } from 'next-intl';
 import { useVendureLanguage } from '../contexts/VendureLanguageContext';
 
@@ -45,11 +46,11 @@ export function useLanguageAwareQuery<TData = any, TVariables extends Record<str
 
   // Vendure gets language from Apollo headers (vendure-language-code)
   // No need to pass languageCode as a variable
-  const queryOptions: QueryHookOptions<TData, TVariables> = {
+  const queryOptions = {
     ...options,
   };
 
-  const result = useQuery<TData, TVariables>(query, queryOptions);
+  const result = useQuery<TData, TVariables>(query, queryOptions as any);
 
   return {
     ...result,

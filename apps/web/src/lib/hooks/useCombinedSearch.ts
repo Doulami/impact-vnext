@@ -125,7 +125,7 @@ export function useCombinedSearch(initialInput?: Partial<SearchInput>) {
   console.log(`[CombinedSearch] Language: ${locale}, Raw products: ${rawProducts.length} -> ${products.length}, Raw bundles: ${rawBundles.length} -> ${bundles.length}`);
   
   const combinedResults: CombinedResult[] = [
-    ...products.map(toProductResult),
+    ...(products as SearchResult[]).map(toProductResult),
     ...bundles
       .filter((bundle: Bundle) => {
         // Filter bundles based on search term if provided

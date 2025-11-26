@@ -621,7 +621,7 @@ export default function ProductDetailPage() {
                                       {group}
                                     </td>
                                   </tr>
-                                  {rows
+                                  {(rows as any[])
                                     .sort((a: any, b: any) => a.displayOrder - b.displayOrder)
                                     .map((row: any) => (
                                       <tr key={row.id} className="border-b border-gray-200">
@@ -648,7 +648,7 @@ export default function ProductDetailPage() {
                           {Object.entries(groupedRows).map(([group, rows]) => (
                             <div key={`group-${group}`}>
                               <div className="text-xs uppercase font-medium text-gray-600 mb-2">{group}</div>
-                              {rows
+                              {(rows as any[])
                                 .sort((a: any, b: any) => a.displayOrder - b.displayOrder)
                                 .map((row: any) => (
                                   <div key={row.id} className="bg-white rounded-lg p-3 mb-2 border">

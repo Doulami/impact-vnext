@@ -56,8 +56,8 @@ export function filterProductsByLanguage<T extends any>(
     // Log products that are being filtered out (for debugging)
     if (!validation.isValidForLanguage) {
       console.log(`[ProductLanguageFilter] Filtering out product without valid ${selectedLanguage} data:`, {
-        productId: product?.id,
-        productName: product?.name,
+        productId: (product as any)?.id,
+        productName: (product as any)?.name,
         hasValidName: validation.hasValidName,
         hasValidDescription: validation.hasValidDescription
       });
@@ -114,8 +114,8 @@ export function filterSearchResultsByLanguage<T extends any>(
     
     if (!validation.isValidForLanguage) {
       console.log(`[SearchResultLanguageFilter] Filtering out result without valid ${selectedLanguage} data:`, {
-        productId: result?.productId,
-        productName: result?.productName,
+        productId: (result as any)?.productId,
+        productName: (result as any)?.productName,
         hasValidName: validation.hasValidName,
         hasValidDescription: validation.hasValidDescription
       });
@@ -174,9 +174,9 @@ export function filterCollectionVariantsByLanguage<T extends any>(
     
     if (!validation.isValidForLanguage) {
       console.log(`[CollectionVariantLanguageFilter] Filtering out variant without valid ${selectedLanguage} data:`, {
-        variantId: variant?.id,
-        variantName: variant?.name,
-        productName: variant?.product?.name,
+        variantId: (variant as any)?.id,
+        variantName: (variant as any)?.name,
+        productName: (variant as any)?.product?.name,
         hasValidName: validation.hasValidName,
         hasValidDescription: validation.hasValidDescription
       });

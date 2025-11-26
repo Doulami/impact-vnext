@@ -66,9 +66,9 @@ export function RelatedProducts({ currentProductId, collections, isCurrentProduc
   // Convert data to product cards based on query type
   let relatedProducts: any[] = [];
   
-  if (isCurrentProductBundle && bundleData?.bundles?.items) {
+  if (isCurrentProductBundle && (bundleData as any)?.bundles?.items) {
     // Handle bundles query results - filter by language (shell product name)
-    const languageFilteredBundles = bundleData.bundles.items.filter((bundle: any) => {
+    const languageFilteredBundles = (bundleData as any).bundles.items.filter((bundle: any) => {
       const shellProduct = bundle.shellProduct;
       return shellProduct?.name && typeof shellProduct.name === 'string' && shellProduct.name.trim().length > 0;
     });
@@ -92,9 +92,9 @@ export function RelatedProducts({ currentProductId, collections, isCurrentProduc
           bundleId: bundle.id
         };
       });
-  } else if (collectionData?.collection?.productVariants?.items) {
+  } else if ((collectionData as any)?.collection?.productVariants?.items) {
     // Handle collection results - filter by language first
-    const variants = collectionData.collection.productVariants.items;
+    const variants = (collectionData as any).collection.productVariants.items;
     const languageFilteredVariants = filterCollectionVariantsByLanguage(variants, locale);
     
     relatedProducts = languageFilteredVariants
