@@ -861,64 +861,97 @@ function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleF
                 {formData.items.length === 0 ? (
                     <p className="text-sm text-muted-foreground"><Trans>No components yet. Click "Add Components" to get started.</Trans></p>
                 ) : (
-                    <div className="border rounded-md">
-                        <table className="w-full text-sm">
-                            <thead className="bg-muted/50 border-b">
-                                <tr>
-                                    <th className="px-3 py-2 text-left font-medium"><Trans>Variant</Trans></th>
-                                    <th className="px-3 py-2 text-center font-medium w-24"><Trans>Quantity</Trans></th>
-                                    <th className="px-3 py-2 text-center font-medium w-24"><Trans>Order</Trans></th>
-                                    <th className="px-3 py-2 text-center font-medium w-20"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {formData.items.map((item: any, index: number) => (
-                                    <tr key={index} className="border-b last:border-b-0">
-                                        <td className="px-3 py-2">{item.productVariantName}</td>
-                                        <td className="px-3 py-2">
-                                            <Input
-                                                type="number"
-                                                min="1"
-                                                value={item.quantity}
-                                                onChange={(e) => {
-                                                    const items = [...formData.items];
-                                                    items[index] = { ...items[index], quantity: parseInt(e.target.value, 10) || 1 };
-                                                    setFormData({ ...formData, items });
-                                                }}
-                                                className="h-8 text-center"
-                                            />
-                                        </td>
-                                        <td className="px-3 py-2">
-                                            <Input
-                                                type="number"
-                                                min="0"
-                                                value={item.displayOrder !== null && item.displayOrder !== undefined ? item.displayOrder : 0}
-                                                onChange={(e) => {
-                                                    const items = [...formData.items];
-                                                    items[index] = { ...items[index], displayOrder: parseInt(e.target.value, 10) || 0 };
-                                                    setFormData({ ...formData, items });
-                                                }}
-                                                className="h-8 text-center"
-                                            />
-                                        </td>
-                                        <td className="px-3 py-2 text-center">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => {
-                                                    const items = [...formData.items];
-                                                    items.splice(index, 1);
-                                                    setFormData({ ...formData, items });
-                                                }}
-                                                className="h-8 w-8 p-0"
-                                            >
-                                                ×
-                                            </Button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <div className="border rounded-md space-y-0">
+                        {(() => {
+                            // Group items by product name (extract from variant name)
+                            const grouped: Record<string, any> = {};
+                            formData.items.forEach((item: any, originalIndex: number) => {
+                                // Try to extract product name from variant name
+                                // Assume variant name format like "Product Name - Variant" or just "Product Name"
+                                const productName = item.productVariantName;
+                                if (!grouped[productName]) {
+                                    grouped[productName] = [];
+                                }
+                                grouped[productName].push({ ...item, originalIndex });
+                            });
+
+                            return Object.entries(grouped).map(([productName, items]) => {
+                                const hasMultipleVariants = items.length > 1;
+
+                                return (
+                                    <div key={productName} className="border-b last:border-b-0">
+                                        {hasMultipleVariants && (
+                                            <div className="bg-muted/30 px-3 py-2 font-medium text-sm">
+                                                {productName}
+                                            </div>
+                                        )}
+                                        <table className="w-full text-sm">
+                                            <tbody>
+                                                {items.map((item: any) => (
+                                                    <tr key={item.originalIndex} className="border-b last:border-b-0">
+                                                        <td className={`px-3 py-2 ${hasMultipleVariants ? 'pl-6' : ''}`}>
+                                                            {item.productVariantName}
+                                                        </td>
+                                                        <td className="px-3 py-2 w-28">
+                                                            <div className="flex items-center gap-1">
+                                                                <span className="text-xs text-muted-foreground"><Trans>Qty</Trans>:</span>
+                                                                <Input
+                                                                    type="number"
+                                                                    min="1"
+                                                                    value={item.quantity}
+                                                                    onChange={(e) => {
+                                                                        const updatedItems = [...formData.items];
+                                                                        updatedItems[item.originalIndex] = {
+                                                                            ...updatedItems[item.originalIndex],
+                                                                            quantity: parseInt(e.target.value, 10) || 1,
+                                                                        };
+                                                                        setFormData({ ...formData, items: updatedItems });
+                                                                    }}
+                                                                    className="h-7 text-center w-14"
+                                                                />
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-3 py-2 w-28">
+                                                            <div className="flex items-center gap-1">
+                                                                <span className="text-xs text-muted-foreground">#</span>
+                                                                <Input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    value={item.displayOrder !== null && item.displayOrder !== undefined ? item.displayOrder : 0}
+                                                                    onChange={(e) => {
+                                                                        const updatedItems = [...formData.items];
+                                                                        updatedItems[item.originalIndex] = {
+                                                                            ...updatedItems[item.originalIndex],
+                                                                            displayOrder: parseInt(e.target.value, 10) || 0,
+                                                                        };
+                                                                        setFormData({ ...formData, items: updatedItems });
+                                                                    }}
+                                                                    className="h-7 text-center w-14"
+                                                                />
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-3 py-2 text-center w-16">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    const updatedItems = [...formData.items];
+                                                                    updatedItems.splice(item.originalIndex, 1);
+                                                                    setFormData({ ...formData, items: updatedItems });
+                                                                }}
+                                                                className="h-7 w-7 p-0 text-lg"
+                                                            >
+                                                                ×
+                                                            </Button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                );
+                            });
+                        })()}
                     </div>
                 )}
             </div>
