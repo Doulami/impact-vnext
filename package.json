@@ -12,7 +12,7 @@
     "dev:web": "cd apps/web && npm run dev",
     "dev:cms": "cd apps/cms && npm run develop",
     "dev:api": "cd apps/api && npm run dev",
-    "build": "npm run build:web && npm run build:cms && npm run build:api",
+    "build": "npm run build:cms && npm run build:api && npm run build:web",
     "build:web": "cd apps/web && npm run build",
     "build:cms": "cd apps/cms && npm run build",
     "build:api": "cd apps/api && npm run build",
@@ -29,6 +29,7 @@
     "install:apps": "cd apps/web && npm install && cd ../cms && npm install && cd ../api && npm install"
   },
   "devDependencies": {
+    "@strapi/strapi": "5.31.0",
     "concurrently": "^8.2.2",
     "rxjs": "^7.8.1"
   },
@@ -56,6 +57,8 @@
     "npm": "10.9.4"
   },
   "overrides": {
-    "@vendure/dashboard": "3.5.1"
+    "@vendure/dashboard": "3.5.1",
+    "@swc/core": "1.15.3",
+    "@vitejs/plugin-react-swc": "4.2.2"
   }
 }

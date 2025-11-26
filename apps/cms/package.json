@@ -36,6 +36,9 @@
     "node": ">=20.0.0 <=24.x.x",
     "npm": ">=6.0.0"
   },
+  "volta": {
+    "node": "20.18.3"
+  },
   "strapi": {
     "uuid": "b3c87862-22f3-4182-98d1-8bcb4df63c88",
     "installId": "0f86e1bd6e0ebd855ddf2d5f569c1a38fffcefb4dae7b5576c7e66d72f043ba5"

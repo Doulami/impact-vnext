@@ -166,32 +166,32 @@ export const config: VendureConfig = {
                 changeEmailAddressUrl: 'http://localhost:8080/verify-email-address-change'
             },
         }),
-        // AdminUiPlugin temporarily disabled - serve via separate static server
-        AdminUiPlugin.init({
-            route: 'admin',
-            port: 3002,
-            app: IS_DEV 
-                ? compileUiExtensions({
-                      outputPath: path.join(__dirname, '../admin-ui'),
-                      extensions: [
-                          {
-                              extensionPath: path.join(__dirname, '../ui-extensions'),
-                              providers: ['providers.ts'],
-                          },
-                          // bundleUiExtension, // Removed - migrated to React Dashboard
-                          // rewardPointsUiExtension, // Removed - migrated to React Dashboard
-                          // nutritionBatchUiExtension, // Removed - migrated to React Dashboard
-                      ],
-                      devMode: true,
-                  })
-                : {
-                      path: path.join(__dirname, '../admin-ui'),
-                  },
-            adminUiConfig: {
-                apiHost: 'http://localhost',
-                apiPort: serverPort,
-            },
-        }),
+        // AdminUiPlugin disabled - all admin UI migrated to React Dashboard
+        // AdminUiPlugin.init({
+        //     route: 'admin',
+        //     port: 3002,
+        //     app: IS_DEV 
+        //         ? compileUiExtensions({
+        //               outputPath: path.join(__dirname, '../admin-ui'),
+        //               extensions: [
+        //                   {
+        //                       extensionPath: path.join(__dirname, '../ui-extensions'),
+        //                       providers: ['providers.ts'],
+        //                   },
+        //                   // bundleUiExtension, // Removed - migrated to React Dashboard
+        //                   // rewardPointsUiExtension, // Removed - migrated to React Dashboard
+        //                   // nutritionBatchUiExtension, // Removed - migrated to React Dashboard
+        //               ],
+        //               devMode: true,
+        //           })
+        //         : {
+        //               path: path.join(__dirname, '../admin-ui'),
+        //           },
+        //     adminUiConfig: {
+        //         apiHost: 'http://localhost',
+        //         apiPort: serverPort,
+        //     },
+        // }),
         DashboardPlugin.init({
             route: 'dashboard',
             appDir: path.join(__dirname, '../dist/dashboard'),

@@ -49,6 +49,7 @@
   "devDependencies": {
     "@angular-devkit/build-angular": "^19.2.15",
     "@angular/cli": "^19.2.15",
+    "@types/node": "^24.10.1",
     "@vendure/cli": "3.5.1",
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "9.2.1",
