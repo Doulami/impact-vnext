@@ -13,8 +13,14 @@ msgstr "تفعيل المنتج المجمّع"
 msgid "Activating..."
 msgstr "جار التفعيل..."
 
+msgid "Add Bundle Components"
+msgstr "إضافة مكونات المنتج المجمّع"
+
 msgid "Add Component"
 msgstr "إضافة مكون"
+
+msgid "Add to Bundle"
+msgstr "إضافة إلى المنتج المجمّع"
 
 msgid "Allow (Risky)"
 msgstr "السماح (محفوف بالمخاطر)"
@@ -219,3 +225,18 @@ msgstr "ما إذا كان يمكن تطبيق رموز/كوبونات العر�
 
 msgid "Whether external promotions can apply to bundles"
 msgstr "ما إذا كان يمكن تطبيق العروض الترويجية الخارجية على المنتجات المجمّعة"
+
+msgid "Search products..."
+msgstr "البحث عن منتجات..."
+
+msgid "No products found"
+msgstr "لم يتم العثور على منتجات"
+
+msgid "Start typing to search for products"
+msgstr "ابدأ الكتابة للبحث عن منتجات"
+
+msgid "Qty"
+msgstr "الكمية"
+
+msgid "{selectedVariants.size} variant(s) selected"
+msgstr "{selectedVariants.size} متغير(ات) محددة"

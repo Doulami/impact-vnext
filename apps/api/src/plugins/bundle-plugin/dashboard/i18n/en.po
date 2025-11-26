@@ -22,8 +22,14 @@ msgid "Activating..."
 msgstr "Activating..."
 
 #: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:569
+msgid "Add Bundle Components"
+msgstr "Add Bundle Components"
+
 msgid "Add Component"
 msgstr "Add Component"
+
+msgid "Add to Bundle"
+msgstr "Add to Bundle"
 
 #: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:1036
 msgid "Allow (Risky)"
@@ -310,3 +316,18 @@ msgstr "Whether external promotion codes/coupons can be applied to this bundle"
 #: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:1039
 msgid "Whether external promotions can apply to bundles"
 msgstr "Whether external promotions can apply to bundles"
+
+msgid "Search products..."
+msgstr "Search products..."
+
+msgid "No products found"
+msgstr "No products found"
+
+msgid "Start typing to search for products"
+msgstr "Start typing to search for products"
+
+msgid "Qty"
+msgstr "Qty"
+
+msgid "{selectedVariants.size} variant(s) selected"
+msgstr "{selectedVariants.size} variant(s) selected"
