@@ -1,7 +1,8 @@
 import { DeepPartial, ID } from '@vendure/common/lib/shared-types';
-import { VendureEntity, ProductVariant, Asset } from '@vendure/core';
+import { VendureEntity, ProductVariant, Asset, Translatable, Translation, LocaleString } from '@vendure/core';
 import { Column, Entity, OneToMany, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { NutritionBatchRow } from './nutrition-batch-row.entity';
+import { NutritionBatchTranslation } from './nutrition-batch-translation.entity';
 import { ServingSizeUnit } from '../types/nutrition-batch.types';
 
 /**
@@ -18,10 +19,13 @@ import { ServingSizeUnit } from '../types/nutrition-batch.types';
  * - Certificate of Analysis (COA) asset
  */
 @Entity()
-export class NutritionBatch extends VendureEntity {
+export class NutritionBatch extends VendureEntity implements Translatable {
     constructor(input?: DeepPartial<NutritionBatch>) {
         super(input);
     }
+
+    @OneToMany(() => NutritionBatchTranslation, translation => translation.base, { eager: true })
+    translations: Array<Translation<NutritionBatch>>;
 
     // ==================== Identity & Relations ====================
 
@@ -63,58 +67,56 @@ export class NutritionBatch extends VendureEntity {
 
     /**
      * Serving label shown to users
-     * Example JSON: {"en": "60 g (1.5 scoops)", "fr": "60 g (1,5 dosettes)"}
+     * Translatable field - stored in translation entity
      */
-    @Column('simple-json')
-    servingLabel: Record<string, string>;
+    servingLabel: LocaleString;
 
     @Column('int', { nullable: true })
     servingsPerContainer?: number;
 
-    // ==================== Regulatory Texts (LocaleString) ====================
+    // ==================== Regulatory Texts (Translatable) ====================
 
     /**
-     * Full ingredients list (localized JSON)
-     * Example: {"en": "Whey protein isolate...", "fr": "Isolat de protéines de lactosérum..."}
+     * Full ingredients list
+     * Translatable field - stored in translation entity
      */
-    @Column('simple-json', { nullable: true })
-    ingredientsText?: Record<string, string>;
+    ingredientsText: LocaleString;
 
     /**
-     * Allergy advice (localized JSON)
+     * Allergy advice
+     * Translatable field - stored in translation entity
      */
-    @Column('simple-json', { nullable: true })
-    allergyAdviceText?: Record<string, string>;
+    allergyAdviceText: LocaleString;
 
     /**
-     * Recommended use instructions (localized JSON)
+     * Recommended use instructions
+     * Translatable field - stored in translation entity
      */
-    @Column('simple-json', { nullable: true })
-    recommendedUseText?: Record<string, string>;
+    recommendedUseText: LocaleString;
 
     /**
-     * Storage advice (localized JSON)
+     * Storage advice
+     * Translatable field - stored in translation entity
      */
-    @Column('simple-json', { nullable: true })
-    storageAdviceText?: Record<string, string>;
+    storageAdviceText: LocaleString;
 
     /**
-     * Warnings (localized JSON)
+     * Warnings
+     * Translatable field - stored in translation entity
      */
-    @Column('simple-json', { nullable: true })
-    warningsText?: Record<string, string>;
+    warningsText: LocaleString;
 
     /**
-     * Short label description (localized JSON)
+     * Short label description
+     * Translatable field - stored in translation entity
      */
-    @Column('simple-json', { nullable: true })
-    shortLabelDescription?: Record<string, string>;
+    shortLabelDescription: LocaleString;
 
     /**
-     * Reference intake footnote (localized JSON)
+     * Reference intake footnote
+     * Translatable field - stored in translation entity
      */
-    @Column('simple-json', { nullable: true })
-    referenceIntakeFootnoteText?: Record<string, string>;
+    referenceIntakeFootnoteText: LocaleString;
 
     // ==================== Internal / Admin ====================
 

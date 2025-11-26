@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/typeorm';
 import { Connection } from 'typeorm';
-import { RequestContext, TransactionalConnection, ID, UserInputError } from '@vendure/core';
+import { RequestContext, TransactionalConnection, ID, UserInputError, TranslatableSaver, TranslatorService } from '@vendure/core';
 import { NutritionBatch } from '../entities/nutrition-batch.entity';
 import { NutritionBatchRow } from '../entities/nutrition-batch-row.entity';
+import { NutritionBatchTranslation } from '../entities/nutrition-batch-translation.entity';
 import { CreateNutritionBatchInput, UpdateNutritionBatchInput } from '../types/nutrition-batch.types';
 
 /**
@@ -20,18 +21,21 @@ import { CreateNutritionBatchInput, UpdateNutritionBatchInput } from '../types/n
 @Injectable()
 export class NutritionBatchService {
     constructor(
-        private connection: TransactionalConnection
+        private connection: TransactionalConnection,
+        private translatableSaver: TranslatableSaver,
+        private translatorService: TranslatorService
     ) {}
 
     /**
      * Find all batches for a specific product variant
      */
     async findByVariantId(ctx: RequestContext, variantId: ID): Promise<NutritionBatch[]> {
-        return this.connection.getRepository(ctx, NutritionBatch).find({
+        const batches = await this.connection.getRepository(ctx, NutritionBatch).find({
             where: { productVariantId: variantId },
-            relations: ['rows', 'productVariant', 'coaAsset'],
+            relations: ['rows', 'productVariant', 'coaAsset', 'translations'],
             order: { createdAt: 'DESC' }
         });
+        return Promise.all(batches.map(batch => this.translatorService.translate(batch, ctx)));
     }
 
     /**
@@ -40,9 +44,9 @@ export class NutritionBatchService {
     async findOne(ctx: RequestContext, id: ID): Promise<NutritionBatch | null> {
         const batch = await this.connection.getRepository(ctx, NutritionBatch).findOne({
             where: { id },
-            relations: ['rows', 'productVariant', 'coaAsset']
+            relations: ['rows', 'productVariant', 'coaAsset', 'translations']
         });
-        return batch || null;
+        return batch ? this.translatorService.translate(batch, ctx) : null;
     }
 
     /**
@@ -55,9 +59,9 @@ export class NutritionBatchService {
                 productVariantId: variantId,
                 isCurrentForWebsite: true
             },
-            relations: ['rows', 'productVariant', 'coaAsset']
+            relations: ['rows', 'productVariant', 'coaAsset', 'translations']
         });
-        return batch || null;
+        return batch ? this.translatorService.translate(batch, ctx) : null;
     }
 
     /**
@@ -72,36 +76,24 @@ export class NutritionBatchService {
             await this.unsetCurrentBatch(ctx, input.productVariantId);
         }
 
-        const batch = new NutritionBatch({
-            productVariantId: input.productVariantId,
-            batchCode: input.batchCode,
-            productionDate: input.productionDate,
-            expiryDate: input.expiryDate,
-            isCurrentForWebsite: input.isCurrentForWebsite,
-            servingSizeValue: input.servingSizeValue,
-            servingSizeUnit: input.servingSizeUnit,
-            servingLabel: input.servingLabel,
-            servingsPerContainer: input.servingsPerContainer,
-            ingredientsText: input.ingredientsText,
-            allergyAdviceText: input.allergyAdviceText,
-            recommendedUseText: input.recommendedUseText,
-            storageAdviceText: input.storageAdviceText,
-            warningsText: input.warningsText,
-            shortLabelDescription: input.shortLabelDescription,
-            referenceIntakeFootnoteText: input.referenceIntakeFootnoteText,
-            notesInternal: input.notesInternal,
-            coaAssetId: input.coaAssetId,
-            rows: [] // Rows added separately
+        const batch = await this.translatableSaver.create({
+            ctx,
+            entityType: NutritionBatch,
+            translationType: NutritionBatchTranslation,
+            input: input as any
         });
 
-        return this.connection.getRepository(ctx, NutritionBatch).save(batch);
+        return this.translatorService.translate(batch, ctx);
     }
 
     /**
      * Update an existing nutrition batch
      */
     async update(ctx: RequestContext, id: ID, input: UpdateNutritionBatchInput): Promise<NutritionBatch> {
-        const batch = await this.findOne(ctx, id);
+        const batch = await this.connection.getRepository(ctx, NutritionBatch).findOne({
+            where: { id },
+            relations: ['translations']
+        });
         if (!batch) {
             throw new UserInputError(`Nutrition batch with ID ${id} not found`);
         }
@@ -111,26 +103,14 @@ export class NutritionBatchService {
             await this.unsetCurrentBatch(ctx, batch.productVariantId);
         }
 
-        // Update fields
-        if (input.batchCode !== undefined) batch.batchCode = input.batchCode;
-        if (input.productionDate !== undefined) batch.productionDate = input.productionDate;
-        if (input.expiryDate !== undefined) batch.expiryDate = input.expiryDate;
-        if (input.isCurrentForWebsite !== undefined) batch.isCurrentForWebsite = input.isCurrentForWebsite;
-        if (input.servingSizeValue !== undefined) batch.servingSizeValue = input.servingSizeValue;
-        if (input.servingSizeUnit !== undefined) batch.servingSizeUnit = input.servingSizeUnit;
-        if (input.servingLabel !== undefined) batch.servingLabel = input.servingLabel;
-        if (input.servingsPerContainer !== undefined) batch.servingsPerContainer = input.servingsPerContainer;
-        if (input.ingredientsText !== undefined) batch.ingredientsText = input.ingredientsText;
-        if (input.allergyAdviceText !== undefined) batch.allergyAdviceText = input.allergyAdviceText;
-        if (input.recommendedUseText !== undefined) batch.recommendedUseText = input.recommendedUseText;
-        if (input.storageAdviceText !== undefined) batch.storageAdviceText = input.storageAdviceText;
-        if (input.warningsText !== undefined) batch.warningsText = input.warningsText;
-        if (input.shortLabelDescription !== undefined) batch.shortLabelDescription = input.shortLabelDescription;
-        if (input.referenceIntakeFootnoteText !== undefined) batch.referenceIntakeFootnoteText = input.referenceIntakeFootnoteText;
-        if (input.notesInternal !== undefined) batch.notesInternal = input.notesInternal;
-        if (input.coaAssetId !== undefined) batch.coaAssetId = input.coaAssetId;
+        const updatedBatch = await this.translatableSaver.update({
+            ctx,
+            entityType: NutritionBatch,
+            translationType: NutritionBatchTranslation,
+            input: { id, ...input } as any
+        });
 
-        return this.connection.getRepository(ctx, NutritionBatch).save(batch);
+        return this.translatorService.translate(updatedBatch, ctx);
     }
 
     /**
@@ -174,29 +154,38 @@ export class NutritionBatchService {
             throw new UserInputError(`Nutrition batch with ID ${sourceBatchId} not found`);
         }
 
-        // Create new batch with same data but new batch code
-        const newBatch = new NutritionBatch({
-            productVariantId: sourceBatch.productVariantId,
-            batchCode: `${sourceBatch.batchCode}-COPY`,
-            productionDate: undefined, // Clear dates for new batch
-            expiryDate: undefined,
-            isCurrentForWebsite: false, // Don't make copy current
-            servingSizeValue: sourceBatch.servingSizeValue,
-            servingSizeUnit: sourceBatch.servingSizeUnit,
-            servingLabel: sourceBatch.servingLabel,
-            servingsPerContainer: sourceBatch.servingsPerContainer,
-            ingredientsText: sourceBatch.ingredientsText,
-            allergyAdviceText: sourceBatch.allergyAdviceText,
-            recommendedUseText: sourceBatch.recommendedUseText,
-            storageAdviceText: sourceBatch.storageAdviceText,
-            warningsText: sourceBatch.warningsText,
-            shortLabelDescription: sourceBatch.shortLabelDescription,
-            referenceIntakeFootnoteText: sourceBatch.referenceIntakeFootnoteText,
-            notesInternal: sourceBatch.notesInternal,
-            coaAssetId: sourceBatch.coaAssetId
-        });
+        // Create translation inputs from source batch
+        const translations = sourceBatch.translations.map(t => ({
+            languageCode: t.languageCode,
+            servingLabel: t.servingLabel,
+            ingredientsText: t.ingredientsText,
+            allergyAdviceText: t.allergyAdviceText,
+            recommendedUseText: t.recommendedUseText,
+            storageAdviceText: t.storageAdviceText,
+            warningsText: t.warningsText,
+            shortLabelDescription: t.shortLabelDescription,
+            referenceIntakeFootnoteText: t.referenceIntakeFootnoteText
+        }));
 
-        const savedBatch = await this.connection.getRepository(ctx, NutritionBatch).save(newBatch);
+        // Create new batch with same data but new batch code
+        const savedBatch = await this.translatableSaver.create({
+            ctx,
+            entityType: NutritionBatch,
+            translationType: NutritionBatchTranslation,
+            input: {
+                productVariantId: sourceBatch.productVariantId,
+                batchCode: `${sourceBatch.batchCode}-COPY`,
+                productionDate: undefined,
+                expiryDate: undefined,
+                isCurrentForWebsite: false,
+                servingSizeValue: sourceBatch.servingSizeValue,
+                servingSizeUnit: sourceBatch.servingSizeUnit,
+                servingsPerContainer: sourceBatch.servingsPerContainer,
+                notesInternal: sourceBatch.notesInternal,
+                coaAssetId: sourceBatch.coaAssetId,
+                translations
+            } as any
+        });
 
         // Clone all rows
         if (sourceBatch.rows && sourceBatch.rows.length > 0) {

@@ -17,7 +17,7 @@ import { CreateNutritionBatchInput, UpdateNutritionBatchInput, CreateNutritionBa
  * - Current batch management
  * - Batch duplication
  */
-@Resolver()
+@Resolver('NutritionBatch')
 export class NutritionBatchAdminResolver {
     constructor(
         private nutritionBatchService: NutritionBatchService,
@@ -34,11 +34,6 @@ export class NutritionBatchAdminResolver {
         @Args() args: { options?: ListQueryOptions<NutritionBatch>; variantId?: ID },
         @Relations(NutritionBatch) relations: RelationPaths<NutritionBatch>
     ): Promise<PaginatedList<NutritionBatch>> {
-        console.log('[NutritionBatchResolver] nutritionBatches called with:', {
-            variantId: args.variantId,
-            options: args.options,
-        });
-
         const qb = this.listQueryBuilder.build(NutritionBatch, args.options, {
             relations: relations || ['productVariant', 'rows', 'coaAsset'],
             ctx,
@@ -46,12 +41,10 @@ export class NutritionBatchAdminResolver {
 
         // Filter by variantId if provided
         if (args.variantId) {
-            // Use the query builder's alias to avoid column name issues
             qb.andWhere(`${qb.alias}.productVariantId = :variantId`, { variantId: args.variantId });
         }
 
         const [items, totalItems] = await qb.getManyAndCount();
-        console.log('[NutritionBatchResolver] returning:', { itemsCount: items.length, totalItems });
         return { items, totalItems };
     }
 
@@ -194,8 +187,7 @@ export class NutritionBatchAdminResolver {
 @Resolver('NutritionBatch')
 export class NutritionBatchShopResolver {
     constructor(
-        private nutritionBatchService: NutritionBatchService,
-        private nutritionLocaleService: NutritionLocaleService
+        private nutritionBatchService: NutritionBatchService
     ) {}
 
     @Query()
@@ -213,86 +205,6 @@ export class NutritionBatchShopResolver {
     ): Promise<NutritionBatch[]> {
         return this.nutritionBatchService.findByVariantId(ctx, args.variantId);
     }
-
-    // Resolve LocaleString fields based on request language
-    private resolveLocaleString(value: Record<string, string> | string | undefined, ctx: RequestContext): string | undefined {
-        if (!value) return undefined;
-        
-        // If it's a string (from simple-json serialization), parse it
-        let parsedObject: Record<string, string>;
-        if (typeof value === 'string') {
-            try {
-                parsedObject = JSON.parse(value);
-            } catch (e) {
-                // If parsing fails, return the string as-is
-                return value;
-            }
-        } else {
-            parsedObject = value;
-        }
-        
-        const languageCode = ctx.languageCode;
-        return parsedObject[languageCode] || parsedObject['en'] || Object.values(parsedObject)[0] || undefined;
-    }
-
-    @ResolveField()
-    servingLabel(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): string | undefined {
-        return this.resolveLocaleString(batch.servingLabel, ctx);
-    }
-
-    @ResolveField()
-    shortLabelDescription(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): string | undefined {
-        const raw = batch.shortLabelDescription;
-        console.log('[NutritionBatchShopResolver] shortLabelDescription input:', { type: typeof raw, valuePreview: typeof raw === 'string' ? (raw as string).substring(0, 100) : JSON.stringify(raw) });
-        const resolved = this.resolveLocaleString(raw, ctx);
-        console.log('[NutritionBatchShopResolver] shortLabelDescription output:', { type: typeof resolved, length: resolved?.length, valuePreview: resolved?.substring(0, 100) });
-        return resolved;
-    }
-
-    @ResolveField()
-    ingredientsText(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): string | undefined {
-        return this.resolveLocaleString(batch.ingredientsText, ctx);
-    }
-
-    @ResolveField()
-    allergyAdviceText(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): string | undefined {
-        return this.resolveLocaleString(batch.allergyAdviceText, ctx);
-    }
-
-    @ResolveField()
-    recommendedUseText(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): string | undefined {
-        return this.resolveLocaleString(batch.recommendedUseText, ctx);
-    }
-
-    @ResolveField()
-    storageAdviceText(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): string | undefined {
-        return this.resolveLocaleString(batch.storageAdviceText, ctx);
-    }
-
-    @ResolveField()
-    warningsText(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): string | undefined {
-        return this.resolveLocaleString(batch.warningsText, ctx);
-    }
-
-    @ResolveField()
-    referenceIntakeFootnoteText(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): string | undefined {
-        return this.resolveLocaleString(batch.referenceIntakeFootnoteText, ctx);
-    }
-
-    @ResolveField()
-    rows(@Parent() batch: NutritionBatch, @Ctx() ctx: RequestContext): any[] {
-        // Resolve row names - must parse JSON string first
-        const resolved = batch.rows?.map(row => {
-            console.log('[NutritionBatchShopResolver] Row name input:', { type: typeof row.name, value: row.name });
-            const resolvedName = this.resolveLocaleString(row.name as any, ctx);
-            console.log('[NutritionBatchShopResolver] Row name output:', { type: typeof resolvedName, value: resolvedName });
-            return {
-                ...row,
-                name: resolvedName
-            };
-        }) || [];
-        return resolved;
-    }
 }
 
 /**
@@ -301,29 +213,5 @@ export class NutritionBatchShopResolver {
  */
 @Resolver('NutritionBatchRow')
 export class NutritionBatchRowShopResolver {
-    // Resolve LocaleString fields based on request language
-    private resolveLocaleString(value: Record<string, string> | string | undefined, ctx: RequestContext): string | undefined {
-        if (!value) return undefined;
-        
-        // If it's a string (from simple-json serialization), parse it
-        let parsedObject: Record<string, string>;
-        if (typeof value === 'string') {
-            try {
-                parsedObject = JSON.parse(value);
-            } catch (e) {
-                // If parsing fails, return the string as-is
-                return value;
-            }
-        } else {
-            parsedObject = value;
-        }
-        
-        const languageCode = ctx.languageCode;
-        return parsedObject[languageCode] || parsedObject['en'] || Object.values(parsedObject)[0] || undefined;
-    }
-
-    @ResolveField()
-    name(@Parent() row: NutritionBatchRow, @Ctx() ctx: RequestContext): string | undefined {
-        return this.resolveLocaleString(row.name, ctx);
-    }
+    // No custom resolvers needed - TranslatorService handles translation
 }

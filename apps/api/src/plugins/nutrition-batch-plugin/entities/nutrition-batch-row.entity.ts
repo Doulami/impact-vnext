@@ -1,7 +1,8 @@
 import { DeepPartial, ID } from '@vendure/common/lib/shared-types';
-import { VendureEntity } from '@vendure/core';
-import { Column, Entity, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { VendureEntity, Translatable, Translation, LocaleString } from '@vendure/core';
+import { Column, Entity, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
 import { NutritionBatch } from './nutrition-batch.entity';
+import { NutritionBatchRowTranslation } from './nutrition-batch-row-translation.entity';
 import { NutrientGroup } from '../types/nutrition-batch.types';
 
 /**
@@ -18,10 +19,13 @@ import { NutrientGroup } from '../types/nutrition-batch.types';
  * - Display ordering
  */
 @Entity()
-export class NutritionBatchRow extends VendureEntity {
+export class NutritionBatchRow extends VendureEntity implements Translatable {
     constructor(input?: DeepPartial<NutritionBatchRow>) {
         super(input);
     }
+
+    @OneToMany(() => NutritionBatchRowTranslation, translation => translation.base, { eager: true })
+    translations: Array<Translation<NutritionBatchRow>>;
 
     // ==================== Identity & Relations ====================
 
@@ -36,11 +40,10 @@ export class NutritionBatchRow extends VendureEntity {
     // ==================== Nutrient Information ====================
 
     /**
-     * Name of the nutrient (localized JSON)
-     * Example: { "en": "Vitamin C - L-Ascorbic Acid", "fr": "Vitamine C - Acide L-Ascorbique" }
+     * Name of the nutrient
+     * Translatable field - stored in translation entity
      */
-    @Column('simple-json')
-    name: Record<string, string>;
+    name: LocaleString;
 
     /**
      * Nutrient group for organization

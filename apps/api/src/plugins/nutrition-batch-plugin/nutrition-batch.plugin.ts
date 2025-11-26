@@ -1,7 +1,9 @@
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
 import { gql } from 'graphql-tag';
 import { NutritionBatch } from './entities/nutrition-batch.entity';
+import { NutritionBatchTranslation } from './entities/nutrition-batch-translation.entity';
 import { NutritionBatchRow } from './entities/nutrition-batch-row.entity';
+import { NutritionBatchRowTranslation } from './entities/nutrition-batch-row-translation.entity';
 import { NutritionBatchService } from './services/nutrition-batch.service';
 import { NutritionBatchRowService } from './services/nutrition-batch-row.service';
 import { NutritionLocaleService } from './services/nutrition-locale.service';
@@ -25,9 +27,10 @@ import { ProductVariantNutritionResolver } from './api/product-variant.resolver'
 @VendurePlugin({
     imports: [PluginCommonModule],
     compatibility: '^3.5.0',
+    dashboard: './dashboard/nutrition-batch.index.tsx',
     
     // Register custom entities
-    entities: [NutritionBatch, NutritionBatchRow],
+    entities: [NutritionBatch, NutritionBatchTranslation, NutritionBatchRow, NutritionBatchRowTranslation],
     
     // Register services
     providers: [
@@ -67,6 +70,21 @@ import { ProductVariantNutritionResolver } from './api/product-variant.resolver'
                 totalItems: Int!
             }
             
+            type NutritionBatchTranslation {
+                id: ID!
+                createdAt: DateTime!
+                updatedAt: DateTime!
+                languageCode: LanguageCode!
+                servingLabel: String!
+                ingredientsText: String!
+                allergyAdviceText: String!
+                recommendedUseText: String!
+                storageAdviceText: String!
+                warningsText: String!
+                shortLabelDescription: String!
+                referenceIntakeFootnoteText: String!
+            }
+            
             type NutritionBatch implements Node {
                 id: ID!
                 createdAt: DateTime!
@@ -77,6 +95,8 @@ import { ProductVariantNutritionResolver } from './api/product-variant.resolver'
                 productionDate: DateTime
                 expiryDate: DateTime
                 isCurrentForWebsite: Boolean!
+                languageCode: LanguageCode!
+                translations: [NutritionBatchTranslation!]!
                 
                 # Serving information
                 servingSizeValue: Float!
@@ -101,11 +121,21 @@ import { ProductVariantNutritionResolver } from './api/product-variant.resolver'
                 rows: [NutritionBatchRow!]!
             }
             
+            type NutritionBatchRowTranslation {
+                id: ID!
+                createdAt: DateTime!
+                updatedAt: DateTime!
+                languageCode: LanguageCode!
+                name: String!
+            }
+            
             type NutritionBatchRow implements Node {
                 id: ID!
                 createdAt: DateTime!
                 updatedAt: DateTime!
                 nutritionBatch: NutritionBatch!
+                languageCode: LanguageCode!
+                translations: [NutritionBatchRowTranslation!]!
                 name: String!
                 group: NutrientGroup!
                 unit: String!
@@ -116,6 +146,19 @@ import { ProductVariantNutritionResolver } from './api/product-variant.resolver'
             }
             
             # Input types
+            input NutritionBatchTranslationInput {
+                id: ID
+                languageCode: LanguageCode!
+                servingLabel: String!
+                ingredientsText: String
+                allergyAdviceText: String
+                recommendedUseText: String
+                storageAdviceText: String
+                warningsText: String
+                shortLabelDescription: String
+                referenceIntakeFootnoteText: String
+            }
+            
             input CreateNutritionBatchInput {
                 productVariantId: ID!
                 batchCode: String!
@@ -124,15 +167,8 @@ import { ProductVariantNutritionResolver } from './api/product-variant.resolver'
                 isCurrentForWebsite: Boolean!
                 servingSizeValue: Float!
                 servingSizeUnit: ServingSizeUnit!
-                servingLabel: String!
                 servingsPerContainer: Int
-                ingredientsText: String
-                allergyAdviceText: String
-                recommendedUseText: String
-                storageAdviceText: String
-                warningsText: String
-                shortLabelDescription: String
-                referenceIntakeFootnoteText: String
+                translations: [NutritionBatchTranslationInput!]!
                 notesInternal: String
                 coaAssetId: ID
             }
@@ -144,21 +180,20 @@ import { ProductVariantNutritionResolver } from './api/product-variant.resolver'
                 isCurrentForWebsite: Boolean
                 servingSizeValue: Float
                 servingSizeUnit: ServingSizeUnit
-                servingLabel: String
                 servingsPerContainer: Int
-                ingredientsText: String
-                allergyAdviceText: String
-                recommendedUseText: String
-                storageAdviceText: String
-                warningsText: String
-                shortLabelDescription: String
-                referenceIntakeFootnoteText: String
+                translations: [NutritionBatchTranslationInput!]
                 notesInternal: String
                 coaAssetId: ID
             }
             
-            input CreateNutritionBatchRowInput {
+            input NutritionBatchRowTranslationInput {
+                id: ID
+                languageCode: LanguageCode!
                 name: String!
+            }
+            
+            input CreateNutritionBatchRowInput {
+                translations: [NutritionBatchRowTranslationInput!]!
                 group: NutrientGroup!
                 unit: String!
                 valuePerServing: Float
@@ -168,7 +203,7 @@ import { ProductVariantNutritionResolver } from './api/product-variant.resolver'
             }
             
             input UpdateNutritionBatchRowInput {
-                name: String
+                translations: [NutritionBatchRowTranslationInput!]
                 group: NutrientGroup
                 unit: String
                 valuePerServing: Float
@@ -311,6 +346,3 @@ export class NutritionBatchPlugin {
         return NutritionBatchPlugin;
     }
 }
-
-// Export UI extension
-export { nutritionBatchUiExtension } from './ui/nutrition-batch-ui-extension';

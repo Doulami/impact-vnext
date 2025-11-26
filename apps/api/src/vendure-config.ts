@@ -21,7 +21,7 @@ import { RewardPointsPlugin } from './plugins/reward-points-plugin';
 import { FeaturedCollectionPlugin } from './plugins/featured-collection.plugin';
 import { autoExpireBundlesTask } from './plugins/bundle-plugin/tasks/auto-expire-bundles.task';
 import { bundleConsistencyCheckTask } from './plugins/bundle-plugin/tasks/bundle-consistency-check.task';
-import { NutritionBatchPlugin, nutritionBatchUiExtension } from './plugins/nutrition-batch-plugin/nutrition-batch.plugin';
+import { NutritionBatchPlugin } from './plugins/nutrition-batch-plugin/nutrition-batch.plugin';
 import { ClicToPayPlugin } from './plugins/clictopay-plugin/clictopay.plugin';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
@@ -164,7 +164,7 @@ export const config: VendureConfig = {
                           },
                           // bundleUiExtension, // Removed - migrated to React Dashboard
                           // rewardPointsUiExtension, // Removed - migrated to React Dashboard
-                          nutritionBatchUiExtension,
+                          // nutritionBatchUiExtension, // Removed - migrated to React Dashboard
                       ],
                       devMode: true,
                   })

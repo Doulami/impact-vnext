@@ -3,6 +3,7 @@
  */
 
 import { ID } from '@vendure/common/lib/shared-types';
+import { LanguageCode } from '@vendure/core';
 
 /**
  * Serving Size Unit Enum
@@ -33,6 +34,22 @@ export enum NutrientGroup {
 }
 
 /**
+ * Translation input for nutrition batch
+ */
+export interface NutritionBatchTranslationInput {
+    id?: ID;
+    languageCode: LanguageCode;
+    servingLabel: string;
+    ingredientsText?: string;
+    allergyAdviceText?: string;
+    recommendedUseText?: string;
+    storageAdviceText?: string;
+    warningsText?: string;
+    shortLabelDescription?: string;
+    referenceIntakeFootnoteText?: string;
+}
+
+/**
  * Input type for creating a nutrition batch
  */
 export interface CreateNutritionBatchInput {
@@ -45,17 +62,10 @@ export interface CreateNutritionBatchInput {
     // Serving information
     servingSizeValue: number;
     servingSizeUnit: ServingSizeUnit;
-    servingLabel: Record<string, string>;
     servingsPerContainer?: number;
     
-    // Regulatory texts (localized as JSON objects)
-    ingredientsText?: Record<string, string>;
-    allergyAdviceText?: Record<string, string>;
-    recommendedUseText?: Record<string, string>;
-    storageAdviceText?: Record<string, string>;
-    warningsText?: Record<string, string>;
-    shortLabelDescription?: Record<string, string>;
-    referenceIntakeFootnoteText?: Record<string, string>;
+    // Translations
+    translations: NutritionBatchTranslationInput[];
     
     // Internal
     notesInternal?: string;
@@ -74,17 +84,10 @@ export interface UpdateNutritionBatchInput {
     // Serving information
     servingSizeValue?: number;
     servingSizeUnit?: ServingSizeUnit;
-    servingLabel?: Record<string, string>;
     servingsPerContainer?: number;
     
-    // Regulatory texts (localized as JSON objects)
-    ingredientsText?: Record<string, string>;
-    allergyAdviceText?: Record<string, string>;
-    recommendedUseText?: Record<string, string>;
-    storageAdviceText?: Record<string, string>;
-    warningsText?: Record<string, string>;
-    shortLabelDescription?: Record<string, string>;
-    referenceIntakeFootnoteText?: Record<string, string>;
+    // Translations
+    translations?: NutritionBatchTranslationInput[];
     
     // Internal
     notesInternal?: string;
@@ -92,10 +95,19 @@ export interface UpdateNutritionBatchInput {
 }
 
 /**
+ * Translation input for nutrition batch row
+ */
+export interface NutritionBatchRowTranslationInput {
+    id?: ID;
+    languageCode: LanguageCode;
+    name: string;
+}
+
+/**
  * Input type for creating a nutrition batch row
  */
 export interface CreateNutritionBatchRowInput {
-    name: Record<string, string>;
+    translations: NutritionBatchRowTranslationInput[];
     group: NutrientGroup;
     unit: string;
     valuePerServing?: number;
@@ -108,7 +120,7 @@ export interface CreateNutritionBatchRowInput {
  * Input type for updating a nutrition batch row
  */
 export interface UpdateNutritionBatchRowInput {
-    name?: Record<string, string>;
+    translations?: NutritionBatchRowTranslationInput[];
     group?: NutrientGroup;
     unit?: string;
     valuePerServing?: number;
