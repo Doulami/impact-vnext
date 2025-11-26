@@ -1,0 +1,164 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2025-11-26 20:00+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en\n"
+
+msgid "Actions"
+msgstr "Actions"
+
+msgid "Add Default Macros"
+msgstr "Add Default Macros"
+
+msgid "Add Row"
+msgstr "Add Row"
+
+msgid "Allergy Advice"
+msgstr "Allergy Advice"
+
+msgid "Amino"
+msgstr "Amino"
+
+msgid "Are you sure you want to delete batch {batch.batchCode}? This action cannot be undone."
+msgstr "Are you sure you want to delete batch {batch.batchCode}? This action cannot be undone."
+
+msgid "Back to List"
+msgstr "Back to List"
+
+msgid "Batch Code"
+msgstr "Batch Code"
+
+msgid "Batch Information"
+msgstr "Batch Information"
+
+msgid "Batch not found."
+msgstr "Batch not found."
+
+msgid "Batches & Nutrition"
+msgstr "Batches & Nutrition"
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Create Batch"
+msgstr "Create Batch"
+
+msgid "Create Nutrition Batch"
+msgstr "Create Nutrition Batch"
+
+msgid "Current"
+msgstr "Current"
+
+msgid "Delete"
+msgstr "Delete"
+
+msgid "Delete Batch?"
+msgstr "Delete Batch?"
+
+msgid "Error loading batch data. Check console for details."
+msgstr "Error loading batch data. Check console for details."
+
+msgid "Error saving batch. Please check console for details."
+msgstr "Error saving batch. Please check console for details."
+
+msgid "Expiry Date"
+msgstr "Expiry Date"
+
+msgid "Group"
+msgstr "Group"
+
+msgid "Ingredients"
+msgstr "Ingredients"
+
+msgid "Internal Notes"
+msgstr "Internal Notes"
+
+msgid "Loading..."
+msgstr "Loading..."
+
+msgid "Loading batch data..."
+msgstr "Loading batch data..."
+
+msgid "Macro"
+msgstr "Macro"
+
+msgid "Mineral"
+msgstr "Mineral"
+
+msgid "No batches yet. Click \"Create Batch\" to get started."
+msgstr "No batches yet. Click \"Create Batch\" to get started."
+
+msgid "No nutrition data yet. Click \"Add Row\" or \"Add Default Macros\" to get started."
+msgstr "No nutrition data yet. Click \"Add Row\" or \"Add Default Macros\" to get started."
+
+msgid "Nutrient"
+msgstr "Nutrient"
+
+msgid "Nutrition Table"
+msgstr "Nutrition Table"
+
+msgid "Other"
+msgstr "Other"
+
+msgid "Per 100g"
+msgstr "Per 100g"
+
+msgid "Per Serving"
+msgstr "Per Serving"
+
+msgid "Production Date"
+msgstr "Production Date"
+
+msgid "RI %"
+msgstr "RI %"
+
+msgid "Recommended Use"
+msgstr "Recommended Use"
+
+msgid "Reference Intake Footnote"
+msgstr "Reference Intake Footnote"
+
+msgid "Regulatory & Marketing Texts"
+msgstr "Regulatory & Marketing Texts"
+
+msgid "Save"
+msgstr "Save"
+
+msgid "Saving..."
+msgstr "Saving..."
+
+msgid "Serving Information"
+msgstr "Serving Information"
+
+msgid "Serving Label"
+msgstr "Serving Label"
+
+msgid "Serving Size"
+msgstr "Serving Size"
+
+msgid "Servings Per Container"
+msgstr "Servings Per Container"
+
+msgid "Set as Current"
+msgstr "Set as Current"
+
+msgid "Set as Current for Website"
+msgstr "Set as Current for Website"
+
+msgid "Short Description"
+msgstr "Short Description"
+
+msgid "Storage Advice"
+msgstr "Storage Advice"
+
+msgid "Unit"
+msgstr "Unit"
+
+msgid "Vitamin"
+msgstr "Vitamin"
+
+msgid "Warnings"
+msgstr "Warnings"

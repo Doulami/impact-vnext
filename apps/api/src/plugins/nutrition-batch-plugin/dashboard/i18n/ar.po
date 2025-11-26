@@ -1,0 +1,164 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2025-11-26 20:00+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: ar\n"
+
+msgid "Actions"
+msgstr "الإجراءات"
+
+msgid "Add Default Macros"
+msgstr "إضافة المغذيات الكبرى الافتراضية"
+
+msgid "Add Row"
+msgstr "إضافة صف"
+
+msgid "Allergy Advice"
+msgstr "نصائح الحساسية"
+
+msgid "Amino"
+msgstr "حمض أميني"
+
+msgid "Are you sure you want to delete batch {batch.batchCode}? This action cannot be undone."
+msgstr "هل أنت متأكد من حذف الدفعة {batch.batchCode}؟ لا يمكن التراجع عن هذا الإجراء."
+
+msgid "Back to List"
+msgstr "العودة إلى القائمة"
+
+msgid "Batch Code"
+msgstr "رمز الدفعة"
+
+msgid "Batch Information"
+msgstr "معلومات الدفعة"
+
+msgid "Batch not found."
+msgstr "لم يتم العثور على الدفعة."
+
+msgid "Batches & Nutrition"
+msgstr "الدفعات والتغذية"
+
+msgid "Cancel"
+msgstr "إلغاء"
+
+msgid "Create Batch"
+msgstr "إنشاء دفعة"
+
+msgid "Create Nutrition Batch"
+msgstr "إنشاء دفعة تغذية"
+
+msgid "Current"
+msgstr "الحالية"
+
+msgid "Delete"
+msgstr "حذف"
+
+msgid "Delete Batch?"
+msgstr "حذف الدفعة؟"
+
+msgid "Error loading batch data. Check console for details."
+msgstr "خطأ في تحميل بيانات الدفعة. تحقق من وحدة التحكم للحصول على التفاصيل."
+
+msgid "Error saving batch. Please check console for details."
+msgstr "خطأ في حفظ الدفعة. يرجى التحقق من وحدة التحكم للحصول على التفاصيل."
+
+msgid "Expiry Date"
+msgstr "تاريخ انتهاء الصلاحية"
+
+msgid "Group"
+msgstr "المجموعة"
+
+msgid "Ingredients"
+msgstr "المكونات"
+
+msgid "Internal Notes"
+msgstr "ملاحظات داخلية"
+
+msgid "Loading..."
+msgstr "جار التحميل..."
+
+msgid "Loading batch data..."
+msgstr "جار تحميل بيانات الدفعة..."
+
+msgid "Macro"
+msgstr "مغذي كبير"
+
+msgid "Mineral"
+msgstr "معدن"
+
+msgid "No batches yet. Click \"Create Batch\" to get started."
+msgstr "لا توجد دفعات حتى الآن. انقر على \"إنشاء دفعة\" للبدء."
+
+msgid "No nutrition data yet. Click \"Add Row\" or \"Add Default Macros\" to get started."
+msgstr "لا توجد بيانات تغذية حتى الآن. انقر على \"إضافة صف\" أو \"إضافة المغذيات الكبرى الافتراضية\" للبدء."
+
+msgid "Nutrient"
+msgstr "المغذي"
+
+msgid "Nutrition Table"
+msgstr "جدول التغذية"
+
+msgid "Other"
+msgstr "أخرى"
+
+msgid "Per 100g"
+msgstr "لكل 100 جرام"
+
+msgid "Per Serving"
+msgstr "لكل حصة"
+
+msgid "Production Date"
+msgstr "تاريخ الإنتاج"
+
+msgid "RI %"
+msgstr "نسبة المرجع %"
+
+msgid "Recommended Use"
+msgstr "الاستخدام الموصى به"
+
+msgid "Reference Intake Footnote"
+msgstr "حاشية المدخول المرجعي"
+
+msgid "Regulatory & Marketing Texts"
+msgstr "النصوص التنظيمية والتسويقية"
+
+msgid "Save"
+msgstr "حفظ"
+
+msgid "Saving..."
+msgstr "جار الحفظ..."
+
+msgid "Serving Information"
+msgstr "معلومات الحصة"
+
+msgid "Serving Label"
+msgstr "تسمية الحصة"
+
+msgid "Serving Size"
+msgstr "حجم الحصة"
+
+msgid "Servings Per Container"
+msgstr "عدد الحصص في الحاوية"
+
+msgid "Set as Current"
+msgstr "تعيين كحالية"
+
+msgid "Set as Current for Website"
+msgstr "تعيين كحالية للموقع"
+
+msgid "Short Description"
+msgstr "وصف مختصر"
+
+msgid "Storage Advice"
+msgstr "نصائح التخزين"
+
+msgid "Unit"
+msgstr "الوحدة"
+
+msgid "Vitamin"
+msgstr "فيتامين"
+
+msgid "Warnings"
+msgstr "تحذيرات"
