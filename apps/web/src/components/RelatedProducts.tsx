@@ -1,11 +1,14 @@
 'use client';
 
 import { useQuery } from '@apollo/client/react';
-import { GET_RELATED_PRODUCTS, GET_BUNDLES } from '@/lib/graphql/queries';
+import { useRelatedProducts, useBundles } from '@/lib/hooks/useLanguageAwareQuery';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { useRef } from 'react';
+import { useLocale } from 'next-intl';
 import { ProductCard } from './ProductCard';
+import { filterCollectionVariantsByLanguage } from '@/lib/utils/productLanguageValidation';
+import EmptyLanguageState from './EmptyLanguageState';
 
 interface RelatedProductsProps {
   currentProductId: string;
@@ -15,6 +18,7 @@ interface RelatedProductsProps {
 
 export function RelatedProducts({ currentProductId, collections, isCurrentProductBundle }: RelatedProductsProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const locale = useLocale();
   
   // If current product is a bundle, query other bundle products via facet
   // Otherwise, use collection-based related products
@@ -26,78 +30,33 @@ export function RelatedProducts({ currentProductId, collections, isCurrentProduc
   console.log('[RelatedProducts] Props:', { currentProductId, collections, isFeatured, collectionSlug, isCurrentProductBundle });
   
   // Query bundle products if current is a bundle (same as bundles listing page)
-  const { data: bundleData, loading: bundleLoading, error: bundleError } = useQuery<{
-    bundles: {
-      items: Array<{
-        id: string;
-        name: string;
-        slug: string;
-        description?: string;
-        status: string;
-        effectivePrice: number;
-        featuredAsset?: {
-          id: string;
-          preview: string;
-        };
-        shellProduct?: {
-          id: string;
-          name: string;
-          slug: string;
-        };
-      }>;
-    };
-  }>(GET_BUNDLES, {
-    variables: {
-      options: {
-        take: 9, // Take 9 to exclude current and show 8
-        filter: {
-          status: { eq: 'ACTIVE' } // Only show active bundles
-        }
+  const { 
+    data: bundleData, 
+    loading: bundleLoading, 
+    error: bundleError 
+  } = useBundles(
+    {
+      take: 9, // Take 9 to exclude current and show 8
+      filter: {
+        status: { eq: 'ACTIVE' } // Only show active bundles
       }
     },
-    skip: !isCurrentProductBundle
-  });
+    {
+      skip: !isCurrentProductBundle
+    }
+  );
   
   // Query products from collection if NOT a bundle
-  const { data: collectionData, loading: collectionLoading, error: collectionError } = useQuery<{
-    collection: {
-      id: string;
-      name: string;
-      productVariants: {
-        items: Array<{
-          id: string;
-          name: string;
-          sku: string;
-          price: number;
-          priceWithTax: number;
-          stockLevel: string;
-          featuredAsset?: {
-            id: string;
-            preview: string;
-          };
-          product: {
-            id: string;
-            name: string;
-            slug: string;
-            description: string;
-            customFields?: {
-              isBundle?: boolean;
-              bundleId?: string;
-            };
-            featuredAsset?: {
-              id: string;
-              preview: string;
-            };
-          };
-        }>;
-      };
-    };
-  }>(GET_RELATED_PRODUCTS, {
-    variables: {
-      collectionSlug: collectionSlug || 'all-products'
-    },
-    skip: isCurrentProductBundle || !collectionSlug // Skip if bundle or no collection
-  });
+  const { 
+    data: collectionData, 
+    loading: collectionLoading, 
+    error: collectionError 
+  } = useRelatedProducts(
+    collectionSlug || 'all-products',
+    {
+      skip: isCurrentProductBundle || !collectionSlug // Skip if bundle or no collection
+    }
+  );
 
   const loading = isCurrentProductBundle ? bundleLoading : collectionLoading;
   const error = isCurrentProductBundle ? bundleError : collectionError;
@@ -107,9 +66,14 @@ export function RelatedProducts({ currentProductId, collections, isCurrentProduc
   // Convert data to product cards based on query type
   let relatedProducts: any[] = [];
   
-  if (isCurrentProductBundle && bundleData?.bundles?.items) {
-    // Handle bundles query results (same structure as bundles listing)
-    relatedProducts = bundleData.bundles.items
+  if (isCurrentProductBundle && (bundleData as any)?.bundles?.items) {
+    // Handle bundles query results - filter by language (shell product name)
+    const languageFilteredBundles = (bundleData as any).bundles.items.filter((bundle: any) => {
+      const shellProduct = bundle.shellProduct;
+      return shellProduct?.name && typeof shellProduct.name === 'string' && shellProduct.name.trim().length > 0;
+    });
+    
+    relatedProducts = languageFilteredBundles
       .filter((bundle: any) => bundle.id !== currentProductId)
       .slice(0, 8)
       .map((bundle: any) => {
@@ -128,10 +92,12 @@ export function RelatedProducts({ currentProductId, collections, isCurrentProduc
           bundleId: bundle.id
         };
       });
-  } else if (collectionData?.collection?.productVariants?.items) {
-    // Handle collection results
-    const variants = collectionData.collection.productVariants.items;
-    relatedProducts = variants
+  } else if ((collectionData as any)?.collection?.productVariants?.items) {
+    // Handle collection results - filter by language first
+    const variants = (collectionData as any).collection.productVariants.items;
+    const languageFilteredVariants = filterCollectionVariantsByLanguage(variants, locale);
+    
+    relatedProducts = languageFilteredVariants
       .filter((v: any) => v.product.id !== currentProductId)
       .slice(0, 8)
       .map((v: any) => {

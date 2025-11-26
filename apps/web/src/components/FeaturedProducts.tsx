@@ -1,12 +1,16 @@
 'use client';
 
-import { useQuery, useApolloClient } from '@apollo/client/react';
-import { GET_FEATURED_PRODUCTS } from '@/lib/graphql/queries';
+import { useApolloClient } from '@apollo/client/react';
+import { useFeaturedProducts } from '@/lib/hooks/useLanguageAwareQuery';
 import { toProductCardData, type SearchResult } from '@/lib/types/product';
 import { Star, ChevronLeft, ChevronRight, Package } from 'lucide-react';
 import Link from 'next/link';
 import { useCart } from '@/lib/hooks/useCart';
 import { addBundleToCart } from '@/lib/helpers/bundleCart';
+import { useLocale } from 'next-intl';
+import { formatCurrency } from '@/lib/utils/locale-formatting';
+import { filterCollectionVariantsByLanguage } from '@/lib/utils/productLanguageValidation';
+import { EmptyLanguageState } from '@/components/EmptyLanguageState';
 
 interface FeaturedProductsProps {
   title?: string;
@@ -15,12 +19,25 @@ interface FeaturedProductsProps {
 export function FeaturedProducts({ title = 'Your journey starts here' }: FeaturedProductsProps = {}) {
   const { addItem, openCart } = useCart();
   const apolloClient = useApolloClient();
+  const locale = useLocale();
   
-  const { data: productsData, loading: productsLoading, error: productsError } = useQuery(GET_FEATURED_PRODUCTS);
+  const { 
+    data: productsData, 
+    loading: productsLoading, 
+    error: productsError, 
+    currentLanguage,
+    isUsingFallback
+  } = useFeaturedProducts();
 
   // Convert collection variants to card data - use variant ID to avoid duplicates
-  const variants = (productsData as any)?.collection?.productVariants?.items || [];
-  const productCards = variants.map((v: any) => {
+  const rawVariants = (productsData as any)?.collection?.productVariants?.items || [];
+  
+  // Filter variants to only include those with valid language data
+  const filteredVariants = filterCollectionVariantsByLanguage(rawVariants, locale);
+  
+  console.log(`[FeaturedProducts] Language: ${locale}, Raw variants: ${rawVariants.length}, Filtered: ${filteredVariants.length}`);
+  
+  const productCards = filteredVariants.map((v: any) => {
     // Check if product has bundle facet (check the parent facet name/code)
     const facetValues = v.product?.facetValues || [];
     
@@ -101,6 +118,23 @@ export function FeaturedProducts({ title = 'Your journey starts here' }: Feature
     );
   }
 
+  // Show empty state if no products available in current language
+  if (!loading && productCards.length === 0) {
+    return (
+      <section id="journey-section" className="py-16 bg-white">
+        <div className="container mx-auto px-4">
+          <h2 id="journey-title" className="text-3xl font-bold text-center mb-12">
+            {title}
+          </h2>
+          <EmptyLanguageState 
+            currentLanguage={locale}
+            title={`No featured products available in ${locale === 'ar' ? 'العربية' : locale === 'fr' ? 'Français' : 'English'}`}
+          />
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section id="journey-section" className="py-16 bg-white">
       <div className="container mx-auto px-4">
@@ -159,11 +193,11 @@ export function FeaturedProducts({ title = 'Your journey starts here' }: Feature
                     <div className="text-left">
                       {product.priceRange ? (
                         <div className="text-lg font-bold">
-                          ${(product.priceRange.min / 100).toFixed(2)} - ${(product.priceRange.max / 100).toFixed(2)}
+                          {formatCurrency(product.priceRange.min / 100, locale)} - {formatCurrency(product.priceRange.max / 100, locale)}
                         </div>
                       ) : (
                         <div className="text-lg font-bold">
-                          ${(product.priceWithTax / 100).toFixed(2)}
+                          {formatCurrency(product.priceWithTax / 100, locale)}
                         </div>
                       )}
                     </div>

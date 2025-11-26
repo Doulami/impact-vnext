@@ -6,6 +6,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useSearch } from '@/lib/hooks/useSearch';
 import { useDebounce } from '@/lib/hooks/useDebounce';
 import Link from 'next/link';
+import { useLocale } from 'next-intl';
+import { formatCurrency } from '@/lib/utils/locale-formatting';
 
 interface SearchBarProps {
   placeholder?: string;
@@ -27,6 +29,7 @@ export default function SearchBar({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
+  const locale = useLocale();
 
   // Update search term when initial value changes (e.g., from URL)
   useEffect(() => {
@@ -137,7 +140,7 @@ export default function SearchBar({
             if (showDropdown && searchTerm.trim()) setIsOpen(true);
           }}
           placeholder={placeholder}
-          className="w-full bg-white text-black px-4 py-2 pr-20 text-sm border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+          className="w-full bg-white text-black px-4 py-2 pe-20 text-sm border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
           autoComplete="off"
         />
         
@@ -218,8 +221,8 @@ export default function SearchBar({
                   {/* Price */}
                   <div className="text-sm font-semibold text-gray-900 flex-shrink-0">
                     {'value' in product.priceWithTax 
-                      ? `$${(product.priceWithTax.value / 100).toFixed(2)}`
-                      : `$${(product.priceWithTax.min / 100).toFixed(2)} - $${(product.priceWithTax.max / 100).toFixed(2)}`
+                      ? formatCurrency(product.priceWithTax.value / 100, locale)
+                      : `${formatCurrency(product.priceWithTax.min / 100, locale)} - ${formatCurrency(product.priceWithTax.max / 100, locale)}`
                     }
                   </div>
                 </button>

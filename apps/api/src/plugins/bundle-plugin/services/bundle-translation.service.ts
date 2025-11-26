@@ -294,6 +294,143 @@ export class BundleTranslationService {
             maxAvailable: 'Maximum Disponible',
             componentTotal: 'Total des Composants',
             savingsPercentage: 'Pourcentage d\'Économies',
+        },
+        
+        [LanguageCode.ar]: {
+            // ========== BUNDLE CRUD MESSAGES ==========
+            bundleCreated: (name: string) => `تم إنشاء الحزمة "${name}" بنجاح`,
+            bundleUpdated: (name: string) => `تم تحديث الحزمة "${name}" بنجاح`,
+            bundleDeleted: (name: string) => `تم حذف الحزمة "${name}" بنجاح`,
+            bundleNotFound: (id: string) => `الحزمة ذات المعرف "${id}" غير موجودة`,
+            
+            // ========== LIFECYCLE MESSAGES ==========
+            bundlePublished: (name: string) => `تم نشر الحزمة "${name}" وهي الآن متاحة للشراء`,
+            bundleArchived: (name: string) => `تم أرشفة الحزمة "${name}" ولم تعد متاحة`,
+            bundleMarkedBroken: (name: string) => `تم وضع علامة على الحزمة "${name}" كمعطلة`,
+            bundleRestored: (name: string) => `تم استعادة الحزمة "${name}" بنجاح`,
+            
+            // ========== VALIDATION ERRORS ==========
+            nameRequired: 'اسم الحزمة مطلوب',
+            discountTypeRequired: 'نوع الخصم مطلوب',
+            fixedPriceRequired: 'السعر الثابت مطلوب عندما يكون نوع الخصم "ثابت"',
+            percentOffRequired: 'نسبة الخصم مطلوبة عندما يكون نوع الخصم "نسبة مئوية"',
+            percentOffRange: 'يجب أن تكون نسبة الخصم بين 0 و 100',
+            itemsRequired: 'يجب أن تحتوي الحزمة على عنصر واحد على الأقل',
+            invalidQuantity: (qty: number) => `كمية غير صالحة: ${qty}. يجب أن تكون أكبر من 0`,
+            duplicateVariant: (variantId: string) => `المتغير ${variantId} موجود بالفعل في هذه الحزمة`,
+            
+            // ========== STOCK & AVAILABILITY ERRORS ==========
+            insufficientStock: 'مخزون غير كافٍ لمكونات الحزمة',
+            variantNotFound: (variantId: string) => `متغير المنتج ${variantId} غير موجود`,
+            variantOutOfStock: (variantName: string, required: number, available: number) => 
+                `"${variantName}" يتطلب ${required} ولكن ${available} فقط متاح`,
+            bundleNotAvailable: (name: string) => `الحزمة "${name}" غير متاحة حالياً`,
+            bundleCapReached: (name: string, cap: number) => 
+                `وصلت الحزمة "${name}" إلى سعتها القصوى وهي ${cap} وحدة`,
+            bundleExpired: (name: string) => `الحزمة "${name}" لم تعد متاحة (منتهية الصلاحية)`,
+            bundleNotYetActive: (name: string, availableFrom: Date) => 
+                `ستكون الحزمة "${name}" متاحة من ${availableFrom.toLocaleDateString('ar-SA')}`,
+            
+            // ========== COMPONENT HEALTH ERRORS ==========
+            brokenComponent: (variantName: string) => `المكون "${variantName}" لم يعد متاحاً`,
+            disabledComponent: (variantName: string) => `المكون "${variantName}" معطل`,
+            deletedComponent: (variantName: string) => `تم حذف المكون "${variantName}"`,
+            componentPriceChanged: (variantName: string) => `تغير سعر "${variantName}"`,
+            
+            // ========== LIFECYCLE TRANSITION ERRORS ==========
+            cannotPublishDraft: 'لا يمكن النشر: الحزمة تحتوي على أخطاء في التحقق',
+            cannotPublishBroken: 'لا يمكن النشر: الحزمة تحتوي على مكونات معطلة. يرجى إصلاح المشاكل أولاً',
+            cannotArchiveNew: 'لا يمكن الأرشفة: يجب حفظ الحزمة أولاً',
+            alreadyPublished: 'الحزمة منشورة بالفعل',
+            alreadyArchived: 'الحزمة مؤرشفة بالفعل',
+            
+            // ========== ORDER ERRORS ==========
+            cannotAddToOrder: (reason: string) => `لا يمكن إضافة الحزمة إلى الطلب: ${reason}`,
+            cannotAdjustQuantity: (reason: string) => `لا يمكن تعديل كمية الحزمة: ${reason}`,
+            cannotRemoveBundle: (reason: string) => `لا يمكن إزالة الحزمة من الطلب: ${reason}`,
+            bundleKeyNotFound: (key: string) => `الحزمة ذات المفتاح "${key}" غير موجودة في الطلب`,
+            invalidBundleQuantity: (qty: number) => `كمية الحزمة غير صالحة: ${qty}`,
+            
+            // ========== PROMOTION ERRORS ==========
+            externalPromosNotAllowed: (bundleName: string) => 
+                `العروض الترويجية الخارجية غير مسموح بها على الحزمة "${bundleName}"`,
+            promotionConflict: (promoName: string, bundleName: string) => 
+                `لا يمكن تطبيق العرض الترويجي "${promoName}" على الحزمة "${bundleName}"`,
+            maxDiscountExceeded: (max: number) => 
+                `سيتم تجاوز الحد الأقصى للخصم التراكمي البالغ ${max}%`,
+            
+            // ========== RESERVATION MESSAGES ==========
+            reservationCreated: (bundleId: string, qty: number) => 
+                `تم حجز ${qty} وحدات من الحزمة ${bundleId}`,
+            reservationReleased: (bundleId: string, qty: number) => 
+                `تم إطلاق ${qty} وحدات من الحزمة ${bundleId}`,
+            reservationFailed: (reason: string) => `فشل الحجز: ${reason}`,
+            
+            // ========== STATUS LABELS ==========
+            statusLabels: {
+                DRAFT: 'مسودة',
+                ACTIVE: 'نشط',
+                BROKEN: 'معطل',
+                ARCHIVED: 'مؤرشف',
+            },
+            
+            // ========== DISCOUNT TYPE LABELS ==========
+            discountTypes: {
+                FIXED: 'سعر ثابت',
+                PERCENT: 'نسبة مئوية من الخصم',
+            },
+            
+            // ========== FIELD LABELS ==========
+            fields: {
+                name: 'الاسم',
+                slug: 'المعرف',
+                description: 'الوصف',
+                status: 'الحالة',
+                discountType: 'نوع الخصم',
+                fixedPrice: 'السعر الثابت',
+                percentOff: 'نسبة الخصم',
+                validFrom: 'متاح من',
+                validTo: 'متاح حتى',
+                bundleCap: 'حد الحزمة',
+                allowExternalPromos: 'السماح بالعروض الترويجية الخارجية',
+                items: 'عناصر الحزمة',
+                version: 'الإصدار',
+                assets: 'الوسائط',
+                category: 'الفئة',
+                tags: 'الوسوم',
+            },
+            
+            // ========== FIELD DESCRIPTIONS ==========
+            fieldDescriptions: {
+                name: 'اسم العرض للحزمة',
+                slug: 'معرف متوافق مع عناوين URL',
+                description: 'وصف تفصيلي للحزمة',
+                discountType: 'كيفية حساب الخصم',
+                fixedPrice: 'السعر النهائي للحزمة بأكملها',
+                percentOff: 'نسبة الخصم من إجمالي المكونات (0-100)',
+                validFrom: 'التاريخ الذي تصبح فيه الحزمة متاحة',
+                validTo: 'التاريخ الذي تنتهي فيه صلاحية الحزمة',
+                bundleCap: 'الحد الأقصى لعدد الحزم التي يمكن بيعها',
+                allowExternalPromos: 'ما إذا كان يمكن تطبيق رموز ترويجية خارجية',
+            },
+            
+            // ========== UI MESSAGES ==========
+            confirmDelete: (name: string) => `هل أنت متأكد من رغبتك في حذف الحزمة "${name}"؟`,
+            confirmPublish: (name: string) => `نشر الحزمة "${name}" وجعلها متاحة للشراء؟`,
+            confirmArchive: (name: string) => `أرشفة الحزمة "${name}" وإزالتها من البيع؟`,
+            unsavedChanges: 'لديك تغييرات غير محفوظة. هل تريد تجاهلها؟',
+            
+            // ========== SUCCESS MESSAGES ==========
+            operationSuccess: 'تمت العملية بنجاح',
+            validationPassed: 'تم التحقق من الحزمة بنجاح',
+            stockCheckPassed: 'تم التحقق من توفر المخزون بنجاح',
+            
+            // ========== COMPUTED FIELDS ==========
+            effectivePrice: 'السعر الفعلي',
+            totalSavings: 'إجمالي التوفير',
+            maxAvailable: 'الحد الأقصى المتاح',
+            componentTotal: 'إجمالي المكونات',
+            savingsPercentage: 'نسبة التوفير',
         }
     };
     

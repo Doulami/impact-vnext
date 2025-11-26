@@ -26,14 +26,23 @@ const httpLink = new HttpLink({
 let currentLanguage = 'en'; // Default language
 
 export function setApolloLanguage(lang: string) {
+  console.log('[Apollo] Setting language to:', lang);
   currentLanguage = lang;
 }
 
 const languageLink = setContext((_, { headers }) => {
+  console.log('[Apollo] Language link - sending headers:', {
+    currentLanguage,
+    'Accept-Language': currentLanguage
+  });
+  
   return {
     headers: {
       ...headers,
-      'vendure-token': currentLanguage, // Vendure uses this header for language
+      // Try Accept-Language header which is more standard
+      'Accept-Language': currentLanguage,
+      // Also try the vendure-language-code header as backup
+      'vendure-language-code': currentLanguage,
     }
   };
 });

@@ -588,3 +588,112 @@ export const GET_BUNDLE_AVAILABILITY = gql`
     }
   }
 `;
+
+// Get available languages from active channel
+export const GET_AVAILABLE_LANGUAGES = gql`
+  query GetAvailableLanguages {
+    activeChannel {
+      id
+      code
+      availableLanguageCodes
+      defaultLanguageCode
+    }
+  }
+`;
+
+// Language metadata type
+export interface LanguageInfo {
+  code: string;
+  name: string;
+  nativeName: string;
+  flag: string;
+  dir: 'ltr' | 'rtl';
+}
+
+// Static language metadata mapping
+export const LANGUAGE_METADATA: Record<string, LanguageInfo> = {
+  en: {
+    code: 'en',
+    name: 'English',
+    nativeName: 'English',
+    flag: '🇺🇸',
+    dir: 'ltr'
+  },
+  fr: {
+    code: 'fr',
+    name: 'French',
+    nativeName: 'Français',
+    flag: '🇫🇷',
+    dir: 'ltr'
+  },
+  ar: {
+    code: 'ar',
+    name: 'Arabic',
+    nativeName: 'العربية',
+    flag: '🇸🇦',
+    dir: 'rtl'
+  },
+  de: {
+    code: 'de',
+    name: 'German',
+    nativeName: 'Deutsch',
+    flag: '🇩🇪',
+    dir: 'ltr'
+  },
+  es: {
+    code: 'es',
+    name: 'Spanish',
+    nativeName: 'Español',
+    flag: '🇪🇸',
+    dir: 'ltr'
+  },
+  it: {
+    code: 'it',
+    name: 'Italian',
+    nativeName: 'Italiano',
+    flag: '🇮🇹',
+    dir: 'ltr'
+  },
+  pt: {
+    code: 'pt',
+    name: 'Portuguese',
+    nativeName: 'Português',
+    flag: '🇵🇹',
+    dir: 'ltr'
+  },
+  ru: {
+    code: 'ru',
+    name: 'Russian',
+    nativeName: 'Русский',
+    flag: '🇷🇺',
+    dir: 'ltr'
+  },
+  ja: {
+    code: 'ja',
+    name: 'Japanese',
+    nativeName: '日本語',
+    flag: '🇯🇵',
+    dir: 'ltr'
+  },
+  zh: {
+    code: 'zh',
+    name: 'Chinese',
+    nativeName: '中文',
+    flag: '🇨🇳',
+    dir: 'ltr'
+  },
+  ko: {
+    code: 'ko',
+    name: 'Korean',
+    nativeName: '한국어',
+    flag: '🇰🇷',
+    dir: 'ltr'
+  },
+  hi: {
+    code: 'hi',
+    name: 'Hindi',
+    nativeName: 'हिन्दी',
+    flag: '🇮🇳',
+    dir: 'ltr'
+  }
+};

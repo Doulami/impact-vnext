@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useCart } from '@/lib/hooks/useCart';
 import { useApolloClient } from '@apollo/client/react';
 import { addBundleToCart } from '@/lib/helpers/bundleCart';
+import { useLocale } from 'next-intl';
+import { formatCurrency } from '@/lib/utils/locale-formatting';
 
 interface ProductCardProps {
   product: {
@@ -26,6 +28,7 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem, openCart } = useCart();
   const apolloClient = useApolloClient();
+  const locale = useLocale();
 
   return (
     <Link
@@ -77,11 +80,11 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="text-center">
             {product.priceRange ? (
               <div className="text-lg font-bold">
-                ${(product.priceRange.min / 100).toFixed(2)} - ${(product.priceRange.max / 100).toFixed(2)}
+                {formatCurrency(product.priceRange.min / 100, locale)} - {formatCurrency(product.priceRange.max / 100, locale)}
               </div>
             ) : (
               <div className="text-lg font-bold">
-                ${(product.priceWithTax / 100).toFixed(2)}
+                {formatCurrency(product.priceWithTax / 100, locale)}
               </div>
             )}
           </div>

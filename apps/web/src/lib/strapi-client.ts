@@ -88,7 +88,7 @@ function transformArticle(strapiArticle: any): Article {
             : null,
         }
       : null,
-    category: data.category
+    category: data.category && (data.category.name || data.category.data?.attributes?.name)
       ? {
           name: data.category.name || data.category.data?.attributes?.name,
           slug: data.category.slug || data.category.data?.attributes?.slug,
@@ -131,7 +131,7 @@ function transformArticleListItem(strapiArticle: any): ArticleListItem {
             : null,
         }
       : null,
-    category: data.category
+    category: data.category && (data.category.name || data.category.data?.attributes?.name)
       ? {
           name: data.category.name || data.category.data?.attributes?.name,
           slug: data.category.slug || data.category.data?.attributes?.slug,
