@@ -214,9 +214,6 @@ export const GET_PRODUCT_BY_SLUG = gql`
       customFields {
         isBundle
         bundleId
-        bundlePrice
-        bundleAvailability
-        bundleComponents
       }
       optionGroups {
         id
@@ -425,6 +422,34 @@ export const BUNDLE_FRAGMENT = gql`
           featuredAsset {
             id
             preview
+          }
+          optionGroups {
+            id
+            name
+            code
+            options {
+              id
+              name
+              code
+            }
+          }
+          variants {
+            id
+            name
+            sku
+            price
+            priceWithTax
+            stockLevel
+            featuredAsset {
+              id
+              preview
+            }
+            options {
+              id
+              name
+              code
+              groupId
+            }
           }
         }
         currentNutritionBatch {

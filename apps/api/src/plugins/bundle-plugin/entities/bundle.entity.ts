@@ -5,13 +5,19 @@ import { BundleItem } from './bundle-item.entity';
 
 /**
  * Bundle Status Enum
+ * 
+ * Simplified to only DB-stored statuses:
+ * - DRAFT: Bundle being configured
+ * - ACTIVE: Bundle published and exists
+ * 
+ * Other states are computed:
+ * - Expired: computed from validTo date
+ * - Broken: computed from component availability
+ * - Unavailable: computed from product.enabled + dates + stock
  */
 export enum BundleStatus {
     DRAFT = 'DRAFT',
-    ACTIVE = 'ACTIVE',
-    EXPIRED = 'EXPIRED', 
-    BROKEN = 'BROKEN',
-    ARCHIVED = 'ARCHIVED'
+    ACTIVE = 'ACTIVE'
 }
 
 /**
@@ -27,7 +33,8 @@ export enum BundleDiscountType {
  * 
  * Represents a bundle definition with exploded bundle support:
  * - Manages bundle composition and discount rules
- * - Tracks status lifecycle (DRAFT → ACTIVE → EXPIRED/BROKEN → ARCHIVED)
+ * - Tracks status lifecycle (DRAFT → ACTIVE)
+ * - Expired/Broken states are computed at runtime
  * - Supports both fixed-price and percentage discounts
  * - Version controlled for auditability
  */
@@ -140,20 +147,16 @@ export class Bundle extends VendureEntity implements HasCustomFields {
     get effectivePrice(): number {
         if (this.discountType === BundleDiscountType.FIXED && this.fixedPrice !== null && this.fixedPrice !== undefined) {
             // Admin enters tax-inclusive fixedPrice, convert to pre-tax using tax ratio from components
-            console.log('[Bundle effectivePrice] Calculating for bundle', this.id, 'fixedPrice:', this.fixedPrice, 'items count:', this.items?.length);
             if (this.items?.length > 0) {
                 // Find first item with valid pricing to calculate tax ratio
                 for (const item of this.items) {
-                    console.log('[Bundle effectivePrice] Checking item:', item.id, 'variant:', item.productVariant?.id, 'price:', item.productVariant?.price, 'priceWithTax:', item.productVariant?.priceWithTax);
                     if (item.productVariant?.price > 0 && item.productVariant?.priceWithTax > 0) {
                         const taxRatio = item.productVariant.priceWithTax / item.productVariant.price;
                         const preTaxPrice = Math.round(this.fixedPrice / taxRatio);
-                        console.log('[Bundle effectivePrice] Tax ratio:', taxRatio, 'Pre-tax price:', preTaxPrice);
                         return preTaxPrice;
                     }
                 }
             }
-            console.log('[Bundle effectivePrice] Fallback: returning fixedPrice as-is');
             // Fallback: if no items or can't determine tax, return as-is (assume admin entered pre-tax)
             return this.fixedPrice;
         }
@@ -355,52 +358,33 @@ export class Bundle extends VendureEntity implements HasCustomFields {
         this.enabled = true; // Keep backwards compatibility
     }
     
+    
     /**
-     * Mark bundle as BROKEN (when components become unavailable)
+     * Check if bundle is expired based on validTo date
      */
-    markBroken(reason?: string): void {
-        if (this.status === BundleStatus.ACTIVE) {
-            this.status = BundleStatus.BROKEN;
-            this.enabled = false; // Keep backwards compatibility
-            // Could store reason in customFields if needed
-            if (reason && this.customFields) {
-                this.customFields.brokenReason = reason;
-                this.customFields.brokenAt = new Date().toISOString();
-            }
-        }
+    get isExpired(): boolean {
+        if (!this.validTo) return false;
+        return new Date() > this.validTo;
     }
     
     /**
-     * Archive bundle (soft delete)
+     * Check if bundle is broken (components missing/deleted)
+     * Note: This requires items to be loaded with productVariant relation
      */
-    archive(): void {
-        this.status = BundleStatus.ARCHIVED;
-        this.enabled = false; // Keep backwards compatibility
-    }
-    
-    /**
-     * Restore bundle from BROKEN to ACTIVE if valid
-     */
-    restore(): boolean {
-        if (this.status === BundleStatus.BROKEN && this.validate().length === 0) {
-            this.status = BundleStatus.ACTIVE;
-            this.enabled = true; // Keep backwards compatibility
-            if (this.customFields) {
-                delete this.customFields.brokenReason;
-                delete this.customFields.brokenAt;
-            }
-            return true;
-        }
-        return false;
+    get isBroken(): boolean {
+        if (!this.items || this.items.length === 0) return true;
+        // Check if any component variant is missing
+        return this.items.some(item => !item.productVariant || item.productVariant.deletedAt);
     }
     
     /**
      * Check if bundle is available for add-to-cart
-     * Returns true only if status is ACTIVE AND bundle is within date range
-     * Note: EXPIRED bundles are not available even if manually set back to ACTIVE
+     * Computed from: status=ACTIVE + within date range + not broken
      */
     get isAvailable(): boolean {
-        return this.status === BundleStatus.ACTIVE && this.isWithinSchedule();
+        return this.status === BundleStatus.ACTIVE 
+            && this.isWithinSchedule() 
+            && !this.isBroken;
     }
     
     /**
@@ -443,19 +427,26 @@ export class Bundle extends VendureEntity implements HasCustomFields {
     
     /**
      * Get human-readable status description
+     * Includes computed states (expired, broken)
      */
     get statusDescription(): string {
-        switch (this.status) {
-            case BundleStatus.DRAFT:
-                return 'Draft - Not yet published';
-            case BundleStatus.ACTIVE:
-                return 'Active - Available for purchase';
-            case BundleStatus.BROKEN:
-                return 'Broken - Components unavailable';
-            case BundleStatus.ARCHIVED:
-                return 'Archived - No longer available';
-            default:
-                return 'Unknown status';
+        if (this.status === BundleStatus.DRAFT) {
+            return 'Draft - Not yet published';
         }
+        
+        if (this.status === BundleStatus.ACTIVE) {
+            if (this.isBroken) {
+                return 'Broken - Components unavailable';
+            }
+            if (this.isExpired) {
+                return 'Expired - Past end date';
+            }
+            if (!this.isWithinSchedule()) {
+                return 'Scheduled - Not yet available';
+            }
+            return 'Active - Available for purchase';
+        }
+        
+        return 'Unknown status';
     }
 }

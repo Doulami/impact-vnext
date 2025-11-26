@@ -105,7 +105,7 @@ function renderStrapiBlock(block: StrapiBlock, index: number): React.ReactNode {
       return <p key={index} className="mb-4 leading-relaxed">{children}</p>;
     
     case 'heading':
-      const HeadingTag = `h${block.level || 2}` as keyof JSX.IntrinsicElements;
+      const HeadingTag = `h${block.level || 2}` as keyof React.JSX.IntrinsicElements;
       return <HeadingTag key={index} className="font-bold mt-6 mb-3 text-gray-900">{children}</HeadingTag>;
     
     case 'list':

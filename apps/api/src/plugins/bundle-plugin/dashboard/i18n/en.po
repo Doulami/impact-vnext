@@ -1,0 +1,312 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2025-11-25 11:29+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:293
+msgid "Activate Bundle"
+msgstr "Activate Bundle"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:293
+msgid "Activating..."
+msgstr "Activating..."
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:569
+msgid "Add Component"
+msgstr "Add Component"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:1036
+msgid "Allow (Risky)"
+msgstr "Allow (Risky)"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:538
+msgid "Allow External Promotions"
+msgstr "Allow External Promotions"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:859
+msgid "Allowed"
+msgstr "Allowed"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:494
+msgid "Availability"
+msgstr "Availability"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:497
+msgid "Available From"
+msgstr "Available From"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:508
+msgid "Available Until"
+msgstr "Available Until"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:301
+msgid "Bundle activated but not configured yet"
+msgstr "Bundle activated but not configured yet"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:309
+msgid "Bundle Active"
+msgstr "Bundle Active"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:522
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:854
+msgid "Bundle Cap"
+msgstr "Bundle Cap"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:759
+msgid "Bundle Configuration"
+msgstr "Bundle Configuration"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:968
+msgid "Bundle Settings"
+msgstr "Bundle Settings"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:673
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:1073
+msgid "Cancel"
+msgstr "Cancel"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:336
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:560
+msgid "Components"
+msgstr "Components"
+
+#. placeholder {0}: bundle.items?.length || 0
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:816
+msgid "Components ({0})"
+msgstr "Components ({0})"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:300
+msgid "Configure Bundle"
+msgstr "Configure Bundle"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:750
+msgid "Create Bundle"
+msgstr "Create Bundle"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:318
+msgid "Deactivate"
+msgstr "Deactivate"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:318
+msgid "Deactivating..."
+msgstr "Deactivating..."
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:794
+msgid "Discount Configuration"
+msgstr "Discount Configuration"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:476
+msgid "Discount percentage applied to component total"
+msgstr "Discount percentage applied to component total"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:340
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:447
+msgid "Discount Type"
+msgstr "Discount Type"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:785
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:983
+msgid "Edit"
+msgstr "Edit"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:865
+msgid "Effective Price"
+msgstr "Effective Price"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:1062
+msgid "Enter as decimal (e.g., 0.50 for 50%)"
+msgstr "Enter as decimal (e.g., 0.50 for 50%)"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:1035
+msgid "Exclude (Safe)"
+msgstr "Exclude (Safe)"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:858
+msgid "External Promos"
+msgstr "External Promos"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:553
+msgid "External promotions can apply (bundle discount + promo discount)"
+msgstr "External promotions can apply (bundle discount + promo discount)"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:956
+msgid "Failed to load bundle settings"
+msgstr "Failed to load bundle settings"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:342
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:453
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:461
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:799
+msgid "Fixed Price"
+msgstr "Fixed Price"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:499
+msgid "Leave empty for immediate availability"
+msgstr "Leave empty for immediate availability"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:510
+msgid "Leave empty for permanent availability"
+msgstr "Leave empty for permanent availability"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:734
+msgid "Loading bundle data..."
+msgstr "Loading bundle data..."
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:948
+msgid "Loading settings..."
+msgstr "Loading settings..."
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:1003
+msgid "Max Cumulative Discount"
+msgstr "Max Cumulative Discount"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:1044
+msgid "Max Cumulative Discount (%)"
+msgstr "Max Cumulative Discount (%)"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:524
+msgid "Maximum bundles that can be sold (leave empty for unlimited)"
+msgstr "Maximum bundles that can be sold (leave empty for unlimited)"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:743
+msgid "No bundle configuration found. Create a bundle for this product."
+msgstr "No bundle configuration found. Create a bundle for this product."
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:840
+msgid "No components"
+msgstr "No components"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:573
+msgid "No components yet"
+msgstr "No components yet"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:859
+msgid "Not Allowed"
+msgstr "Not Allowed"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:550
+msgid "OFF"
+msgstr "OFF"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:553
+msgid "ON"
+msgstr "ON"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:581
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:825
+msgid "Order"
+msgstr "Order"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:342
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:454
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:799
+msgid "Percentage Off"
+msgstr "Percentage Off"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:474
+msgid "Percentage Off (%)"
+msgstr "Percentage Off (%)"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:463
+msgid "Price applied at order; item prices prorated"
+msgstr "Price applied at order; item prices prorated"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:550
+msgid "Promotion codes and coupons will NOT apply to this bundle (prevents double-discounting)"
+msgstr "Promotion codes and coupons will NOT apply to this bundle (prevents double-discounting)"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:777
+msgid "Publish"
+msgstr "Publish"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:777
+msgid "Publishing..."
+msgstr "Publishing..."
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:580
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:824
+msgid "Quantity"
+msgstr "Quantity"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:1070
+msgid "Save"
+msgstr "Save"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:670
+msgid "Save Bundle"
+msgstr "Save Bundle"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:670
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:1070
+msgid "Saving..."
+msgstr "Saving..."
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:991
+msgid "Site-wide Promotions"
+msgstr "Site-wide Promotions"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:1023
+msgid "Site-wide Promotions Affect Bundles"
+msgstr "Site-wide Promotions Affect Bundles"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:609
+msgid "SKU"
+msgstr "SKU"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:326
+msgid "Status"
+msgstr "Status"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:286
+msgid "This product is not configured as a bundle."
+msgstr "This product is not configured as a bundle."
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:869
+msgid "Total Savings"
+msgstr "Total Savings"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:797
+msgid "Type"
+msgstr "Type"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:855
+msgid "Unlimited"
+msgstr "Unlimited"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:846
+msgid "Valid From"
+msgstr "Valid From"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:850
+msgid "Valid To"
+msgstr "Valid To"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:803
+msgid "Value"
+msgstr "Value"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:823
+msgid "Variant"
+msgstr "Variant"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:579
+msgid "Variant ID"
+msgstr "Variant ID"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:546
+msgid "Whether external promotion codes/coupons can be applied to this bundle"
+msgstr "Whether external promotion codes/coupons can be applied to this bundle"
+
+#: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:1039
+msgid "Whether external promotions can apply to bundles"
+msgstr "Whether external promotions can apply to bundles"

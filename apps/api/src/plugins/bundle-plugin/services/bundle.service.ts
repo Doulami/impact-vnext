@@ -154,16 +154,8 @@ export class BundleService {
             featuredAsset = assetEntities[0]; // First asset as featured
         }
         
-        // Determine initial status based on validTo date
-        let initialStatus = BundleStatus.DRAFT;
-        if (input.validTo) {
-            const now = new Date();
-            const validTo = new Date(input.validTo);
-            if (validTo < now) {
-                initialStatus = BundleStatus.EXPIRED; // Expired on creation
-                Logger.info(`Creating bundle with expired validTo date (${input.validTo}), setting status to EXPIRED`, 'BundleService');
-            }
-        }
+        // All new bundles start as DRAFT
+        const initialStatus = BundleStatus.DRAFT;
         
         // Create bundle entity
         const bundle = new Bundle({
@@ -414,41 +406,41 @@ export class BundleService {
             delete (input as any).assets; // Remove from input to avoid Object.assign overwriting
         }
         
-        // Update bundle properties
-        Object.assign(bundle, input);
+        // Update bundle properties (excluding items which are handled separately)
+        const { items, ...bundleProps } = input;
+        Object.assign(bundle, bundleProps);
         
-        // Check if validTo was updated to an expired date
-        if (input.validTo !== undefined) {
-            const now = new Date();
-            const validTo = new Date(input.validTo);
-            if (validTo < now && bundle.status === BundleStatus.ACTIVE) {
-                bundle.status = BundleStatus.EXPIRED;
-                bundle.enabled = false;
-                Logger.info(`Bundle ${bundle.id} validTo updated to expired date (${input.validTo}), setting status to EXPIRED`, 'BundleService');
-            } else if (validTo >= now && bundle.status === BundleStatus.EXPIRED) {
-                // Reactivate expired bundle if validTo is extended to future
-                bundle.status = BundleStatus.ACTIVE;
-                bundle.enabled = true;
-                Logger.info(`Bundle ${bundle.id} validTo extended to future date (${input.validTo}), reactivating from EXPIRED`, 'BundleService');
-            }
-        }
+        // Clear items relation to prevent cascade save
+        delete (bundle as any).items;
+        console.log('Deleted bundle.items, now saving bundle...');
         
         await this.connection.getRepository(ctx, Bundle).save(bundle);
 
         // Update bundle items if provided
-        if (input.items) {
+        if (items) {
             // Remove existing items
-            await this.connection.getRepository(ctx, BundleItem).delete({ bundleId: input.id });
+            await this.connection.getRepository(ctx, BundleItem).delete({ bundleId: bundle.id });
+
+            // Validate and enrich items
+            const validatedItems = await this.validateAndEnrichItems(ctx, items as CreateBundleItemInput[]);
 
             // Create new items
-            const bundleItems = input.items.map(itemInput => new BundleItem({
-                ...itemInput,
-                bundleId: input.id,
-            }));
-
+            const bundleItems = validatedItems.map((itemData, index) => {
+                const item = new BundleItem({
+                    bundleId: bundle.id,
+                    productVariantId: itemData.productVariantId,
+                    quantity: itemData.quantity,
+                    weight: itemData.weight,
+                    displayOrder: itemData.displayOrder ?? index,
+                    unitPriceSnapshot: itemData.currentPrice,
+                    unitPrice: itemData.currentPrice / 100,
+                    customFields: {}
+                });
+                return item;
+            });
+            
             await this.connection.getRepository(ctx, BundleItem).save(bundleItems);
         }
-
         const result = await this.findOne(ctx, input.id);
         if (!result) {
             throw new Error('Failed to retrieve updated bundle');
@@ -478,6 +470,62 @@ export class BundleService {
         await this.connection.getRepository(ctx, Bundle).delete(id);
         return { result: 'DELETED' };
     }
+
+    /**
+     * Activate a product as a bundle
+     * Sets isBundle=true customField via ProductService (bypasses readonly restriction)
+     */
+    async activateProductAsBundle(ctx: RequestContext, productId: ID): Promise<void> {
+        const product = await this.productService.findOne(ctx, productId);
+        if (!product) {
+            throw new Error(`Product with id ${productId} not found`);
+        }
+
+        // Check if product has more than one variant
+        const productWithVariants = await this.connection.getRepository(ctx, Product).findOne({
+            where: { id: productId },
+            relations: ['variants']
+        });
+        
+        if (productWithVariants && productWithVariants.variants && productWithVariants.variants.length > 1) {
+            throw new Error('Cannot activate bundle: Product has multiple variants. Bundles can only be created for products with a single variant.');
+        }
+
+        // Update product customFields using ProductService (bypasses readonly)
+        await this.productService.update(ctx, {
+            id: productId,
+            customFields: {
+                isBundle: true,
+            },
+        });
+        
+        Logger.info(`Activated product ${productId} as bundle`, 'BundleService');
+    }
+
+    /**
+     * Remove bundle from product
+     * Hard deletes bundle entity and clears product customFields
+     */
+    async removeProductBundle(ctx: RequestContext, productId: ID, bundleId: ID): Promise<void> {
+        const bundle = await this.findOne(ctx, bundleId);
+        if (bundle) {
+            // Hard delete the bundle entity
+            await this.connection.getRepository(ctx, Bundle).delete(bundleId);
+            Logger.info(`Deleted bundle ${bundleId}`, 'BundleService');
+        }
+
+        // Clear product customFields using ProductService (bypasses readonly)
+        await this.productService.update(ctx, {
+            id: productId,
+            customFields: {
+                isBundle: false,
+                bundleId: null,
+            },
+        });
+        
+        Logger.info(`Removed bundle from product ${productId}`, 'BundleService');
+    }
+
 
     /**
      * Find a bundle by ID
@@ -612,7 +660,6 @@ export class BundleService {
         }> = [];
 
         let componentMaxQuantity = Infinity;
-        console.log('[calculateComponentAvailability] Starting calc for bundle', bundle.id, 'items:', bundle.items.length);
 
         for (const item of bundle.items) {
             const variant = item.productVariant;
@@ -621,7 +668,6 @@ export class BundleService {
             const stockLevel = await this.getVariantStockLevel(ctx, variant.id);
             const onHand = stockLevel.stockOnHand;
             const allocated = stockLevel.stockAllocated || 0;
-            console.log('[calculateComponentAvailability] Item:', variant.id, variant.name, 'onHand:', onHand, 'allocated:', allocated, 'quantity needed:', item.quantity);
             
             // Calculate effective available based on backorder settings
             let effectiveAvailable: number;
@@ -639,9 +685,7 @@ export class BundleService {
 
             // Calculate max bundles possible with this component
             const maxForThisItem = Math.floor(effectiveAvailable / item.quantity);
-            console.log('[calculateComponentAvailability] effectiveAvailable:', effectiveAvailable, 'maxForThisItem:', maxForThisItem, 'componentMaxQuantity before:', componentMaxQuantity);
             componentMaxQuantity = Math.min(componentMaxQuantity, maxForThisItem);
-            console.log('[calculateComponentAvailability] componentMaxQuantity after:', componentMaxQuantity);
             
             // Track insufficient items for detailed error reporting
             if (effectiveAvailable < item.quantity) {
@@ -656,7 +700,6 @@ export class BundleService {
         }
 
         const finalMax = componentMaxQuantity === Infinity ? 999999 : componentMaxQuantity;
-        console.log('[calculateComponentAvailability] Final result - componentMaxQuantity:', componentMaxQuantity, 'returning:', finalMax);
         return {
             maxQuantity: finalMax,
             insufficientItems
@@ -955,20 +998,10 @@ export class BundleService {
             // Storefront uses shell product assets, not bundle assets
             // CLEANUP: Bundle.assets and Bundle.featuredAsset fields can be deprecated in future
             
-            // Update shell product (price, availability, components only)
+            // Update shell product enabled status only
+            // Custom fields bundlePrice, bundleAvailability, bundleComponents removed - data available via Bundle entity
             await this.productService.update(ctx, {
                 id: shellProduct.id,
-                customFields: {
-                    ...shellProduct.customFields,
-                    bundlePrice: effectivePricePreTax,
-                    bundleAvailability: A_final,
-                    bundleComponents: JSON.stringify(
-                        bundle.items.map(item => ({
-                            variantId: item.productVariantId,
-                            qty: item.quantity
-                        }))
-                    )
-                },
                 enabled: bundle.status === BundleStatus.ACTIVE && bundle.isWithinSchedule()
             });
             
@@ -986,7 +1019,7 @@ export class BundleService {
             }
             
             Logger.info(
-                `Synced bundle ${bundle.id} to shell product ${shellProduct.id}: price=${effectivePricePreTax} (pre-tax), availability=${A_final} (assets managed by shell product)`,
+                `Synced bundle ${bundle.id} to shell product ${shellProduct.id}: variant price=${effectivePricePreTax} (pre-tax), enabled=${bundle.status === BundleStatus.ACTIVE && bundle.isWithinSchedule()}`,
                 'BundleService'
             );
             
@@ -1097,58 +1130,6 @@ export class BundleService {
     }
     
     /**
-     * Archive bundle (soft delete)
-     */
-    async archiveBundle(ctx: RequestContext, bundleId: ID): Promise<Bundle> {
-        const bundle = await this.findOne(ctx, bundleId);
-        if (!bundle) {
-            throw new Error(this.translationService.bundleNotFound(ctx, String(bundleId)));
-        }
-        
-        bundle.archive();
-        
-        const savedBundle = await this.connection.getRepository(ctx, Bundle).save(bundle);
-        Logger.info(`Bundle ${bundle.name} archived`, 'BundleService');
-        
-        return savedBundle;
-    }
-    
-    /**
-     * Mark bundle as BROKEN when components become unavailable
-     */
-    async markBundleBroken(ctx: RequestContext, bundleId: ID, reason?: string): Promise<Bundle> {
-        const bundle = await this.findOne(ctx, bundleId);
-        if (!bundle) {
-            throw new Error(this.translationService.bundleNotFound(ctx, String(bundleId)));
-        }
-        
-        bundle.markBroken(reason);
-        
-        const savedBundle = await this.connection.getRepository(ctx, Bundle).save(bundle);
-        Logger.warn(`Bundle ${bundle.name} marked as BROKEN: ${reason}`, 'BundleService');
-        
-        return savedBundle;
-    }
-    
-    /**
-     * Restore bundle from BROKEN to ACTIVE if components are available again
-     */
-    async restoreBundle(ctx: RequestContext, bundleId: ID): Promise<Bundle> {
-        const bundle = await this.findOne(ctx, bundleId);
-        if (!bundle) {
-            throw new Error(this.translationService.bundleNotFound(ctx, String(bundleId)));
-        }
-        
-        if (bundle.restore()) {
-            const savedBundle = await this.connection.getRepository(ctx, Bundle).save(bundle);
-            Logger.info(`Bundle ${bundle.name} restored to ACTIVE status`, 'BundleService');
-            return savedBundle;
-        } else {
-            throw new Error(`Bundle cannot be restored: ${bundle.validate().join(', ')}`);
-        }
-    }
-    
-    /**
      * Find all active bundles (for public API)
      */
     async findActiveBundles(ctx: RequestContext, options?: BundleListOptions): Promise<PaginatedList<Bundle>> {
@@ -1157,21 +1138,6 @@ export class BundleService {
             filter: {
                 ...options?.filter,
                 status: { eq: BundleStatus.ACTIVE }
-            }
-        };
-        
-        return this.findAll(ctx, queryOptions);
-    }
-    
-    /**
-     * Find bundles by status
-     */
-    async findBundlesByStatus(ctx: RequestContext, status: BundleStatus, options?: BundleListOptions): Promise<PaginatedList<Bundle>> {
-        const queryOptions = {
-            ...options,
-            filter: {
-                ...options?.filter,
-                status: { eq: status }
             }
         };
         

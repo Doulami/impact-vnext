@@ -49,7 +49,7 @@ function toBundleResult(bundle: Bundle): CombinedResult {
     id: bundle.id,
     name: shellProduct?.name || 'Bundle',
     slug: shellProduct?.slug || `bundle-${bundle.id}`,
-    image: shellProduct?.featuredAsset?.preview || '/product-placeholder.svg',
+    image: (shellProduct as any)?.featuredAsset?.preview || '/product-placeholder.svg',
     price: bundlePrice, // Already in cents
     originalPrice: componentTotal,
     savings: savings,
@@ -132,7 +132,7 @@ export function useCombinedSearch(initialInput?: Partial<SearchInput>) {
         if (searchInput.term) {
           const term = searchInput.term.toLowerCase();
           const shellName = bundle.shellProduct?.name || '';
-          const shellDescription = bundle.shellProduct?.description || '';
+          const shellDescription = (bundle.shellProduct as any)?.description || '';
           return shellName.toLowerCase().includes(term) ||
                  shellDescription.toLowerCase().includes(term) ||
                  bundle.items.some(item => 

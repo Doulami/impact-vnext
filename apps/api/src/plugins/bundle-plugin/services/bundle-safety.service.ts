@@ -22,9 +22,10 @@ import { Bundle } from '../entities/bundle.entity';
  * 
  * Key Features:
  * - Event-driven bundle recomputation when components change
- * - Automatic bundle status updates (ACTIVE → BROKEN) when components fail
  * - Protection against deleting variants used in active bundles
  * - Bundle lifecycle management and validation
+ * 
+ * Note: Broken/expired states are computed at runtime (not written to DB)
  */
 @Injectable()
 export class BundleSafetyService implements OnModuleInit {
@@ -89,16 +90,15 @@ export class BundleSafetyService implements OnModuleInit {
             
             for (const bundle of affectedBundles) {
                 if (isVariantUnavailable && bundle.status === 'ACTIVE') {
-                    // Mark bundle as broken if an active bundle contains an unavailable variant
-                    await this.markBundleBroken(
-                        ctx, 
-                        bundle.id, 
-                        `Component variant ${variantId} is no longer available`
+                    // Log warning - bundle.isBroken will now compute to true at runtime
+                    Logger.warn(
+                        `Bundle ${bundle.id} component variant ${variantId} is now unavailable - bundle will show as broken`,
+                        BundleSafetyService.loggerCtx
                     );
-                } else {
-                    // Queue bundle for recomputation
-                    await this.queueBundleRecomputation(ctx, bundle.id, 'variant_updated');
                 }
+                
+                // Queue bundle for recomputation (pricing/availability sync)
+                await this.queueBundleRecomputation(ctx, bundle.id, 'variant_updated');
             }
             
         } catch (error) {
@@ -123,20 +123,13 @@ export class BundleSafetyService implements OnModuleInit {
                     BundleSafetyService.loggerCtx
                 );
                 
-                // Mark all affected bundles as broken
+                // Log all affected bundles - they will show as broken via computed isBroken property
                 for (const bundle of affectedBundles) {
-                    await this.markBundleBroken(
-                        ctx, 
-                        bundle.id, 
-                        `CRITICAL: Component variant ${variantId} was deleted`
+                    Logger.error(
+                        `Bundle ${bundle.id} (${bundle.name}) will show as broken - component variant ${variantId} was deleted`,
+                        BundleSafetyService.loggerCtx
                     );
                 }
-                
-                // Log critical alert instead of complex event
-                Logger.error(
-                    `CRITICAL ALERT: Variant ${variantId} deleted affecting bundles: ${affectedBundles.map(b => b.id).join(', ')}`,
-                    BundleSafetyService.loggerCtx
-                );
             }
             
         } catch (error) {
@@ -192,36 +185,6 @@ export class BundleSafetyService implements OnModuleInit {
             .getMany();
     }
     
-    /**
-     * Mark a bundle as BROKEN with reason
-     */
-    async markBundleBroken(ctx: RequestContext, bundleId: ID, reason: string): Promise<void> {
-        try {
-            await this.connection.getRepository(ctx, Bundle)
-                .update({ id: bundleId }, {
-                    status: 'BROKEN' as any,
-                    updatedAt: new Date()
-                });
-            
-            Logger.warn(`Bundle ${bundleId} marked as BROKEN: ${reason}`, BundleSafetyService.loggerCtx);
-            
-            // Log status change instead of complex event
-            Logger.warn(
-                `Bundle ${bundleId} status changed to BROKEN: ${reason}`,
-                BundleSafetyService.loggerCtx
-            );
-            
-            // Queue reindex if bundle was using shell product
-            await this.queueBundleReindex(ctx, bundleId, 'bundle_broken');
-            
-        } catch (error) {
-            Logger.error(
-                `Failed to mark bundle ${bundleId} as BROKEN: ${error instanceof Error ? error.message : String(error)}`,
-                BundleSafetyService.loggerCtx
-            );
-            throw error;
-        }
-    }
     
     /**
      * Queue bundle for recomputation (price, availability, etc.)
@@ -246,9 +209,7 @@ export class BundleSafetyService implements OnModuleInit {
                 `Failed to recompute bundle ${bundleId}: ${errorMessage}`,
                 BundleSafetyService.loggerCtx
             );
-            
-            // If recomputation fails, mark bundle as broken
-            await this.markBundleBroken(ctx, bundleId, `Recomputation failed: ${errorMessage}`);
+            // Bundle will show as broken via computed isBroken if components are unavailable
         }
     }
     
@@ -376,10 +337,10 @@ export class BundleSafetyService implements OnModuleInit {
                     const validation = await this.validateBundleIntegrity(ctx, bundle.id);
                     
                     if (!validation.isValid) {
-                        await this.markBundleBroken(
-                            ctx,
-                            bundle.id,
-                            `Consistency check failed: ${validation.issues.map(i => i.message).join(', ')}`
+                        // Log broken bundles - they will show as broken via computed isBroken property
+                        Logger.warn(
+                            `Bundle ${bundle.id} (${bundle.name}) failed consistency check: ${validation.issues.map(i => i.message).join(', ')}`,
+                            BundleSafetyService.loggerCtx
                         );
                         stats.brokenBundles++;
                     }

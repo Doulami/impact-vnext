@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import React, { useState, Fragment, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { GET_BUNDLE } from '@/lib/graphql/queries';
 import { useProduct, useBundle } from '@/lib/hooks/useLanguageAwareQuery';
@@ -17,6 +17,7 @@ import Footer from '@/components/Footer';
 import Button from '@/components/Button';
 import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
+import { VariantSelector } from '@/components/VariantSelector';
 import type { Bundle, BundleItem, NutritionBatch } from '@/lib/types/product';
 
 interface ProductOption {
@@ -75,9 +76,6 @@ interface Product {
   customFields?: {
     isBundle?: boolean;
     bundleId?: string;
-    bundlePrice?: number;
-    bundleAvailability?: number;
-    bundleComponents?: string;
   };
   optionGroups: ProductOptionGroup[];
   variants: ProductVariant[];
@@ -99,6 +97,8 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedBundleComponentIndex, setSelectedBundleComponentIndex] = useState(0);
+  // Track selected variant per bundle component (key: bundleItemId, value: variantId)
+  const [bundleComponentVariants, setBundleComponentVariants] = useState<Record<string, string>>({});
   const [isOverviewAccordionOpen, setIsOverviewAccordionOpen] = useState(false);
   const [isNutritionAccordionOpen, setIsNutritionAccordionOpen] = useState(false);
   const [isRecommendedUseAccordionOpen, setIsRecommendedUseAccordionOpen] = useState(false);
@@ -155,6 +155,17 @@ export default function ProductDetailPage() {
   const selectedVariant = selectedVariantId 
     ? product?.variants.find(v => v.id === selectedVariantId)
     : findVariantByOptions(selectedOptions) || product?.variants[0];
+  
+  // Initialize bundle component variants when bundle loads
+  useEffect(() => {
+    if (bundle?.items && Object.keys(bundleComponentVariants).length === 0) {
+      const initialVariants: Record<string, string> = {};
+      bundle.items.forEach(item => {
+        initialVariants[item.id] = item.productVariant.id;
+      });
+      setBundleComponentVariants(initialVariants);
+    }
+  }, [bundle?.items]);
 
   // Initialize default options when product loads
   if (product && Object.keys(selectedOptions).length === 0 && product.variants.length > 0 && product.optionGroups?.length > 0) {
@@ -231,7 +242,7 @@ export default function ProductDetailPage() {
         originalPrice: componentTotal,
         image: product.featuredAsset?.preview || '/product-placeholder.svg',
         slug: product.slug,
-        inStock: (product.customFields?.bundleAvailability || 0) > 0,
+        inStock: bundle.items.length > 0, // Bundle is in stock if it has components
         quantity: quantity,
         isBundle: true,
         bundleId: bundleId,
@@ -340,14 +351,34 @@ export default function ProductDetailPage() {
   const price = selectedVariant?.priceWithTax || 0;
   
   // Calculate component total for display (use priceWithTax from variants for consistency)
+  // NOTE: This reflects the selected variant prices, not just the default variants
   const componentTotal = isBundle && bundle
-    ? bundle.items.reduce((sum, item) => sum + (item.productVariant.priceWithTax * item.quantity), 0)
+    ? bundle.items.reduce((sum, item) => {
+        // Get the selected variant ID (or default to the item's original variant)
+        const currentVariantId = bundleComponentVariants[item.id] || item.productVariant.id;
+        // Find the full variant object from the product's variants
+        const currentVariant = item.productVariant.product?.variants?.find(v => v.id === currentVariantId) || item.productVariant;
+        return sum + (currentVariant.priceWithTax * item.quantity);
+      }, 0)
     : 0;
   
-  // Get bundle savings from backend (now correctly calculated with tax)
+  // Calculate bundle savings dynamically based on selected variants
+  // Savings = Individual Total (selected variants) - Bundle Price (fixed)
   const bundleSavings = isBundle && bundle
-    ? bundle.totalSavings || 0
+    ? componentTotal - price
     : 0;
+  
+  // Determine if all multi-variant components have been selected
+  // If any component has multiple variants but no selection made, hide pricing until selected
+  const areAllVariantsSelected = isBundle && bundle
+    ? bundle.items.every((item) => {
+        const hasMultipleVariants = (item.productVariant.product?.variants?.length || 0) > 1;
+        // If single variant, always considered "selected"
+        if (!hasMultipleVariants) return true;
+        // If multiple variants, check if user has made a selection
+        return bundleComponentVariants[item.id] !== undefined;
+      })
+    : true; // For non-bundles, always show pricing
 
   // Get current nutrition batch for selected variant
   const currentNutritionBatch = selectedVariant?.currentNutritionBatch;
@@ -789,23 +820,33 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* Price */}
-            <div>
-              <div className="text-3xl font-bold">
-                ${(price / 100).toFixed(2)}
-              </div>
-              {isBundle && componentTotal > price && (
-                <div className="text-lg text-gray-500 line-through mt-1">
-                  ${(componentTotal / 100).toFixed(2)}
+            {/* Price - Only show for non-bundles or bundles with all variants selected */}
+            {areAllVariantsSelected && (
+              <div>
+                <div className="text-3xl font-bold">
+                  ${(price / 100).toFixed(2)}
                 </div>
+<<<<<<< HEAD:apps/web/src/app/[locale]/products/[slug]/page.tsx
               )}
               {!isBundle && selectedVariant?.sku && (
                 <span className="text-sm text-gray-600 mt-2 block">{t('sku')} {selectedVariant.sku}</span>
               )}
             </div>
+=======
+                {isBundle && componentTotal > price && (
+                  <div className="text-lg text-gray-500 line-through mt-1">
+                    ${(componentTotal / 100).toFixed(2)}
+                  </div>
+                )}
+                {!isBundle && selectedVariant?.sku && (
+                  <span className="text-sm text-gray-600 mt-2 block">SKU: {selectedVariant.sku}</span>
+                )}
+              </div>
+            )}
+>>>>>>> 270cbf117859c61bdcc96dc3e9cc3d5e343208a5:apps/web/src/app/products/[slug]/page.tsx
             
-            {/* Bundle Savings */}
-            {isBundle && bundleSavings > 0 && (
+            {/* Bundle Savings - Only show when all variants selected */}
+            {isBundle && bundleSavings > 0 && areAllVariantsSelected && (
               <div className="bg-[var(--success)]/10 border border-[var(--success)]/20 rounded-lg p-4">
                 <div className="flex items-center gap-2 text-[var(--success)] font-semibold">
                   <Package className="w-5 h-5" />
@@ -818,47 +859,16 @@ export default function ProductDetailPage() {
             )}
 
             {/* Variant Selection - Dropdown per Option Group */}
-            {!isBundle && product?.optionGroups && product.optionGroups.length > 0 && (
-              <div className="space-y-4">
-                {product.optionGroups.map((optionGroup) => {
-                  const selectedOptionId = selectedOptions[optionGroup.id];
-                  const selectedOption = optionGroup.options.find(opt => opt.id === selectedOptionId);
-                  
-                  return (
-                    <div key={optionGroup.id}>
-                      <label className="block text-sm font-semibold mb-2">
-                        {optionGroup.name}:
-                      </label>
-                      <div className="relative">
-                        <select
-                          value={selectedOptionId || ''}
-                          onChange={(e) => {
-                            const newOptions = {
-                              ...selectedOptions,
-                              [optionGroup.id]: e.target.value
-                            };
-                            setSelectedOptions(newOptions);
-                            
-                            // Find matching variant
-                            const matchingVariant = findVariantByOptions(newOptions);
-                            if (matchingVariant) {
-                              setSelectedVariantId(matchingVariant.id);
-                            }
-                          }}
-                          className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg bg-white text-base font-medium focus:ring-2 focus:ring-black focus:border-transparent appearance-none cursor-pointer"
-                        >
-                          {optionGroup.options.map((option) => (
-                            <option key={option.id} value={option.id}>
-                              {option.name}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-600 pointer-events-none" />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+            {!isBundle && product?.optionGroups && product.optionGroups.length > 0 && product.variants && (
+              <VariantSelector
+                optionGroups={product.optionGroups}
+                variants={product.variants}
+                selectedOptions={selectedOptions}
+                onVariantChange={(variantId, newOptions) => {
+                  setSelectedVariantId(variantId);
+                  setSelectedOptions(newOptions);
+                }}
+              />
             )}
             
             {/* Bundle Components - Show before Add to Cart */}
@@ -869,10 +879,18 @@ export default function ProductDetailPage() {
                   {[...bundle.items]
                     .sort((a, b) => a.displayOrder - b.displayOrder)
                     .map((item) => {
+                      // Get the selected variant ID (or default to the item's original variant)
+                      const currentVariantId = bundleComponentVariants[item.id] || item.productVariant.id;
+                      // Find the full variant object from the product's variants
+                      const currentVariant = item.productVariant.product?.variants?.find(v => v.id === currentVariantId) || item.productVariant;
+                      
                       // Use priceWithTax for consistency with regular products (already in cents)
-                      const itemTotal = item.productVariant.priceWithTax * item.quantity;
-                      const itemImage = item.productVariant.featuredAsset?.preview || item.productVariant.product?.featuredAsset?.preview;
+                      const itemTotal = currentVariant.priceWithTax * item.quantity;
+                      const itemImage = currentVariant.featuredAsset?.preview || item.productVariant.product?.featuredAsset?.preview;
+                      const hasMultipleVariants = (item.productVariant.product?.variants?.length || 0) > 1;
+                      
                       return (
+<<<<<<< HEAD:apps/web/src/app/[locale]/products/[slug]/page.tsx
                         <div key={item.id} className="flex items-center gap-4 p-3 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
                           <div className="w-14 h-14 bg-gray-50 rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
                             {itemImage ? (
@@ -888,11 +906,56 @@ export default function ProductDetailPage() {
                           <div className="text-right flex-shrink-0">
                             <div className="text-sm font-medium">${(itemTotal / 100).toFixed(2)}</div>
                             <div className="text-xs text-gray-500">{t('qty')} {item.quantity}</div>
+=======
+                        <div key={item.id} className="p-3 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+                          <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 bg-gray-50 rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {itemImage ? (
+                                <img src={itemImage} alt={currentVariant.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <Package className="w-8 h-8 text-gray-400" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-sm">{item.productVariant.product?.name || currentVariant.name}</h4>
+                              {hasMultipleVariants && (
+                                <p className="text-xs text-gray-500 mt-0.5">{currentVariant.name}</p>
+                              )}
+                              {!hasMultipleVariants && (
+                                <p className="text-xs text-gray-500 mt-0.5">SKU: {currentVariant.sku}</p>
+                              )}
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <div className="text-sm font-medium">${(itemTotal / 100).toFixed(2)}</div>
+                              <div className="text-xs text-gray-500">Qty: {item.quantity}</div>
+                            </div>
+>>>>>>> 270cbf117859c61bdcc96dc3e9cc3d5e343208a5:apps/web/src/app/products/[slug]/page.tsx
                           </div>
+                          
+                          {/* Variant Selector - Show if product has multiple variants */}
+                          {hasMultipleVariants && item.productVariant.product?.optionGroups && (
+                            <div className="mt-3 pt-3 border-t border-gray-100">
+                              <VariantSelector
+                                optionGroups={item.productVariant.product.optionGroups}
+                                variants={item.productVariant.product.variants!}
+                                selectedOptions={currentVariant.options.reduce((acc, opt) => {
+                                  acc[opt.groupId] = opt.id;
+                                  return acc;
+                                }, {} as Record<string, string>)}
+                                onVariantChange={(variantId) => {
+                                  setBundleComponentVariants(prev => ({
+                                    ...prev,
+                                    [item.id]: variantId
+                                  }));
+                                }}
+                              />
+                            </div>
+                          )}
                         </div>
                       );
                     })}
                 </div>
+<<<<<<< HEAD:apps/web/src/app/[locale]/products/[slug]/page.tsx
                 <div className="mt-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
                   <div className="flex justify-between items-center text-sm mb-2">
                     <span className="text-gray-700">{t('individualTotal')}</span>
@@ -907,6 +970,25 @@ export default function ProductDetailPage() {
                     <span className="text-xl">${(bundleSavings / 100).toFixed(2)}</span>
                   </div>
                 </div>
+=======
+                {/* Pricing Summary - Only show when all variants selected */}
+                {areAllVariantsSelected && (
+                  <div className="mt-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
+                    <div className="flex justify-between items-center text-sm mb-2">
+                      <span className="text-gray-700">Individual Total:</span>
+                      <span className="font-semibold text-gray-900">${(componentTotal / 100).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-base mb-2">
+                      <span className="text-gray-900 font-medium">Bundle Price:</span>
+                      <span className="font-bold text-gray-900">${(price / 100).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-base font-bold text-[var(--success)] border-t border-gray-300 pt-3 mt-2">
+                      <span>You Save:</span>
+                      <span className="text-xl">${(bundleSavings / 100).toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+>>>>>>> 270cbf117859c61bdcc96dc3e9cc3d5e343208a5:apps/web/src/app/products/[slug]/page.tsx
               </div>
             )}
 

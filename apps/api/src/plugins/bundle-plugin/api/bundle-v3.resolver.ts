@@ -476,24 +476,6 @@ export class AdminApiBundleResolver {
         return this.bundleLifecycleService.publishBundle(ctx, args.id);
     }
     
-    @Mutation() 
-    @Allow(Permission.UpdateCatalog)
-    async archiveBundle(@Ctx() ctx: RequestContext, @Args() args: { id: ID; reason?: string }) {
-        return this.bundleLifecycleService.archiveBundle(ctx, args.id, args.reason);
-    }
-    
-    @Mutation()
-    @Allow(Permission.UpdateCatalog) 
-    async markBundleBroken(@Ctx() ctx: RequestContext, @Args() args: { id: ID; reason: string }) {
-        return this.bundleLifecycleService.markBundleBroken(ctx, args.id, args.reason);
-    }
-    
-    @Mutation()
-    @Allow(Permission.UpdateCatalog)
-    async restoreBundle(@Ctx() ctx: RequestContext, @Args() args: { id: ID }) {
-        return this.bundleLifecycleService.restoreBundle(ctx, args.id);
-    }
-    
     // Phase 4.2: Bundle Validation and Safety Queries
     
     // Temporarily commented out due to GraphQL schema conflicts
