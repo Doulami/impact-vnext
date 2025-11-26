@@ -101,7 +101,7 @@ export default async function ArticlePage({ params }: PageProps) {
           <div className="container mx-auto px-4 py-8">
             <div className="max-w-4xl mx-auto">
               {/* Category Badge */}
-              {article.category && (
+              {article.category?.name && (
                 <div className="mb-4">
                   <span className="inline-flex items-center gap-1 bg-[var(--brand-primary)] text-white px-3 py-1 rounded-full text-sm font-medium">
                     <Tag className="w-3.5 h-3.5" />
