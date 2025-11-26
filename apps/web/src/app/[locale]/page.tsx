@@ -6,6 +6,9 @@ import Header from '@/components/Header';
 import { useTranslations } from 'next-intl';
 import { useLocale } from 'next-intl';
 
+// Force dynamic rendering to avoid prerendering errors
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
   const t = useTranslations('homepage');
   const tFooter = useTranslations('footer');

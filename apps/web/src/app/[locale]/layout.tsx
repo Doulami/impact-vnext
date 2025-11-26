@@ -31,6 +31,10 @@ const fontBody = Inter({
 // Note: metadata is defined per-page for localization
 // This static export is kept for pages without specific metadata
 
+// Temporarily force dynamic rendering to avoid build errors
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
   // For static generation, try to get languages from Vendure
   try {
