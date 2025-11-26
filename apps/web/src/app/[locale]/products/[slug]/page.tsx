@@ -826,24 +826,16 @@ export default function ProductDetailPage() {
                 <div className="text-3xl font-bold">
                   ${(price / 100).toFixed(2)}
                 </div>
-<<<<<<< HEAD:apps/web/src/app/[locale]/products/[slug]/page.tsx
-              )}
-              {!isBundle && selectedVariant?.sku && (
-                <span className="text-sm text-gray-600 mt-2 block">{t('sku')} {selectedVariant.sku}</span>
-              )}
-            </div>
-=======
                 {isBundle && componentTotal > price && (
                   <div className="text-lg text-gray-500 line-through mt-1">
                     ${(componentTotal / 100).toFixed(2)}
                   </div>
                 )}
                 {!isBundle && selectedVariant?.sku && (
-                  <span className="text-sm text-gray-600 mt-2 block">SKU: {selectedVariant.sku}</span>
+                  <span className="text-sm text-gray-600 mt-2 block">{t('sku')} {selectedVariant.sku}</span>
                 )}
               </div>
             )}
->>>>>>> 270cbf117859c61bdcc96dc3e9cc3d5e343208a5:apps/web/src/app/products/[slug]/page.tsx
             
             {/* Bundle Savings - Only show when all variants selected */}
             {isBundle && bundleSavings > 0 && areAllVariantsSelected && (
@@ -890,23 +882,6 @@ export default function ProductDetailPage() {
                       const hasMultipleVariants = (item.productVariant.product?.variants?.length || 0) > 1;
                       
                       return (
-<<<<<<< HEAD:apps/web/src/app/[locale]/products/[slug]/page.tsx
-                        <div key={item.id} className="flex items-center gap-4 p-3 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
-                          <div className="w-14 h-14 bg-gray-50 rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
-                            {itemImage ? (
-                              <img src={itemImage} alt={item.productVariant.name} className="w-full h-full object-cover" />
-                            ) : (
-                              <Package className="w-8 h-8 text-gray-400" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-sm">{item.productVariant.name}</h4>
-                            <p className="text-xs text-gray-500 mt-0.5">{t('sku')} {item.productVariant.sku}</p>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <div className="text-sm font-medium">${(itemTotal / 100).toFixed(2)}</div>
-                            <div className="text-xs text-gray-500">{t('qty')} {item.quantity}</div>
-=======
                         <div key={item.id} className="p-3 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
                           <div className="flex items-center gap-4">
                             <div className="w-14 h-14 bg-gray-50 rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -922,14 +897,13 @@ export default function ProductDetailPage() {
                                 <p className="text-xs text-gray-500 mt-0.5">{currentVariant.name}</p>
                               )}
                               {!hasMultipleVariants && (
-                                <p className="text-xs text-gray-500 mt-0.5">SKU: {currentVariant.sku}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">{t('sku')} {currentVariant.sku}</p>
                               )}
                             </div>
                             <div className="text-right flex-shrink-0">
                               <div className="text-sm font-medium">${(itemTotal / 100).toFixed(2)}</div>
-                              <div className="text-xs text-gray-500">Qty: {item.quantity}</div>
+                              <div className="text-xs text-gray-500">{t('qty')} {item.quantity}</div>
                             </div>
->>>>>>> 270cbf117859c61bdcc96dc3e9cc3d5e343208a5:apps/web/src/app/products/[slug]/page.tsx
                           </div>
                           
                           {/* Variant Selector - Show if product has multiple variants */}
@@ -955,40 +929,23 @@ export default function ProductDetailPage() {
                       );
                     })}
                 </div>
-<<<<<<< HEAD:apps/web/src/app/[locale]/products/[slug]/page.tsx
-                <div className="mt-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
-                  <div className="flex justify-between items-center text-sm mb-2">
-                    <span className="text-gray-700">{t('individualTotal')}</span>
-                    <span className="font-semibold text-gray-900">${(componentTotal / 100).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-base mb-2">
-                    <span className="text-gray-900 font-medium">{t('bundlePrice')}</span>
-                    <span className="font-bold text-gray-900">${(price / 100).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-base font-bold text-[var(--success)] border-t border-gray-300 pt-3 mt-2">
-                    <span>{t('youSave')}</span>
-                    <span className="text-xl">${(bundleSavings / 100).toFixed(2)}</span>
-                  </div>
-                </div>
-=======
                 {/* Pricing Summary - Only show when all variants selected */}
                 {areAllVariantsSelected && (
                   <div className="mt-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
                     <div className="flex justify-between items-center text-sm mb-2">
-                      <span className="text-gray-700">Individual Total:</span>
+                      <span className="text-gray-700">{t('individualTotal')}</span>
                       <span className="font-semibold text-gray-900">${(componentTotal / 100).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center text-base mb-2">
-                      <span className="text-gray-900 font-medium">Bundle Price:</span>
+                      <span className="text-gray-900 font-medium">{t('bundlePrice')}</span>
                       <span className="font-bold text-gray-900">${(price / 100).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center text-base font-bold text-[var(--success)] border-t border-gray-300 pt-3 mt-2">
-                      <span>You Save:</span>
+                      <span>{t('youSave')}</span>
                       <span className="text-xl">${(bundleSavings / 100).toFixed(2)}</span>
                     </div>
                   </div>
                 )}
->>>>>>> 270cbf117859c61bdcc96dc3e9cc3d5e343208a5:apps/web/src/app/products/[slug]/page.tsx
               </div>
             )}
 
