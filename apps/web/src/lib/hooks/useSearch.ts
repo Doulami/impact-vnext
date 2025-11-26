@@ -2,8 +2,9 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@apollo/client/react';
+import { useLocale } from 'next-intl';
 import { SEARCH_PRODUCTS, GET_COLLECTIONS, GET_FACETS } from '../graphql/queries';
-import type { 
+import type {
   SearchResponse, 
   SearchResult, 
   SearchInput,
@@ -15,6 +16,7 @@ import type {
 
 // Hook for product search with server-side filtering and sorting
 export function useSearch(initialInput?: Partial<SearchInput>) {
+  const locale = useLocale();
   const [searchInput, setSearchInput] = useState<SearchInput>({
     groupByProduct: true,
     take: 20,
@@ -22,8 +24,20 @@ export function useSearch(initialInput?: Partial<SearchInput>) {
     ...initialInput,
   });
 
+  // Map next-intl locale to Vendure language code
+  const getLanguageCode = (locale: string) => {
+    switch (locale) {
+      case 'ar': return 'ar';
+      case 'fr': return 'fr';
+      case 'en':
+      default: return 'en';
+    }
+  };
+
   const { data, loading, error, fetchMore, refetch } = useQuery<SearchResponse>(SEARCH_PRODUCTS, {
-    variables: { input: searchInput },
+    variables: { 
+      input: searchInput
+    },
     fetchPolicy: 'cache-and-network',
   });
 
@@ -40,7 +54,7 @@ export function useSearch(initialInput?: Partial<SearchInput>) {
           input: {
             ...searchInput,
             skip: data.search.items.length,
-          },
+          }
         },
         updateQuery: (prev, { fetchMoreResult }) => {
           if (!fetchMoreResult) return prev;

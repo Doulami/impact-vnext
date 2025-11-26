@@ -1,8 +1,18 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import createIntlMiddleware from 'next-intl/middleware';
+import { locales, defaultLocale } from './i18n';
+
+// Create the next-intl middleware
+const intlMiddleware = createIntlMiddleware({
+  locales,
+  defaultLocale,
+  localePrefix: 'as-needed',
+});
 
 export function middleware(request: NextRequest) {
-  const response = NextResponse.next();
+  // First, apply i18n middleware
+  const response = intlMiddleware(request);
 
   // Get the Strapi URL from environment or use default
   const strapiUrl = process.env.NEXT_PUBLIC_CMS_URL || 'http://localhost:1337';
@@ -20,7 +30,7 @@ export function middleware(request: NextRequest) {
 // Configure which paths the middleware should run on
 export const config = {
   matcher: [
-    // Match all blog pages for preview functionality
-    '/blog/:path*',
+    // Match all pathnames except API routes and static files
+    '/((?!api|_next|_vercel|.*\\..*).*)',
   ],
 };

@@ -7,7 +7,11 @@ import Button from './Button';
 import ConfirmationModal from './ConfirmationModal';
 import BundleCard from './BundleCard';
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
+
 export default function CartDrawer() {
+  const t = useTranslations('cart');
+  
   const { 
     isOpen, 
     items, 
@@ -52,7 +56,7 @@ export default function CartDrawer() {
           <div className="flex items-center justify-between p-4 border-b bg-black text-white">
             <div className="flex items-center gap-2">
               <ShoppingBag className="w-5 h-5" />
-              <h2 className="font-semibold text-lg">Shopping Cart</h2>
+              <h2 className="font-semibold text-lg">{t('title')}</h2>
               {totalItems > 0 && (
                 <span className="bg-white text-black px-2 py-0.5 text-xs font-medium rounded-full">
                   {totalItems}
@@ -75,13 +79,13 @@ export default function CartDrawer() {
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                   <ShoppingBag className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="font-medium text-lg mb-2">Your cart is empty</h3>
-                <p className="text-gray-500 mb-6">Add some products to get started</p>
+                <h3 className="font-medium text-lg mb-2">{t('empty')}</h3>
+                <p className="text-gray-500 mb-6">{t('emptyDescription')}</p>
                 <Button
                   variant="primary"
                   onClick={closeCart}
                 >
-                  Continue Shopping
+                  {t('continueShopping')}
                 </Button>
               </div>
             ) : (
@@ -144,7 +148,7 @@ export default function CartDrawer() {
                                 <p className="font-bold text-sm">
                                   ${(item.price / 100).toFixed(2)}
                                 </p>
-                                <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
+                                <span className="text-xs text-gray-500">{t('qty')}: {item.quantity}</span>
                               </div>
 
                               {/* Quantity Controls */}
@@ -172,7 +176,7 @@ export default function CartDrawer() {
                                   {/* Max quantity warning */}
                                   {item.maxQuantity !== undefined && item.quantity >= item.maxQuantity && (
                                     <p className="text-xs text-amber-600 mt-1">
-                                      Max {item.maxQuantity} available
+                                      {t('maxAvailable', { max: item.maxQuantity })}
                                     </p>
                                   )}
                                 </div>
@@ -180,7 +184,7 @@ export default function CartDrawer() {
                                 <button
                                   onClick={() => setItemToRemove(item.variantId)}
                                   className="text-red-500 hover:text-red-700 transition-colors p-1"
-                                  title="Remove item"
+                                  title={t('removeItem')}
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
@@ -201,13 +205,13 @@ export default function CartDrawer() {
                       onClick={() => setShowClearConfirm(true)}
                       className="text-sm text-red-600 hover:text-red-800 transition-colors"
                     >
-                      Clear all items
+                      {t('clearAllItems')}
                     </button>
                   )}
 
                   {/* Total */}
                   <div className="flex justify-between items-center text-lg font-bold">
-                    <span>Total:</span>
+                    <span>{t('total')}:</span>
                     <span>${(totalPrice / 100).toFixed(2)}</span>
                   </div>
 
@@ -221,7 +225,7 @@ export default function CartDrawer() {
                       fullWidth
                       onClick={closeCart}
                     >
-                      View Cart
+                      {t('viewCart')}
                     </Button>
                     <Button
                       as="link"
@@ -231,7 +235,7 @@ export default function CartDrawer() {
                       fullWidth
                       onClick={closeCart}
                     >
-                      Checkout
+                      {t('checkout')}
                     </Button>
                   </div>
                 </div>
@@ -248,10 +252,10 @@ export default function CartDrawer() {
         onConfirm={() => {
           clearCart();
         }}
-        title="Clear Cart"
-        message={`Are you sure you want to remove all ${totalItems} items from your cart? This action cannot be undone.`}
-        confirmText="Clear Cart"
-        cancelText="Keep Items"
+        title={t('modalClearTitle')}
+        message={t('modalClearMessage', { count: totalItems })}
+        confirmText={t('modalClearConfirm')}
+        cancelText={t('modalClearCancel')}
         icon={<Trash2 className="w-6 h-6 text-red-600" />}
       />
       
@@ -265,13 +269,13 @@ export default function CartDrawer() {
             setItemToRemove(null);
           }
         }}
-        title="Remove Item"
+        title={t('modalRemoveTitle')}
         message={itemToRemove 
-          ? `Remove "${items.find(item => item.variantId === itemToRemove)?.productName}" from your cart?`
-          : "Remove this item from your cart?"
+          ? t('modalRemoveMessage', { name: items.find(item => item.variantId === itemToRemove)?.productName || '' })
+          : t('modalRemoveMessageGeneric')
         }
-        confirmText="Remove"
-        cancelText="Keep Item"
+        confirmText={t('modalRemoveConfirm')}
+        cancelText={t('modalRemoveCancel')}
         icon={<Trash2 className="w-6 h-6 text-red-600" />}
       />
     </>

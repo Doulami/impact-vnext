@@ -2,8 +2,10 @@
 
 import { useState, useCallback } from 'react';
 import { useQuery } from '@apollo/client/react';
+import { useLocale } from 'next-intl';
 import { SEARCH_PRODUCTS_AND_BUNDLES } from '../graphql/queries';
 import { toProductCardData } from '../types/product';
+import { filterSearchResultsByLanguage, filterProductsByLanguage } from '../utils/productLanguageValidation';
 import type { 
   SearchResult,
   SearchInput,
@@ -77,12 +79,23 @@ function toProductResult(searchResult: SearchResult): CombinedResult {
 
 // Hook for combined product and bundle search
 export function useCombinedSearch(initialInput?: Partial<SearchInput>) {
+  const locale = useLocale();
   const [searchInput, setSearchInput] = useState<SearchInput>({
     groupByProduct: true,
     take: 20,
     skip: 0,
     ...initialInput,
   });
+
+  // Map next-intl locale to Vendure language code
+  const getLanguageCode = (locale: string) => {
+    switch (locale) {
+      case 'ar': return 'ar';
+      case 'fr': return 'fr';
+      case 'en':
+      default: return 'en';
+    }
+  };
 
   const { data, loading, error, fetchMore, refetch } = useQuery(SEARCH_PRODUCTS_AND_BUNDLES, {
     variables: { 
@@ -96,9 +109,20 @@ export function useCombinedSearch(initialInput?: Partial<SearchInput>) {
     fetchPolicy: 'cache-and-network',
   });
 
-  // Combine and sort products and bundles
-  const products = (data as any)?.search?.items || [];
-  const bundles = (data as any)?.bundles?.items || [];
+  // Get raw results and filter by language availability
+  const rawProducts = (data as any)?.search?.items || [];
+  const rawBundles = (data as any)?.bundles?.items || [];
+  
+  // Filter products by language (search results have productName field)
+  const products = filterSearchResultsByLanguage(rawProducts, locale);
+  
+  // Filter bundles by language (bundles have shellProduct.name)
+  const bundles = rawBundles.filter((bundle: Bundle) => {
+    const shellProduct = bundle.shellProduct;
+    return shellProduct?.name && typeof shellProduct.name === 'string' && shellProduct.name.trim().length > 0;
+  });
+  
+  console.log(`[CombinedSearch] Language: ${locale}, Raw products: ${rawProducts.length} -> ${products.length}, Raw bundles: ${rawBundles.length} -> ${bundles.length}`);
   
   const combinedResults: CombinedResult[] = [
     ...products.map(toProductResult),
