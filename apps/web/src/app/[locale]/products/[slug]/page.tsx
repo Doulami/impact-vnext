@@ -143,7 +143,7 @@ export default function ProductDetailPage() {
   const findVariantByOptions = (optionsMap: Record<string, string>) => {
     if (!product?.variants) return null;
     
-    return product.variants.find(variant => {
+    return product.variants.find((variant: ProductVariant) => {
       // Check if this variant matches all selected options
       return Object.entries(optionsMap).every(([groupId, optionId]) => {
         return variant.options.some(opt => opt.groupId === groupId && opt.id === optionId);
@@ -153,14 +153,14 @@ export default function ProductDetailPage() {
   
   // Get selected variant based on selected options
   const selectedVariant = selectedVariantId 
-    ? product?.variants.find(v => v.id === selectedVariantId)
+    ? product?.variants.find((v: ProductVariant) => v.id === selectedVariantId)
     : findVariantByOptions(selectedOptions) || product?.variants[0];
   
   // Initialize bundle component variants when bundle loads
   useEffect(() => {
     if (bundle?.items && Object.keys(bundleComponentVariants).length === 0) {
       const initialVariants: Record<string, string> = {};
-      bundle.items.forEach(item => {
+      bundle.items.forEach((item: BundleItem) => {
         initialVariants[item.id] = item.productVariant.id;
       });
       setBundleComponentVariants(initialVariants);
@@ -172,7 +172,7 @@ export default function ProductDetailPage() {
     const defaultVariant = product.variants[0];
     const defaultOptionsMap: Record<string, string> = {};
     
-    defaultVariant.options.forEach(opt => {
+    defaultVariant.options.forEach((opt: ProductOption) => {
       defaultOptionsMap[opt.groupId] = opt.id;
     });
     
@@ -197,12 +197,12 @@ export default function ProductDetailPage() {
     
     // Add other product assets
     if (product?.assets) {
-      imageList.push(...product.assets.map(a => a.preview));
+      imageList.push(...product.assets.map((a: any) => a.preview));
     }
     
     // Add other variant images (excluding the selected one)
     if (product?.variants) {
-      product.variants.forEach(v => {
+      product.variants.forEach((v: ProductVariant) => {
         if (v.featuredAsset?.preview && v.id !== selectedVariant?.id) {
           imageList.push(v.featuredAsset.preview);
         }
@@ -229,7 +229,7 @@ export default function ProductDetailPage() {
   const handleAddToCart = () => {
     if (isBundle && product && bundle) {
       // Calculate component total for savings display
-      const componentTotal = bundle.items.reduce((sum, item) => sum + (item.productVariant?.priceWithTax || 0) * item.quantity, 0);
+      const componentTotal = bundle.items.reduce((sum: number, item: BundleItem) => sum + (item.productVariant?.priceWithTax || 0) * item.quantity, 0);
       
       // CRITICAL: Use shell product's first variant ID (same as unified helper)
       const shellVariantId = product.variants[0]?.id || product.id;
@@ -353,11 +353,11 @@ export default function ProductDetailPage() {
   // Calculate component total for display (use priceWithTax from variants for consistency)
   // NOTE: This reflects the selected variant prices, not just the default variants
   const componentTotal = isBundle && bundle
-    ? bundle.items.reduce((sum, item) => {
+    ? bundle.items.reduce((sum: number, item: BundleItem) => {
         // Get the selected variant ID (or default to the item's original variant)
         const currentVariantId = bundleComponentVariants[item.id] || item.productVariant.id;
         // Find the full variant object from the product's variants
-        const currentVariant = item.productVariant.product?.variants?.find(v => v.id === currentVariantId) || item.productVariant;
+        const currentVariant = item.productVariant.product?.variants?.find((v: any) => v.id === currentVariantId) || item.productVariant;
         return sum + (currentVariant.priceWithTax * item.quantity);
       }, 0)
     : 0;
@@ -371,7 +371,7 @@ export default function ProductDetailPage() {
   // Determine if all multi-variant components have been selected
   // If any component has multiple variants but no selection made, hide pricing until selected
   const areAllVariantsSelected = isBundle && bundle
-    ? bundle.items.every((item) => {
+    ? bundle.items.every((item: BundleItem) => {
         const hasMultipleVariants = (item.productVariant.product?.variants?.length || 0) > 1;
         // If single variant, always considered "selected"
         if (!hasMultipleVariants) return true;
@@ -424,7 +424,7 @@ export default function ProductDetailPage() {
   const displayNutritionBatch = getNutritionBatchForDisplay();
 
   // Group nutrition rows by nutrient group
-  const groupedRows = displayNutritionBatch?.rows?.reduce((acc, row) => {
+  const groupedRows = displayNutritionBatch?.rows?.reduce((acc: any, row: any) => {
     if (!acc[row.group]) acc[row.group] = [];
     acc[row.group].push(row);
     return acc;
@@ -870,11 +870,11 @@ export default function ProductDetailPage() {
                 <div className="space-y-3">
                   {[...bundle.items]
                     .sort((a, b) => a.displayOrder - b.displayOrder)
-                    .map((item) => {
+                    .map((item: BundleItem) => {
                       // Get the selected variant ID (or default to the item's original variant)
                       const currentVariantId = bundleComponentVariants[item.id] || item.productVariant.id;
                       // Find the full variant object from the product's variants
-                      const currentVariant = item.productVariant.product?.variants?.find(v => v.id === currentVariantId) || item.productVariant;
+                      const currentVariant = item.productVariant.product?.variants?.find((v: any) => v.id === currentVariantId) || item.productVariant;
                       
                       // Use priceWithTax for consistency with regular products (already in cents)
                       const itemTotal = currentVariant.priceWithTax * item.quantity;
@@ -912,7 +912,7 @@ export default function ProductDetailPage() {
                               <VariantSelector
                                 optionGroups={item.productVariant.product.optionGroups}
                                 variants={item.productVariant.product.variants!}
-                                selectedOptions={currentVariant.options.reduce((acc, opt) => {
+                                selectedOptions={currentVariant.options.reduce((acc: any, opt: any) => {
                                   acc[opt.groupId] = opt.id;
                                   return acc;
                                 }, {} as Record<string, string>)}
