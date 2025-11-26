@@ -227,6 +227,9 @@ const getProductWithVariantsQuery = graphql(`
         product(id: $id) {
             id
             name
+            customFields {
+                isBundle
+            }
             variants {
                 id
                 name
@@ -455,11 +458,16 @@ function AddComponentsDialog({ isOpen, onClose, onAdd }: AddComponentsDialogProp
                     const productData = await api.query(getProductWithVariantsQuery, { id: item.productId });
                     return {
                         ...item,
+                        product: productData.product,
                         variants: productData.product?.variants || []
                     };
                 })
             );
-            setSearchResults(resultsWithVariants);
+            // Filter out bundle products (bundles cannot contain other bundles)
+            const nonBundleResults = resultsWithVariants.filter(item => 
+                !item.product?.customFields?.isBundle
+            );
+            setSearchResults(nonBundleResults);
         } catch (error) {
             console.error('Failed to search:', error);
         }
