@@ -1,0 +1,221 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2025-11-26 20:30+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: ar\n"
+
+msgid "Activate Bundle"
+msgstr "تفعيل المنتج المجمّع"
+
+msgid "Activating..."
+msgstr "جار التفعيل..."
+
+msgid "Add Component"
+msgstr "إضافة مكون"
+
+msgid "Allow (Risky)"
+msgstr "السماح (محفوف بالمخاطر)"
+
+msgid "Allow External Promotions"
+msgstr "السماح بالعروض الترويجية الخارجية"
+
+msgid "Allowed"
+msgstr "مسموح"
+
+msgid "Availability"
+msgstr "التوفر"
+
+msgid "Available From"
+msgstr "متوفر من"
+
+msgid "Available Until"
+msgstr "متوفر حتى"
+
+msgid "Bundle activated but not configured yet"
+msgstr "تم تفعيل المنتج المجمّع ولكن لم يتم تكوينه بعد"
+
+msgid "Bundle Active"
+msgstr "المنتج المجمّع نشط"
+
+msgid "Bundle Cap"
+msgstr "حد المنتج المجمّع"
+
+msgid "Bundle Configuration"
+msgstr "تكوين المنتج المجمّع"
+
+msgid "Bundle Settings"
+msgstr "إعدادات المنتج المجمّع"
+
+msgid "Cancel"
+msgstr "إلغاء"
+
+msgid "Components"
+msgstr "المكونات"
+
+msgid "Components ({0})"
+msgstr "المكونات ({0})"
+
+msgid "Configure Bundle"
+msgstr "تكوين المنتج المجمّع"
+
+msgid "Create Bundle"
+msgstr "إنشاء منتج مجمّع"
+
+msgid "Deactivate"
+msgstr "إلغاء التفعيل"
+
+msgid "Deactivating..."
+msgstr "جار إلغاء التفعيل..."
+
+msgid "Discount Configuration"
+msgstr "تكوين الخصم"
+
+msgid "Discount percentage applied to component total"
+msgstr "نسبة الخصم المطبقة على إجمالي المكونات"
+
+msgid "Discount Type"
+msgstr "نوع الخصم"
+
+msgid "Edit"
+msgstr "تعديل"
+
+msgid "Effective Price"
+msgstr "السعر الفعلي"
+
+msgid "Enter as decimal (e.g., 0.50 for 50%)"
+msgstr "أدخل كرقم عشري (مثل 0.50 لـ 50%)"
+
+msgid "Exclude (Safe)"
+msgstr "استبعاد (آمن)"
+
+msgid "External Promos"
+msgstr "العروض الخارجية"
+
+msgid "External promotions can apply (bundle discount + promo discount)"
+msgstr "يمكن تطبيق العروض الترويجية الخارجية (خصم المنتج المجمّع + خصم العرض)"
+
+msgid "Failed to load bundle settings"
+msgstr "فشل تحميل إعدادات المنتج المجمّع"
+
+msgid "Fixed Price"
+msgstr "سعر ثابت"
+
+msgid "Leave empty for immediate availability"
+msgstr "اتركه فارغاً للتوفر الفوري"
+
+msgid "Leave empty for permanent availability"
+msgstr "اتركه فارغاً للتوفر الدائم"
+
+msgid "Loading bundle data..."
+msgstr "جار تحميل بيانات المنتج المجمّع..."
+
+msgid "Loading settings..."
+msgstr "جار تحميل الإعدادات..."
+
+msgid "Max Cumulative Discount"
+msgstr "الحد الأقصى للخصم التراكمي"
+
+msgid "Max Cumulative Discount (%)"
+msgstr "الحد الأقصى للخصم التراكمي (%)"
+
+msgid "Maximum bundles that can be sold (leave empty for unlimited)"
+msgstr "الحد الأقصى للمنتجات المجمّعة التي يمكن بيعها (اتركه فارغاً لغير محدود)"
+
+msgid "No bundle configuration found. Create a bundle for this product."
+msgstr "لم يتم العثور على تكوين منتج مجمّع. أنشئ منتجاً مجمّعاً لهذا المنتج."
+
+msgid "No components"
+msgstr "لا توجد مكونات"
+
+msgid "No components yet"
+msgstr "لا توجد مكونات بعد"
+
+msgid "Not Allowed"
+msgstr "غير مسموح"
+
+msgid "OFF"
+msgstr "إيقاف"
+
+msgid "ON"
+msgstr "تشغيل"
+
+msgid "Order"
+msgstr "الترتيب"
+
+msgid "Percentage Off"
+msgstr "نسبة الخصم"
+
+msgid "Percentage Off (%)"
+msgstr "نسبة الخصم (%)"
+
+msgid "Price applied at order; item prices prorated"
+msgstr "يتم تطبيق السعر عند الطلب؛ يتم توزيع أسعار العناصر بالنسب"
+
+msgid "Promotion codes and coupons will NOT apply to this bundle (prevents double-discounting)"
+msgstr "لن تنطبق رموز العروض الترويجية والكوبونات على هذا المنتج المجمّع (لمنع الخصم المزدوج)"
+
+msgid "Publish"
+msgstr "نشر"
+
+msgid "Publishing..."
+msgstr "جار النشر..."
+
+msgid "Quantity"
+msgstr "الكمية"
+
+msgid "Save"
+msgstr "حفظ"
+
+msgid "Save Bundle"
+msgstr "حفظ المنتج المجمّع"
+
+msgid "Saving..."
+msgstr "جار الحفظ..."
+
+msgid "Site-wide Promotions"
+msgstr "العروض الترويجية على مستوى الموقع"
+
+msgid "Site-wide Promotions Affect Bundles"
+msgstr "العروض الترويجية على مستوى الموقع تؤثر على المنتجات المجمّعة"
+
+msgid "SKU"
+msgstr "رمز التخزين"
+
+msgid "Status"
+msgstr "الحالة"
+
+msgid "This product is not configured as a bundle."
+msgstr "هذا المنتج غير مكوّن كمنتج مجمّع."
+
+msgid "Total Savings"
+msgstr "إجمالي التوفير"
+
+msgid "Type"
+msgstr "النوع"
+
+msgid "Unlimited"
+msgstr "غير محدود"
+
+msgid "Valid From"
+msgstr "صالح من"
+
+msgid "Valid To"
+msgstr "صالح حتى"
+
+msgid "Value"
+msgstr "القيمة"
+
+msgid "Variant"
+msgstr "المتغير"
+
+msgid "Variant ID"
+msgstr "معرف المتغير"
+
+msgid "Whether external promotion codes/coupons can be applied to this bundle"
+msgstr "ما إذا كان يمكن تطبيق رموز/كوبونات العروض الخارجية على هذا المنتج المجمّع"
+
+msgid "Whether external promotions can apply to bundles"
+msgstr "ما إذا كان يمكن تطبيق العروض الترويجية الخارجية على المنتجات المجمّعة"
