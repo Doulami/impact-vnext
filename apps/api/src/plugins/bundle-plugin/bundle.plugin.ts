@@ -78,26 +78,19 @@ import { BundleTranslationService } from './services/bundle-translation.service'
                 id: ID!
                 createdAt: DateTime!
                 updatedAt: DateTime!
-                name: String!
-                slug: String
-                description: String
                 status: String!
                 discountType: String!
                 fixedPrice: Money
                 percentOff: Float
                 version: Int!
-                assets: [Asset!]!
-                featuredAsset: Asset
-                tags: [String!]
-                category: String
                 allowExternalPromos: Boolean!
                 validFrom: DateTime
                 validTo: DateTime
                 bundleCap: Int
                 bundleReservedOpen: Int!
                 bundleVirtualStock: Int
-                shellProductId: String
-                shellProduct: Product
+                shellProductId: String!
+                shellProduct: Product!
                 items: [BundleItem!]!
                 # Computed fields
                 isAvailable: Boolean!
@@ -139,15 +132,11 @@ import { BundleTranslationService } from './services/bundle-translation.service'
                 id: SortOrder
                 createdAt: SortOrder
                 updatedAt: SortOrder
-                name: SortOrder
-                price: SortOrder
             }
 
             input BundleFilterParameter {
-                enabled: BooleanOperators
                 status: StringOperators
-                name: StringOperators
-                category: StringOperators
+                shellProductId: StringOperators
             }
             
             type BundleAvailability {
@@ -256,26 +245,19 @@ import { BundleTranslationService } from './services/bundle-translation.service'
                 id: ID!
                 createdAt: DateTime!
                 updatedAt: DateTime!
-                name: String!
-                slug: String
-                description: String
                 status: String!
                 discountType: String!
                 fixedPrice: Money
                 percentOff: Float
                 version: Int!
-                assets: [Asset!]!
-                featuredAsset: Asset
-                tags: [String!]
-                category: String
                 allowExternalPromos: Boolean!
                 validFrom: DateTime
                 validTo: DateTime
                 bundleCap: Int
                 bundleReservedOpen: Int!
                 bundleVirtualStock: Int
-                shellProductId: String
-                shellProduct: Product
+                shellProductId: String!
+                shellProduct: Product!
                 items: [BundleItem!]!
                 # Computed fields
                 isAvailable: Boolean!
@@ -313,14 +295,11 @@ import { BundleTranslationService } from './services/bundle-translation.service'
                 id: SortOrder
                 createdAt: SortOrder
                 updatedAt: SortOrder
-                name: SortOrder
-                price: SortOrder
             }
 
             input BundleFilterParameter {
-                enabled: BooleanOperators
-                name: StringOperators
-                category: StringOperators
+                status: StringOperators
+                shellProductId: StringOperators
             }
             
             # Admin-specific types (avoid conflicts with shop API types)
@@ -391,24 +370,14 @@ import { BundleTranslationService } from './services/bundle-translation.service'
 
             input UpdateBundleInput {
                 id: ID!
-                name: String
-                slug: String
-                description: String
                 discountType: String
                 fixedPrice: Money
                 percentOff: Float
-                assets: [ID!]
-                tags: [String!]
-                category: String
                 allowExternalPromos: Boolean
-                # Phase 3 fields
                 validFrom: DateTime
                 validTo: DateTime
                 bundleCap: Int
                 items: [UpdateBundleItemInput!]
-                # Legacy compatibility
-                price: Money
-                enabled: Boolean
             }
 
             input CreateBundleItemInput {
