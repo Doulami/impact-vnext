@@ -1,0 +1,37 @@
+{
+  "collectionName": "components_shared_menu_items",
+  "info": {
+    "displayName": "MenuItem",
+    "description": "A navigation menu item with support for nested links"
+  },
+  "options": {},
+  "attributes": {
+    "label": {
+      "type": "string",
+      "required": true
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["internal_page", "product_category", "external_url", "custom"],
+      "default": "custom",
+      "required": true
+    },
+    "url": {
+      "type": "string",
+      "required": false
+    },
+    "page": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::page.page"
+    },
+    "vendureCollectionId": {
+      "type": "string",
+      "required": false
+    },
+    "newTab": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}
