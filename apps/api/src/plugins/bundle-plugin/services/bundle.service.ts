@@ -157,11 +157,11 @@ export class BundleService {
         // All new bundles start as DRAFT
         const initialStatus = BundleStatus.DRAFT;
         
-        // Create bundle entity
+        // Create bundle entity with temporary name (will be synced from shell product)
         const bundle = new Bundle({
-            name: input.name,
-            slug: input.slug,
-            description: input.description,
+            name: 'Bundle (pending)',
+            slug: `bundle-temp-${Date.now()}`,
+            description: '',
             status: initialStatus,
             validFrom: input.validFrom,
             validTo: input.validTo,
@@ -171,12 +171,9 @@ export class BundleService {
             version: 1,
             assets: assetEntities,
             featuredAsset: featuredAsset,
-            tags: input.tags,
-            category: input.category,
             allowExternalPromos: input.allowExternalPromos || false,
             // Backwards compatibility
             enabled: false, // New bundles start as DRAFT or EXPIRED, never enabled
-            price: this.calculateLegacyPrice(input, validatedItems),
             customFields: {}
         });
         
