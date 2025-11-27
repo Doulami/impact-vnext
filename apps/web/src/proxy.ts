@@ -10,7 +10,7 @@ const intlMiddleware = createIntlMiddleware({
   localePrefix: 'as-needed',
 });
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // First, apply i18n middleware
   const response = intlMiddleware(request);
 
