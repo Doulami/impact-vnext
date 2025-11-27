@@ -189,6 +189,15 @@ const updateBundleConfigMutation = graphql(`
     }
 `);
 
+const activeChannelQuery = graphql(`
+    query GetActiveChannel {
+        activeChannel {
+            id
+            currencyCode
+        }
+    }
+`);
+
 const searchProductVariantsQuery = graphql(`
     query SearchProductVariants($term: String!, $take: Int) {
         search(input: { term: $term, take: $take, groupByProduct: false }) {
@@ -802,6 +811,21 @@ function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleF
     const [showAddDialog, setShowAddDialog] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
+    // Get active channel currency
+    const { data: channelData } = useQuery({
+        queryKey: ['activeChannel'],
+        queryFn: () => api.query(activeChannelQuery, {}),
+    });
+    const currencyCode = channelData?.activeChannel?.currencyCode || 'USD';
+    
+    // Debug: log currency code changes
+    useEffect(() => {
+        console.log('=== BUNDLE FORM CURRENCY DEBUG ===');
+        console.log('channelData:', JSON.stringify(channelData, null, 2));
+        console.log('currencyCode:', currencyCode);
+        console.log('==================================');
+    }, [channelData, currencyCode]);
+
     const [formData, setFormData] = useState({
         discountType: bundle?.discountType || 'fixed',
         fixedPrice: bundle?.fixedPrice ? bundle.fixedPrice / 100 : 0,
@@ -949,6 +973,7 @@ function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleF
                     <MoneyInput
                         value={Math.round(formData.fixedPrice * 100)}
                         onChange={(value: number) => setFormData({ ...formData, fixedPrice: value / 100 })}
+                        currency={currencyCode}
                         name="fixedPrice"
                     />
                     {errors.fixedPrice && (
