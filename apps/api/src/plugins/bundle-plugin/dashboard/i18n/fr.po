@@ -28,6 +28,9 @@ msgstr "Ajouter des composants au produit groupé"
 msgid "Add Component"
 msgstr "Ajouter un composant"
 
+msgid "Add Components"
+msgstr "Ajouter des composants"
+
 msgid "Add to Bundle"
 msgstr "Ajouter au produit groupé"
 
@@ -195,6 +198,9 @@ msgstr "Aucun composant"
 #: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:573
 msgid "No components yet"
 msgstr "Aucun composant pour le moment"
+
+msgid "No components yet. Click \"Add Components\" to get started."
+msgstr "Aucun composant pour le moment. Cliquez sur \"Ajouter des composants\" pour commencer."
 
 #: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:859
 msgid "Not Allowed"

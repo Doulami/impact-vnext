@@ -19,6 +19,9 @@ msgstr "إضافة مكونات المنتج المجمّع"
 msgid "Add Component"
 msgstr "إضافة مكون"
 
+msgid "Add Components"
+msgstr "إضافة مكونات"
+
 msgid "Add to Bundle"
 msgstr "إضافة إلى المنتج المجمّع"
 
@@ -138,6 +141,9 @@ msgstr "لا توجد مكونات"
 
 msgid "No components yet"
 msgstr "لا توجد مكونات بعد"
+
+msgid "No components yet. Click \"Add Components\" to get started."
+msgstr "لا توجد مكونات بعد. انقر على \"إضافة مكونات\" للبدء."
 
 msgid "Not Allowed"
 msgstr "غير مسموح"

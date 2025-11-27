@@ -1140,6 +1140,13 @@ function BundleConfigurationBlock({ context }: ProductBlockProps) {
     const isBundle = context.entity?.customFields?.isBundle;
     const [isEditing, setIsEditing] = useState(false);
     const queryClient = useQueryClient();
+    
+    // Auto-start editing when product is bundle but has no bundle config yet
+    useEffect(() => {
+        if (isBundle && !bundleId && !isEditing) {
+            setIsEditing(true);
+        }
+    }, [isBundle, bundleId, isEditing]);
 
     // Only show this block if product is configured as a bundle
     if (!isBundle) {
@@ -1189,19 +1196,13 @@ function BundleConfigurationBlock({ context }: ProductBlockProps) {
         );
     }
 
-    if (!bundleId && !bundle) {
+    // If no bundle exists, show empty state
+    if (!bundleId && !bundle && !isEditing) {
         return (
             <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                    <Trans>No bundle configuration found. Create a bundle for this product.</Trans>
+                    <Trans>Loading bundle configuration...</Trans>
                 </p>
-                <Button
-                    onClick={() => setIsEditing(true)}
-                    variant="outline"
-                    className="w-full"
-                >
-                    <Trans>Create Bundle</Trans>
-                </Button>
             </div>
         );
     }

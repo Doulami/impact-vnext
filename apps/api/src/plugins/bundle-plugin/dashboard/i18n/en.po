@@ -28,6 +28,9 @@ msgstr "Add Bundle Components"
 msgid "Add Component"
 msgstr "Add Component"
 
+msgid "Add Components"
+msgstr "Add Components"
+
 msgid "Add to Bundle"
 msgstr "Add to Bundle"
 
@@ -195,6 +198,9 @@ msgstr "No components"
 #: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:573
 msgid "No components yet"
 msgstr "No components yet"
+
+msgid "No components yet. Click \"Add Components\" to get started."
+msgstr "No components yet. Click \"Add Components\" to get started."
 
 #: src/plugins/bundle-plugin/dashboard/bundle.index.tsx:859
 msgid "Not Allowed"
