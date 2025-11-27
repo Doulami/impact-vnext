@@ -26,15 +26,16 @@ import {
 
 interface Bundle {
     id: string;
-    name: string;
-    slug?: string;
-    description?: string;
+    shellProduct?: {
+        id: string;
+        name: string;
+        description?: string;
+    };
     status: string;
     discountType: string;
     fixedPrice?: number;
     percentOff?: number;
     effectivePrice: number;
-    category?: string;
     items: BundleItem[];
 }
 
@@ -53,15 +54,16 @@ const BUNDLES_QUERY = `
         bundles {
             items {
                 id
-                name
-                slug
-                description
+                shellProduct {
+                    id
+                    name
+                    description
+                }
                 status
                 discountType
                 fixedPrice
                 percentOff
                 effectivePrice
-                category
                 items {
                     id
                     productVariant {
@@ -80,7 +82,10 @@ const CREATE_BUNDLE_MUTATION = `
     mutation CreateBundle($input: CreateBundleInput!) {
         createBundle(input: $input) {
             id
-            name
+            shellProduct {
+                id
+                name
+            }
             status
             effectivePrice
         }
@@ -91,7 +96,10 @@ const UPDATE_BUNDLE_MUTATION = `
     mutation UpdateBundle($input: UpdateBundleInput!) {
         updateBundle(input: $input) {
             id
-            name
+            shellProduct {
+                id
+                name
+            }
             status
             effectivePrice
         }
@@ -161,13 +169,13 @@ export function BundlesPage() {
     const handleEdit = (bundle: Bundle) => {
         setEditingBundle(bundle);
         setFormData({
-            name: bundle.name,
-            slug: bundle.slug || '',
-            description: bundle.description || '',
+            name: bundle.shellProduct?.name || '',
+            slug: '',
+            description: bundle.shellProduct?.description || '',
             discountType: bundle.discountType,
             fixedPrice: bundle.fixedPrice || 0,
             percentOff: bundle.percentOff || 0,
-            category: bundle.category || '',
+            category: '',
             items: bundle.items.map(item => ({
                 productVariantId: item.productVariant.id,
                 quantity: item.quantity,
@@ -265,14 +273,13 @@ export function BundlesPage() {
                                     <TableCell>Price</TableCell>
                                     <TableCell>Components</TableCell>
                                     <TableCell>Status</TableCell>
-                                    <TableCell>Category</TableCell>
                                     <TableCell align="right">Actions</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {bundles.map((bundle) => (
                                     <TableRow key={bundle.id}>
-                                        <TableCell>{bundle.name}</TableCell>
+                                        <TableCell>{bundle.shellProduct?.name || 'Unknown'}</TableCell>
                                         <TableCell>${(bundle.effectivePrice / 100).toFixed(2)}</TableCell>
                                         <TableCell>{bundle.items.length} items</TableCell>
                                         <TableCell>
@@ -282,7 +289,6 @@ export function BundlesPage() {
                                                 size="small"
                                             />
                                         </TableCell>
-                                        <TableCell>{bundle.category || '-'}</TableCell>
                                         <TableCell align="right">
                                             <Button
                                                 size="small"
