@@ -238,22 +238,7 @@ export class BundleAdminResolver {
             }
         }
 
-        // Name validation
-        if (!input.name || input.name.trim().length === 0) {
-            throw new Error('Bundle name is required');
-        }
-
-        if (input.name.length > 255) {
-            throw new Error('Bundle name cannot exceed 255 characters');
-        }
-
-        // Slug validation (if provided)
-        if (input.slug) {
-            const slugRegex = /^[a-z0-9-]+$/;
-            if (!slugRegex.test(input.slug)) {
-                throw new Error('Bundle slug must contain only lowercase letters, numbers, and hyphens');
-            }
-        }
+        // Name and slug are synced from shell product - no validation needed
     }
 
     private validateBundleItems(items: any[]): void {
