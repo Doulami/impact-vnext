@@ -187,9 +187,13 @@ export function BundlesPage() {
 
     const handleSave = async () => {
         try {
+            // Only send fields that exist in GraphQL schema
+            // Note: name, slug, description, category are managed via shellProduct, not Bundle entity
             const input = {
-                ...formData,
-                assets: [],
+                discountType: formData.discountType,
+                fixedPrice: formData.fixedPrice,
+                percentOff: formData.percentOff,
+                items: formData.items,
             };
 
             if (editingBundle) {
@@ -197,7 +201,9 @@ export function BundlesPage() {
                     input: { id: editingBundle.id, ...input },
                 });
             } else {
-                await mutate(CREATE_BUNDLE_MUTATION, { input });
+                // For create, we need shellProductId - this UI is outdated and needs shell product selection
+                alert('This UI is deprecated. Please use the Product detail page to create bundles.');
+                return;
             }
 
             setDialogOpen(false);
