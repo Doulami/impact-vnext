@@ -249,6 +249,8 @@ function BundleStatusBlock({ context }: ProductBlockProps) {
     const isBundle = context.entity?.customFields?.isBundle || false;
     const bundleId = context.entity?.customFields?.bundleId;
     const [isActivating, setIsActivating] = useState(false);
+    const [showMultiVariantError, setShowMultiVariantError] = useState(false);
+    const [activationError, setActivationError] = useState<string | null>(null);
     const queryClient = useQueryClient();
 
     const { data: productData } = useQuery({
@@ -268,6 +270,13 @@ function BundleStatusBlock({ context }: ProductBlockProps) {
             api.mutate(activateProductAsBundleMutation, { productId }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['product-bundle-status', productId] });
+            setIsActivating(false);
+            // Reload the page to show the bundle configuration form
+            window.location.reload();
+        },
+        onError: (error: any) => {
+            const errorMessage = error?.message || 'Failed to activate bundle';
+            setActivationError(errorMessage);
             setIsActivating(false);
         },
     });
@@ -290,17 +299,13 @@ function BundleStatusBlock({ context }: ProductBlockProps) {
         // Check if product has more than one variant
         const variantCount = product.variants?.length || 0;
         if (variantCount > 1) {
-            alert('Cannot activate bundle: Product has multiple variants. Bundles can only be created for products with a single variant.');
+            setShowMultiVariantError(true);
             return;
         }
         
         setIsActivating(true);
-        try {
-            await activateBundleMutation.mutateAsync(productId);
-        } catch (error) {
-            console.error('Failed to activate bundle:', error);
-            setIsActivating(false);
-        }
+        setActivationError(null);
+        await activateBundleMutation.mutateAsync(productId);
     };
 
     const handleRemove = async () => {
@@ -336,6 +341,42 @@ function BundleStatusBlock({ context }: ProductBlockProps) {
                         >
                             {isActivating ? <Trans>Configuring...</Trans> : <Trans>Configure as Bundle</Trans>}
                         </Button>
+                        
+                        {/* Multi-variant error dialog */}
+                        <AlertDialog open={showMultiVariantError} onOpenChange={setShowMultiVariantError}>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle><Trans>Cannot Activate Bundle</Trans></AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        <Trans>This product has multiple variants. Bundles can only be created for products with a single variant.</Trans>
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogAction onClick={() => setShowMultiVariantError(false)}>
+                                        <Trans>OK</Trans>
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                        
+                        {/* Activation error dialog */}
+                        {activationError && (
+                            <AlertDialog open={!!activationError} onOpenChange={() => setActivationError(null)}>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle><Trans>Activation Failed</Trans></AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            {activationError}
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogAction onClick={() => setActivationError(null)}>
+                                            <Trans>OK</Trans>
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
                     </>
                 ) : !bundleId && !product?.customFields?.bundleId ? (
                     <div className="flex items-start gap-2 text-amber-600">
@@ -672,7 +713,7 @@ function AddComponentsDialog({ isOpen, onClose, onAdd, existingVariantIds }: Add
                                     <div className="flex-1">
                                         <div className="font-medium">{product.productName}</div>
                                         <div className="text-xs text-muted-foreground">
-                                            <Trans>{product.variants.length} variants</Trans>
+                                            <Trans id="{count} variants" values={{ count: product.variants.length }} />
                                         </div>
                                     </div>
                                     <Button
@@ -724,7 +765,7 @@ function AddComponentsDialog({ isOpen, onClose, onAdd, existingVariantIds }: Add
 
                 <div className="p-4 border-t flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">
-                        <Trans>{selectedVariants.size} variants selected</Trans>
+                        <Trans id="{count} variants selected" values={{ count: selectedVariants.size }} />
                     </span>
                     <div className="flex gap-2">
                         <Button variant="outline" onClick={onClose}>

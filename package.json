@@ -4,32 +4,29 @@
   "description": "Impact Nutrition E-commerce Platform - Monorepo with Next.js frontend and Strapi CMS",
   "private": true,
   "workspaces": [
-    "apps/*",
+    "apps/api",
+    "apps/web",
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently -n WEB,CMS,API -c auto --kill-others-on-fail \"npm run dev:web\" \"npm run dev:cms\" \"npm run dev:api\"",
+    "dev": "concurrently -n WEB,API -c auto --kill-others-on-fail \"npm run dev:web\" \"npm run dev:api\"",
     "dev:web": "cd apps/web && npm run dev",
-    "dev:cms": "cd apps/cms && npm run develop",
     "dev:api": "cd apps/api && npm run dev",
-    "build": "npm run build:cms && npm run build:api && npm run build:web",
+    "build": "npm run build:api && npm run build:web",
     "build:web": "cd apps/web && npm run build",
-    "build:cms": "cd apps/cms && npm run build",
     "build:api": "cd apps/api && npm run build",
-    "start": "concurrently -n WEB,CMS,API -c auto --kill-others-on-fail \"npm run start:web\" \"npm run start:cms\" \"npm run start:api\"",
+    "start": "concurrently -n WEB,API -c auto --kill-others-on-fail \"npm run start:web\" \"npm run start:api\"",
     "start:web": "cd apps/web && npm run start",
-    "start:cms": "cd apps/cms && npm run start",
     "start:api": "cd apps/api && npm run start",
     "lint": "npm run lint:web",
     "lint:web": "cd apps/web && npm run lint",
     "clean": "npm run clean:deps && npm run clean:build",
-    "clean:deps": "rm -rf node_modules apps/*/node_modules packages/*/node_modules",
-    "clean:build": "rm -rf apps/web/.next apps/cms/build apps/cms/.tmp apps/api/dist apps/api/admin-ui",
+    "clean:deps": "rm -rf node_modules apps/web/node_modules apps/api/node_modules packages/*/node_modules",
+    "clean:build": "rm -rf apps/web/.next apps/api/dist",
     "install:all": "npm install && npm run install:apps",
-    "install:apps": "cd apps/web && npm install && cd ../cms && npm install && cd ../api && npm install"
+    "install:apps": "cd apps/web && npm install && cd ../api && npm install"
   },
   "devDependencies": {
-    "@strapi/strapi": "5.31.0",
     "concurrently": "^8.2.2",
     "rxjs": "^7.8.1"
   },
@@ -58,7 +55,9 @@
   },
   "overrides": {
     "@vendure/dashboard": "3.5.1",
-    "@swc/core": "1.15.3",
-    "@vitejs/plugin-react-swc": "4.2.2"
+    "@swc/core": "1.13.5"
+  },
+  "resolutions": {
+    "@swc/core": "1.13.5"
   }
 }

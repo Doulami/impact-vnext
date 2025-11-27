@@ -22,8 +22,8 @@ msgstr "Allergy Advice"
 msgid "Amino"
 msgstr "Amino"
 
-msgid "Are you sure you want to delete batch {batch.batchCode}? This action cannot be undone."
-msgstr "Are you sure you want to delete batch {batch.batchCode}? This action cannot be undone."
+msgid "Are you sure you want to delete batch {batchCode}? This action cannot be undone."
+msgstr "Are you sure you want to delete batch {batchCode}? This action cannot be undone."
 
 msgid "Back to List"
 msgstr "Back to List"

@@ -22,8 +22,8 @@ msgstr "Conseils d'allergie"
 msgid "Amino"
 msgstr "Acide aminé"
 
-msgid "Are you sure you want to delete batch {batch.batchCode}? This action cannot be undone."
-msgstr "Êtes-vous sûr de vouloir supprimer le lot {batch.batchCode}? Cette action ne peut pas être annulée."
+msgid "Are you sure you want to delete batch {batchCode}? This action cannot be undone."
+msgstr "Êtes-vous sûr de vouloir supprimer le lot {batchCode}? Cette action ne peut pas être annulée."
 
 msgid "Back to List"
 msgstr "Retour à la liste"

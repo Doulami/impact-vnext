@@ -22,8 +22,8 @@ msgstr "نصائح الحساسية"
 msgid "Amino"
 msgstr "حمض أميني"
 
-msgid "Are you sure you want to delete batch {batch.batchCode}? This action cannot be undone."
-msgstr "هل أنت متأكد من حذف الدفعة {batch.batchCode}؟ لا يمكن التراجع عن هذا الإجراء."
+msgid "Are you sure you want to delete batch {batchCode}? This action cannot be undone."
+msgstr "هل أنت متأكد من حذف الدفعة {batchCode}؟ لا يمكن التراجع عن هذا الإجراء."
 
 msgid "Back to List"
 msgstr "العودة إلى القائمة"

@@ -348,7 +348,7 @@ function NutritionBatchListBlock({ context }: ProductVariantBlockProps) {
                                                         <AlertDialogHeader>
                                                             <AlertDialogTitle><Trans>Delete Batch?</Trans></AlertDialogTitle>
                                                             <AlertDialogDescription>
-                                                                <Trans>Are you sure you want to delete batch {batch.batchCode}? This action cannot be undone.</Trans>
+                                                                <Trans id="Are you sure you want to delete batch {batchCode}? This action cannot be undone." values={{ batchCode: batch.batchCode }} />
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>

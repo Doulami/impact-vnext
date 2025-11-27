@@ -474,6 +474,7 @@ export class BundleService {
     /**
      * Activate a product as a bundle
      * Sets isBundle=true customField via ProductService (bypasses readonly restriction)
+     * Auto-creates a variant if product has none
      */
     async activateProductAsBundle(ctx: RequestContext, productId: ID): Promise<void> {
         const product = await this.productService.findOne(ctx, productId);
@@ -487,8 +488,36 @@ export class BundleService {
             relations: ['variants']
         });
         
-        if (productWithVariants && productWithVariants.variants && productWithVariants.variants.length > 1) {
+        if (!productWithVariants) {
+            throw new Error(`Product with id ${productId} not found`);
+        }
+
+        const variantCount = productWithVariants.variants?.length || 0;
+        
+        if (variantCount > 1) {
             throw new Error('Cannot activate bundle: Product has multiple variants. Bundles can only be created for products with a single variant.');
+        }
+        
+        // If product has no variants, auto-create a default variant
+        if (variantCount === 0) {
+            Logger.info(`Product ${productId} has no variants, creating default variant`, 'BundleService');
+            
+            await this.productVariantService.create(ctx, [{
+                productId: productId,
+                sku: `${product.slug || productId}-default`,
+                price: 0, // Will be set by bundle pricing
+                stockOnHand: 0,
+                trackInventory: GlobalFlag.FALSE,
+                translations: product.translations?.map(t => ({
+                    languageCode: t.languageCode,
+                    name: t.name || 'Default',
+                })) || [{
+                    languageCode: ctx.languageCode,
+                    name: product.name || 'Default',
+                }],
+            }]);
+            
+            Logger.info(`Created default variant for product ${productId}`, 'BundleService');
         }
 
         // Update product customFields using ProductService (bypasses readonly)
