@@ -189,6 +189,15 @@ const updateBundleConfigMutation = graphql(`
     }
 `);
 
+const activeChannelQuery = graphql(`
+    query GetActiveChannel {
+        activeChannel {
+            id
+            currencyCode
+        }
+    }
+`);
+
 const searchProductVariantsQuery = graphql(`
     query SearchProductVariants($term: String!, $take: Int) {
         search(input: { term: $term, take: $take, groupByProduct: false }) {
@@ -798,7 +807,16 @@ interface BundleFormProps {
 
 function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleFormProps) {
     const { _ } = useLingui();
+    const { formatCurrency } = useLocalFormat();
     const [showAddDialog, setShowAddDialog] = useState(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    // Get active channel currency
+    const { data: channelData } = useQuery({
+        queryKey: ['activeChannel'],
+        queryFn: () => api.query(activeChannelQuery, {}),
+    });
+    const currencyCode = channelData?.activeChannel?.currencyCode || 'USD';
 
     const [formData, setFormData] = useState({
         discountType: bundle?.discountType || 'fixed',
@@ -833,6 +851,63 @@ function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleF
     };
 
     const handleSubmit = async () => {
+        // Clear previous errors
+        const newErrors: Record<string, string> = {};
+
+        // Validate components
+        if (formData.items.length === 0) {
+            newErrors.items = 'At least one component is required';
+        }
+
+        // Validate each component quantity
+        formData.items.forEach((item: any, index: number) => {
+            if (!item.quantity || item.quantity < 1) {
+                newErrors.items = 'All components must have quantity of at least 1';
+            }
+        });
+
+        // Validate discount
+        if (formData.discountType === 'fixed') {
+            if (!formData.fixedPrice || formData.fixedPrice <= 0) {
+                newErrors.fixedPrice = 'Fixed price must be greater than 0';
+            }
+        } else if (formData.discountType === 'percent') {
+            if (formData.percentOff === null || formData.percentOff === undefined || formData.percentOff < 0 || formData.percentOff > 100) {
+                newErrors.percentOff = 'Percentage must be between 0 and 100';
+            }
+            if (formData.percentOff === 0) {
+                newErrors.percentOff = 'Percentage must be greater than 0';
+            }
+        }
+
+        // Validate date range
+        if (formData.validFrom && formData.validTo) {
+            const fromDate = new Date(formData.validFrom);
+            const toDate = new Date(formData.validTo);
+            if (toDate <= fromDate) {
+                newErrors.validTo = 'End date must be after start date';
+            }
+        }
+
+        // Validate bundle cap
+        if (formData.bundleCap !== undefined && formData.bundleCap !== null) {
+            if (formData.bundleCap < 1) {
+                newErrors.bundleCap = 'Bundle cap must be at least 1 or leave empty for unlimited';
+            }
+            if (!Number.isInteger(formData.bundleCap)) {
+                newErrors.bundleCap = 'Bundle cap must be a whole number';
+            }
+        }
+
+        // If there are errors, show them and don't submit
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
+        // Clear errors and proceed
+        setErrors({});
+
         const submitData: any = {
             discountType: formData.discountType,
             allowExternalPromos: formData.allowExternalPromos,
@@ -855,7 +930,15 @@ function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleF
             }));
         }
 
-        await onSave(submitData);
+        try {
+            await onSave(submitData);
+        } catch (error) {
+            // Show backend error if mutation fails
+            if (error instanceof Error) {
+                newErrors.submit = error.message;
+                setErrors(newErrors);
+            }
+        }
     };
 
     return (
@@ -882,9 +965,12 @@ function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleF
                     <MoneyInput
                         value={Math.round(formData.fixedPrice * 100)}
                         onChange={(value: number) => setFormData({ ...formData, fixedPrice: value / 100 })}
-                        currency="USD"
+                        currency={currencyCode}
                         name="fixedPrice"
                     />
+                    {errors.fixedPrice && (
+                        <p className="text-xs text-red-600 mt-1">{errors.fixedPrice}</p>
+                    )}
                 </div>
             ) : (
                 <div>
@@ -904,6 +990,9 @@ function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleF
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
                     </div>
+                    {errors.percentOff && (
+                        <p className="text-xs text-red-600 mt-1">{errors.percentOff}</p>
+                    )}
                 </div>
             )}
 
@@ -931,6 +1020,9 @@ function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleF
                             onChange={(value: string) => setFormData({ ...formData, validTo: value ? new Date(value).toISOString().slice(0, 16) : '' })}
                             name="validTo"
                         />
+                        {errors.validTo && (
+                            <p className="text-xs text-red-600 mt-1">{errors.validTo}</p>
+                        )}
                     </div>
                 </div>
             </div>
@@ -943,10 +1035,14 @@ function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleF
                 <Input
                     type="number"
                     min="1"
+                    step="1"
                     placeholder="Unlimited"
                     value={formData.bundleCap !== null && formData.bundleCap !== undefined ? formData.bundleCap : ''}
                     onChange={(e) => setFormData({ ...formData, bundleCap: e.target.value ? parseInt(e.target.value, 10) : undefined })}
                 />
+                {errors.bundleCap && (
+                    <p className="text-xs text-red-600 mt-1">{errors.bundleCap}</p>
+                )}
             </div>
 
             <div className="border rounded-lg p-4 space-y-2">
@@ -990,6 +1086,9 @@ function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleF
                         <Trans>Add Components</Trans>
                     </Button>
                 </div>
+                {errors.items && (
+                    <p className="text-xs text-red-600 mb-2">{errors.items}</p>
+                )}
                 
                 {formData.items.length === 0 ? (
                     <p className="text-sm text-muted-foreground"><Trans>No components yet. Click "Add Components" to get started.</Trans></p>
@@ -1115,10 +1214,16 @@ function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleF
                 )}
             </div>
 
+            {errors.submit && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-600">
+                    {errors.submit}
+                </div>
+            )}
+
             <div className="flex gap-2 pt-4">
                 <Button
                     onClick={handleSubmit}
-                    disabled={isSaving || formData.items.length === 0 || formData.items.some(item => !item.productVariantId)}
+                    disabled={isSaving}
                 >
                     {isSaving ? <Trans>Saving...</Trans> : <Trans>Save Bundle</Trans>}
                 </Button>
