@@ -70,6 +70,7 @@ export function useProduct(slug: string, options?: QueryHookOptions) {
   return useLanguageAwareQuery(GET_PRODUCT_BY_SLUG, {
     variables: { slug },
     skip: !slug,
+    errorPolicy: 'all', // Return partial data even if some fields (e.g. nutrition batches) are null
     ...options,
   });
 }
@@ -120,6 +121,7 @@ export function useBundle(id: string, options?: QueryHookOptions) {
   return useLanguageAwareQuery(GET_BUNDLE, {
     variables: { id },
     skip: !id,
+    errorPolicy: 'all', // Return partial data even if some fields (e.g. nutrition batches) are null
     ...options,
   });
 }

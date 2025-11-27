@@ -378,24 +378,15 @@ import { BundleTranslationService } from './services/bundle-translation.service'
             }
 
             input CreateBundleInput {
-                name: String!
-                slug: String
-                description: String
+                shellProductId: ID!
                 discountType: String!
                 fixedPrice: Money
                 percentOff: Float
-                assets: [ID!]
-                tags: [String!]
-                category: String
                 allowExternalPromos: Boolean
-                # Phase 3 fields
                 validFrom: DateTime
                 validTo: DateTime
                 bundleCap: Int
                 items: [CreateBundleItemInput!]!
-                # Legacy compatibility
-                price: Money
-                enabled: Boolean
             }
 
             input UpdateBundleInput {

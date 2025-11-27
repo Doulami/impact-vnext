@@ -1379,7 +1379,6 @@ function BundleConfigurationBlock({ context }: ProductBlockProps) {
                                 });
                             } else {
                                 await createMutation.mutateAsync({
-                                    name: context.entity?.name || 'Bundle',
                                     shellProductId: context.entity?.id || '',
                                     ...bundleData,
                                 });

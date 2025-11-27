@@ -75,14 +75,14 @@ import { ProductVariantNutritionResolver } from './api/product-variant.resolver'
                 createdAt: DateTime!
                 updatedAt: DateTime!
                 languageCode: LanguageCode!
-                servingLabel: String!
-                ingredientsText: String!
-                allergyAdviceText: String!
-                recommendedUseText: String!
-                storageAdviceText: String!
-                warningsText: String!
-                shortLabelDescription: String!
-                referenceIntakeFootnoteText: String!
+                servingLabel: String
+                ingredientsText: String
+                allergyAdviceText: String
+                recommendedUseText: String
+                storageAdviceText: String
+                warningsText: String
+                shortLabelDescription: String
+                referenceIntakeFootnoteText: String
             }
             
             type NutritionBatch implements Node {
@@ -101,7 +101,7 @@ import { ProductVariantNutritionResolver } from './api/product-variant.resolver'
                 # Serving information
                 servingSizeValue: Float!
                 servingSizeUnit: ServingSizeUnit!
-                servingLabel: String!
+                servingLabel: String
                 servingsPerContainer: Int
                 
                 # Regulatory texts (localized)
@@ -149,7 +149,7 @@ import { ProductVariantNutritionResolver } from './api/product-variant.resolver'
             input NutritionBatchTranslationInput {
                 id: ID
                 languageCode: LanguageCode!
-                servingLabel: String!
+                servingLabel: String
                 ingredientsText: String
                 allergyAdviceText: String
                 recommendedUseText: String
@@ -297,7 +297,7 @@ import { ProductVariantNutritionResolver } from './api/product-variant.resolver'
                 # Serving information
                 servingSizeValue: Float!
                 servingSizeUnit: ServingSizeUnit!
-                servingLabel: String!
+                servingLabel: String
                 servingsPerContainer: Int
                 
                 # Regulatory texts (localized, filtered by request language)

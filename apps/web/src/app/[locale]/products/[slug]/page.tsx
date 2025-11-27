@@ -129,8 +129,8 @@ export default function ProductDetailPage() {
   });
 
   const bundle = (bundleData as any)?.bundle;
-  const loading = productLoading;
-  const error = productError;
+  const loading = productLoading || (isBundle && bundleLoading);
+  const error = productError || bundleError;
   
   // Log language information for debugging
   useEffect(() => {
@@ -292,7 +292,12 @@ export default function ProductDetailPage() {
     );
   }
 
-  if (error || (!product && !bundle)) {
+  // Only show error if we actually don't have the required data
+  // For bundles: need both product and bundle data
+  // For regular products: just need product data
+  const hasRequiredData = isBundle ? (product && bundle) : product;
+  
+  if (!loading && !hasRequiredData) {
     return (
       <div className="min-h-screen bg-[var(--muted)]">
         <Header />
