@@ -1,0 +1,29 @@
+{
+  "collectionName": "components_blocks_content_sections",
+  "info": {
+    "displayName": "ContentSection",
+    "description": "Text content section with optional image"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": false
+    },
+    "body": {
+      "type": "richtext",
+      "required": true
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "imageAlignment": {
+      "type": "enumeration",
+      "enum": ["left", "right", "center"],
+      "default": "left"
+    }
+  }
+}

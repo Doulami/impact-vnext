@@ -1,0 +1,40 @@
+{
+  "collectionName": "components_blocks_hero_sections",
+  "info": {
+    "displayName": "HeroSection",
+    "description": "Hero banner with headline, image, and CTA buttons"
+  },
+  "options": {},
+  "attributes": {
+    "headline": {
+      "type": "string",
+      "required": true
+    },
+    "subheadline": {
+      "type": "text",
+      "required": false
+    },
+    "backgroundImage": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "primaryButtonLabel": {
+      "type": "string",
+      "required": false
+    },
+    "primaryButtonUrl": {
+      "type": "string",
+      "required": false
+    },
+    "secondaryButtonLabel": {
+      "type": "string",
+      "required": false
+    },
+    "secondaryButtonUrl": {
+      "type": "string",
+      "required": false
+    }
+  }
+}

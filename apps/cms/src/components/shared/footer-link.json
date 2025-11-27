@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_shared_footer_links",
+  "info": {
+    "displayName": "FooterLink",
+    "description": "A footer navigation link"
+  },
+  "options": {},
+  "attributes": {
+    "label": {
+      "type": "string",
+      "required": true
+    },
+    "url": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

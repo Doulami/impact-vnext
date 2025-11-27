@@ -1,4 +1,4 @@
-// Strapi API Client for Blog
+// Strapi API Client for Blog, Global Settings, Menu, and Pages
 
 import {
   StrapiCollectionResponse,
@@ -6,6 +6,17 @@ import {
   Article,
   ArticleListItem,
 } from './types/blog';
+
+import {
+  GlobalSettings,
+  GlobalSettingsRaw,
+  Menu,
+  MenuRaw,
+  Page,
+  PageRaw,
+  StrapiResponse,
+  StrapiCollectionResponse as StrapiCMSCollectionResponse,
+} from './types/strapi';
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_CMS_URL || 'http://localhost:1337';
 
@@ -277,6 +288,237 @@ export async function getCategories() {
     });
   } catch (error) {
     console.error('Error fetching categories:', error);
+    return [];
+  }
+}
+
+// ============================================================================
+// Global Settings API
+// ============================================================================
+
+/**
+ * Transform Strapi global settings to simplified type
+ */
+function transformGlobalSettings(raw: GlobalSettingsRaw): GlobalSettings {
+  const attrs = raw.attributes;
+  
+  return {
+    siteName: attrs.siteName,
+    siteDescription: attrs.siteDescription,
+    logoPrimary: attrs.logoPrimary?.data?.attributes?.url
+      ? getStrapiMediaUrl(attrs.logoPrimary.data.attributes.url)
+      : null,
+    logoDark: attrs.logoDark?.data?.attributes?.url
+      ? getStrapiMediaUrl(attrs.logoDark.data.attributes.url)
+      : null,
+    logoLight: attrs.logoLight?.data?.attributes?.url
+      ? getStrapiMediaUrl(attrs.logoLight.data.attributes.url)
+      : null,
+    favicon: attrs.favicon?.data?.attributes?.url
+      ? getStrapiMediaUrl(attrs.favicon.data.attributes.url)
+      : null,
+    topBarMessage: attrs.topBarMessage || null,
+    showTopBar: attrs.showTopBar,
+    footerText: attrs.footerText || null,
+    footerLinks: attrs.footerLinks || [],
+    socialLinks: attrs.socialLinks || [],
+    defaultMetaTitle: attrs.defaultMetaTitle || null,
+    defaultMetaDescription: attrs.defaultMetaDescription || null,
+    defaultOpenGraphImage: attrs.defaultOpenGraphImage?.data?.attributes?.url
+      ? getStrapiMediaUrl(attrs.defaultOpenGraphImage.data.attributes.url)
+      : null,
+    newsletterProvider: attrs.newsletterProvider,
+    newsletterListId: attrs.newsletterListId || null,
+    newsletterConsentText: attrs.newsletterConsentText || null,
+  };
+}
+
+/**
+ * Fetch global settings
+ */
+export async function getGlobalSettings(locale: string = 'en'): Promise<GlobalSettings | null> {
+  try {
+    const url = `${STRAPI_URL}/api/global?locale=${locale}&populate=*`;
+    
+    const response = await fetch(url, {
+      next: { revalidate: 3600 }, // Revalidate every hour
+    });
+
+    if (!response.ok) {
+      console.error('Failed to fetch global settings:', response.status, response.statusText);
+      return null;
+    }
+
+    const result: StrapiResponse<GlobalSettingsRaw> = await response.json();
+    
+    if (!result.data) {
+      return null;
+    }
+    
+    return transformGlobalSettings(result.data);
+  } catch (error) {
+    console.error('Error fetching global settings:', error);
+    return null;
+  }
+}
+
+// ============================================================================
+// Menu API
+// ============================================================================
+
+/**
+ * Transform Strapi menu to simplified type
+ */
+function transformMenu(raw: MenuRaw): Menu {
+  const attrs = raw.attributes;
+  
+  return {
+    id: raw.id,
+    name: attrs.name,
+    slug: attrs.slug,
+    items: attrs.items || [],
+  };
+}
+
+/**
+ * Fetch menu by slug
+ */
+export async function getMenu(slug: string, locale: string = 'en'): Promise<Menu | null> {
+  try {
+    const url = `${STRAPI_URL}/api/menus?filters[slug][$eq]=${slug}&locale=${locale}&populate=*`;
+    
+    const response = await fetch(url, {
+      next: { revalidate: 3600 }, // Revalidate every hour
+    });
+
+    if (!response.ok) {
+      console.error('Failed to fetch menu:', response.status, response.statusText);
+      return null;
+    }
+
+    const result: StrapiCMSCollectionResponse<MenuRaw> = await response.json();
+    
+    if (!result.data || result.data.length === 0) {
+      return null;
+    }
+    
+    return transformMenu(result.data[0]);
+  } catch (error) {
+    console.error('Error fetching menu:', error);
+    return null;
+  }
+}
+
+/**
+ * Fetch all menus
+ */
+export async function getMenus(locale: string = 'en'): Promise<Menu[]> {
+  try {
+    const url = `${STRAPI_URL}/api/menus?locale=${locale}&populate=*`;
+    
+    const response = await fetch(url, {
+      next: { revalidate: 3600 },
+    });
+
+    if (!response.ok) {
+      console.error('Failed to fetch menus:', response.status, response.statusText);
+      return [];
+    }
+
+    const result: StrapiCMSCollectionResponse<MenuRaw> = await response.json();
+    
+    if (!result.data || result.data.length === 0) {
+      return [];
+    }
+    
+    return result.data.map(transformMenu);
+  } catch (error) {
+    console.error('Error fetching menus:', error);
+    return [];
+  }
+}
+
+// ============================================================================
+// Page API
+// ============================================================================
+
+/**
+ * Transform Strapi page to simplified type
+ */
+function transformPage(raw: any): Page {
+  // Handle both v4 (attributes wrapper) and v5 (flat) structures
+  const data = raw.attributes || raw;
+  const id = raw.id;
+  
+  return {
+    id,
+    title: data.title,
+    slug: data.slug,
+    seoTitle: data.seoTitle || null,
+    seoDescription: data.seoDescription || null,
+    seoImage: data.seoImage?.data?.attributes?.url
+      ? getStrapiMediaUrl(data.seoImage.data.attributes.url)
+      : data.seoImage?.url
+      ? getStrapiMediaUrl(data.seoImage.url)
+      : null,
+    layoutBlocks: data.layoutBlocks || [],
+  };
+}
+
+/**
+ * Fetch page by slug
+ */
+export async function getPage(slug: string, locale: string = 'en'): Promise<Page | null> {
+  try {
+    const url = `${STRAPI_URL}/api/pages?filters[slug][$eq]=${slug}&locale=${locale}&populate=*`;
+    
+    const response = await fetch(url, {
+      next: { revalidate: 60 },
+    });
+
+    if (!response.ok) {
+      console.error('Failed to fetch page:', response.status, response.statusText);
+      return null;
+    }
+
+    const result: StrapiCMSCollectionResponse<PageRaw> = await response.json();
+    
+    if (!result.data || result.data.length === 0) {
+      return null;
+    }
+    
+    return transformPage(result.data[0]);
+  } catch (error) {
+    console.error('Error fetching page:', error);
+    return null;
+  }
+}
+
+/**
+ * Fetch all pages
+ */
+export async function getPages(locale: string = 'en'): Promise<Page[]> {
+  try {
+    const url = `${STRAPI_URL}/api/pages?locale=${locale}&populate=*`;
+    
+    const response = await fetch(url, {
+      next: { revalidate: 60 },
+    });
+
+    if (!response.ok) {
+      console.error('Failed to fetch pages:', response.status, response.statusText);
+      return [];
+    }
+
+    const result: StrapiCMSCollectionResponse<PageRaw> = await response.json();
+    
+    if (!result.data || result.data.length === 0) {
+      return [];
+    }
+    
+    return result.data.map(transformPage);
+  } catch (error) {
+    console.error('Error fetching pages:', error);
     return [];
   }
 }
