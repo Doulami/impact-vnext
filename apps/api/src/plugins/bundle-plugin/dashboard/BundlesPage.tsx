@@ -26,9 +26,12 @@ import {
 
 interface Bundle {
     id: string;
-    name: string;
-    slug?: string;
-    description?: string;
+    shellProduct: {
+        id: string;
+        name: string;
+        slug?: string;
+        description?: string;
+    };
     status: string;
     discountType: string;
     fixedPrice?: number;
@@ -53,15 +56,17 @@ const BUNDLES_QUERY = `
         bundles {
             items {
                 id
-                name
-                slug
-                description
+                shellProduct {
+                    id
+                    name
+                    slug
+                    description
+                }
                 status
                 discountType
                 fixedPrice
                 percentOff
                 effectivePrice
-                category
                 items {
                     id
                     productVariant {
@@ -69,7 +74,6 @@ const BUNDLES_QUERY = `
                         name
                     }
                     quantity
-                    unitPrice
                 }
             }
         }
@@ -80,7 +84,10 @@ const CREATE_BUNDLE_MUTATION = `
     mutation CreateBundle($input: CreateBundleInput!) {
         createBundle(input: $input) {
             id
-            name
+            shellProduct {
+                id
+                name
+            }
             status
             effectivePrice
         }
@@ -91,7 +98,10 @@ const UPDATE_BUNDLE_MUTATION = `
     mutation UpdateBundle($input: UpdateBundleInput!) {
         updateBundle(input: $input) {
             id
-            name
+            shellProduct {
+                id
+                name
+            }
             status
             effectivePrice
         }
@@ -161,9 +171,9 @@ export function BundlesPage() {
     const handleEdit = (bundle: Bundle) => {
         setEditingBundle(bundle);
         setFormData({
-            name: bundle.name,
-            slug: bundle.slug || '',
-            description: bundle.description || '',
+            name: bundle.shellProduct.name,
+            slug: bundle.shellProduct.slug || '',
+            description: bundle.shellProduct.description || '',
             discountType: bundle.discountType,
             fixedPrice: bundle.fixedPrice || 0,
             percentOff: bundle.percentOff || 0,
@@ -272,7 +282,7 @@ export function BundlesPage() {
                             <TableBody>
                                 {bundles.map((bundle) => (
                                     <TableRow key={bundle.id}>
-                                        <TableCell>{bundle.name}</TableCell>
+                                        <TableCell>{bundle.shellProduct.name}</TableCell>
                                         <TableCell>${(bundle.effectivePrice / 100).toFixed(2)}</TableCell>
                                         <TableCell>{bundle.items.length} items</TableCell>
                                         <TableCell>

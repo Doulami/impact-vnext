@@ -134,7 +134,8 @@ export class Bundle extends VendureEntity implements HasCustomFields {
         if (this.discountType === BundleDiscountType.PERCENT && this.percentOff !== null && this.percentOff !== undefined) {
             // Calculate from PRE-TAX component prices, apply discount
             const componentTotal = this.items?.reduce((sum, item) => {
-                const price = item.productVariant?.price || 0;
+                // Use unitPriceSnapshot (in cents) if available, fallback to productVariant.price
+                const price = item.unitPriceSnapshot || item.productVariant?.price || 0;
                 return sum + (price * item.quantity);
             }, 0) || 0;
             return Math.round(componentTotal * (1 - this.percentOff / 100));
@@ -148,12 +149,19 @@ export class Bundle extends VendureEntity implements HasCustomFields {
      * NOTE: Uses priceWithTax to match frontend display prices
      */
     get totalSavings(): number {
-        const componentTotal = this.items?.reduce((sum, item) => sum + (item.productVariant.priceWithTax * item.quantity), 0) || 0;
+        // Use unitPriceSnapshot if available, otherwise use productVariant pricing
+        const componentTotal = this.items?.reduce((sum, item) => {
+            const priceWithTax = item.productVariant?.priceWithTax || item.unitPriceSnapshot || 0;
+            return sum + (priceWithTax * item.quantity);
+        }, 0) || 0;
+        
         // effectivePrice is pre-tax, so we need to apply tax ratio to compare with componentTotal
         if (this.items?.length > 0) {
             for (const item of this.items) {
-                if (item.productVariant?.price > 0 && item.productVariant?.priceWithTax > 0) {
-                    const taxRatio = item.productVariant.priceWithTax / item.productVariant.price;
+                const price = item.unitPriceSnapshot || item.productVariant?.price || 0;
+                const priceWithTax = item.productVariant?.priceWithTax || item.unitPriceSnapshot || 0;
+                if (price > 0 && priceWithTax > 0) {
+                    const taxRatio = priceWithTax / price;
                     const effectivePriceWithTax = Math.round(this.effectivePrice * taxRatio);
                     return Math.max(0, componentTotal - effectivePriceWithTax);
                 }
@@ -219,9 +227,15 @@ export class Bundle extends VendureEntity implements HasCustomFields {
         
         // Business logic validation
         if (this.discountType === BundleDiscountType.FIXED && this.items?.length > 0) {
-            const componentTotal = this.items.reduce((sum, item) => sum + (item.productVariant.price * item.quantity), 0);
+            // Use unitPriceSnapshot (in cents) instead of productVariant.price to avoid loading relation
+            const componentTotal = this.items.reduce((sum, item) => {
+                const itemPrice = item.unitPriceSnapshot || (item.productVariant?.price || 0);
+                console.log(`Bundle validation - Item: unitPriceSnapshot=${item.unitPriceSnapshot}, quantity=${item.quantity}, itemPrice=${itemPrice}`);
+                return sum + (itemPrice * item.quantity);
+            }, 0);
+            console.log(`Bundle validation - fixedPrice=${this.fixedPrice}, componentTotal=${componentTotal}`);
             if (this.fixedPrice && this.fixedPrice >= componentTotal) {
-                errors.push('Fixed price must be less than component total to provide savings');
+                errors.push(`Fixed price (${this.fixedPrice}) must be less than component total (${componentTotal}) to provide savings`);
             }
         }
         

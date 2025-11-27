@@ -85,8 +85,11 @@ const bundleQuery = graphql(`
     query GetBundle($id: ID!) {
         bundle(id: $id) {
             id
-            name
-            description
+            shellProduct {
+                id
+                name
+                description
+            }
             status
             discountType
             fixedPrice
@@ -127,7 +130,10 @@ const createBundleMutation = graphql(`
     mutation CreateBundle($input: CreateBundleInput!) {
         createBundle(input: $input) {
             id
-            name
+            shellProduct {
+                id
+                name
+            }
             status
         }
     }
@@ -137,7 +143,10 @@ const updateBundleMutation = graphql(`
     mutation UpdateBundle($input: UpdateBundleInput!) {
         updateBundle(input: $input) {
             id
-            name
+            shellProduct {
+                id
+                name
+            }
             status
         }
     }

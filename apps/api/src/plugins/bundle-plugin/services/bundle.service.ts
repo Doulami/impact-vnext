@@ -255,13 +255,27 @@ export class BundleService {
         const enrichedItems = [];
         
         for (const itemInput of items) {
-        const variant = await this.productVariantService.findOne(ctx, itemInput.productVariantId);
+            // Use ProductVariantService to properly load variant with pricing
+            const variant = await this.productVariantService.findOne(ctx, itemInput.productVariantId, ['product']);
+            
+            console.log(`Fetched variant via service: id=${variant?.id}, name=${variant?.name}, price=${variant?.price}, priceWithTax=${variant?.priceWithTax}`);
+            
             if (!variant) {
                 throw new Error(this.translationService.variantNotFound(ctx, String(itemInput.productVariantId)));
             }
             
             if (variant.deletedAt) {
                 throw new Error(this.translationService.deletedComponent(ctx, variant.name));
+            }
+            
+            // Apply variant price to the active channel using the service
+            await this.productVariantService.applyChannelPriceAndTax(variant, ctx);
+            
+            console.log(`After applyChannelPriceAndTax: price=${variant.price}, priceWithTax=${variant.priceWithTax}`);
+            
+            // Check if price is available
+            if (variant.price === undefined || variant.price === null || variant.price === 0) {
+                throw new Error(`Variant ${variant.name} (${variant.id}) does not have a price set`);
             }
             
             // Warn about inventory tracking
