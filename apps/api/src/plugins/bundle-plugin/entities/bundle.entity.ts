@@ -1,5 +1,5 @@
 import { DeepPartial, ID } from '@vendure/common/lib/shared-types';
-import { HasCustomFields, VendureEntity, Asset } from '@vendure/core';
+import { HasCustomFields, VendureEntity, Asset, Product } from '@vendure/core';
 import { Column, Entity, OneToMany, ManyToMany, JoinTable, ManyToOne } from 'typeorm';
 import { BundleItem } from './bundle-item.entity';
 
@@ -44,14 +44,12 @@ export class Bundle extends VendureEntity implements HasCustomFields {
         super(input);
     }
 
+    // Shell product linkage - REQUIRED, source of truth for name/slug/description
+    @ManyToOne(() => Product, { eager: false })
+    shellProduct?: Product;
+
     @Column()
-    name: string;
-
-    @Column({ unique: true, nullable: true })
-    slug?: string;
-
-    @Column('text', { nullable: true })
-    description?: string;
+    shellProductId: string;
 
     @Column({
         type: 'enum',
@@ -75,24 +73,7 @@ export class Bundle extends VendureEntity implements HasCustomFields {
     @Column('int', { default: 1 })
     version: number; // Incremented on publish to ACTIVE
 
-    @ManyToMany(() => Asset, { eager: true })
-    @JoinTable({
-        name: 'bundle_assets',
-        joinColumn: { name: 'bundle_id', referencedColumnName: 'id' },
-        inverseJoinColumn: { name: 'asset_id', referencedColumnName: 'id' }
-    })
-    assets: Asset[];
-
-    @ManyToOne(() => Asset, { nullable: true, eager: true })
-    featuredAsset?: Asset; // Primary bundle image (syncs to shell product)
-
-    @Column('simple-json', { nullable: true })
-    tags?: string[]; // For categorization (performance, muscle-gain, etc.)
-
-    @Column({ nullable: true })
-    category?: string; // Bundle category
-
-    // Scheduling & Gating (Phase 1)
+    // Scheduling & Gating
     @Column('timestamp', { nullable: true })
     validFrom?: Date; // Bundle becomes available at this date
 
@@ -108,18 +89,7 @@ export class Bundle extends VendureEntity implements HasCustomFields {
     @Column({ default: false })
     allowExternalPromos: boolean; // Per-bundle external promotion policy
 
-    // Shell product linkage (optional but recommended for SEO/PLP)
-    @Column({ nullable: true })
-    shellProductId?: string; // ID of the Product shell used for PDP/PLP/SEO
-
-    // Backwards compatibility fields (deprecated but kept for existing code)
-    @Column({ default: true })
-    enabled: boolean; // Deprecated: Use status instead
-    
-    @Column('decimal', { precision: 10, scale: 2, nullable: true })
-    price?: number; // Deprecated: Use effectivePrice computed property instead
-
-    @OneToMany(() => BundleItem, bundleItem => bundleItem.bundle, { 
+    @OneToMany(() => BundleItem, bundleItem => bundleItem.bundle, {
         cascade: true,
         eager: true 
     })
@@ -170,8 +140,7 @@ export class Bundle extends VendureEntity implements HasCustomFields {
             return Math.round(componentTotal * (1 - this.percentOff / 100));
         }
         
-        // Backwards compatibility: fall back to legacy price field
-        return this.price ? Math.round(this.price * 100) : 0;
+        return 0;
     }
 
     /**
@@ -211,17 +180,9 @@ export class Bundle extends VendureEntity implements HasCustomFields {
     validate(): string[] {
         const errors: string[] = [];
         
-        // Basic validation
-        if (!this.name?.trim()) {
-            errors.push('Bundle name is required');
-        }
-        
-        if (this.name && this.name.length > 255) {
-            errors.push('Bundle name cannot exceed 255 characters');
-        }
-        
-        if (this.slug && this.slug.length > 255) {
-            errors.push('Bundle slug cannot exceed 255 characters');
+        // Shell product validation
+        if (!this.shellProductId) {
+            errors.push('Shell product is required');
         }
         
         if (!this.discountType) {
@@ -318,7 +279,6 @@ export class Bundle extends VendureEntity implements HasCustomFields {
         this.discountType = BundleDiscountType.FIXED;
         this.fixedPrice = priceInCents;
         this.percentOff = undefined;
-        this.price = priceInCents / 100; // Update legacy field for backwards compatibility
     }
     
     /**
@@ -331,11 +291,6 @@ export class Bundle extends VendureEntity implements HasCustomFields {
         this.discountType = BundleDiscountType.PERCENT;
         this.percentOff = percent;
         this.fixedPrice = undefined;
-        // Update legacy price field based on current component prices
-        if (this.items?.length > 0) {
-            const componentTotal = this.items.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
-            this.price = componentTotal * (1 - percent / 100);
-        }
     }
     
     /**

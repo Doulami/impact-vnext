@@ -142,26 +142,20 @@ export class BundleService {
             throw new Error(this.translationService.percentOffRequired(ctx));
         }
         
+        // Validate shell product is provided
+        if (!input.shellProductId) {
+            throw new Error('Shell product ID is required');
+        }
+        
         // Validate and fetch component variants
         const validatedItems = await this.validateAndEnrichItems(ctx, input.items);
-        
-        // Fetch asset entities if provided
-        let assetEntities: Asset[] = [];
-        let featuredAsset: Asset | undefined;
-        
-        if (input.assets && input.assets.length > 0) {
-            assetEntities = await this.connection.getRepository(ctx, Asset).findByIds(input.assets);
-            featuredAsset = assetEntities[0]; // First asset as featured
-        }
         
         // All new bundles start as DRAFT
         const initialStatus = BundleStatus.DRAFT;
         
-        // Create bundle entity with temporary name (will be synced from shell product)
+        // Create bundle entity
         const bundle = new Bundle({
-            name: 'Bundle (pending)',
-            slug: `bundle-temp-${Date.now()}`,
-            description: '',
+            shellProductId: input.shellProductId,
             status: initialStatus,
             validFrom: input.validFrom,
             validTo: input.validTo,
@@ -169,11 +163,7 @@ export class BundleService {
             fixedPrice: input.fixedPrice,
             percentOff: input.percentOff,
             version: 1,
-            assets: assetEntities,
-            featuredAsset: featuredAsset,
             allowExternalPromos: input.allowExternalPromos || false,
-            // Backwards compatibility
-            enabled: false, // New bundles start as DRAFT or EXPIRED, never enabled
             customFields: {}
         });
         
@@ -207,60 +197,38 @@ export class BundleService {
 
         await this.connection.getRepository(ctx, BundleItem).save(bundleItems);
 
-        // Handle shell product
-        let shellProductId: string;
-        if (input.shellProductId) {
-            // Product tab workflow: Use existing product as shell
-            shellProductId = input.shellProductId;
-            
-            // Mark existing product as bundle
-            const shellProduct = await this.connection.getRepository(ctx, Product).findOne({
-                where: { id: shellProductId },
-                relations: ['variants']
-            });
-            
-            if (!shellProduct) {
-                throw new Error(`Shell product ${shellProductId} not found`);
-            }
-            
-            // Update product customFields
-            await this.productService.update(ctx, {
-                id: shellProductId,
-                customFields: {
-                    isBundle: true,
-                    bundleId: String(savedBundle.id)
-                }
-            });
-            
-            // Sync shell Product name/slug/description to Bundle (Product is source of truth)
-            savedBundle.name = shellProduct.name;
-            savedBundle.slug = shellProduct.slug;
-            savedBundle.description = shellProduct.description || '';
-            await this.connection.getRepository(ctx, Bundle).save(savedBundle);
-            
-            // Create variant if product has no variants
-            if (!shellProduct.variants || shellProduct.variants.length === 0) {
-                await this.productVariantService.create(ctx, [{
-                    productId: shellProductId,
-                    sku: `BUNDLE-${savedBundle.id}`,
-                    price: 0, // Price computed from bundle
-                    trackInventory: GlobalFlag.FALSE,
-                    translations: [{
-                        languageCode: LanguageCode.en,
-                        name: savedBundle.name
-                    }]
-                }]);
-                Logger.info(`Created variant for existing product ${shellProductId} (bundle ${savedBundle.id})`, 'BundleService');
-            }
-            
-            Logger.info(`Marked existing product ${shellProductId} as bundle ${savedBundle.id}`, 'BundleService');
-        } else {
-            // Standalone bundle UI workflow: Create new shell product
-            shellProductId = await this.createShellProduct(ctx, savedBundle);
+        // Verify shell product exists
+        const shellProduct = await this.connection.getRepository(ctx, Product).findOne({
+            where: { id: input.shellProductId },
+            relations: ['variants']
+        });
+        
+        if (!shellProduct) {
+            throw new Error(`Shell product ${input.shellProductId} not found`);
         }
         
-        savedBundle.shellProductId = shellProductId;
-        await this.connection.getRepository(ctx, Bundle).save(savedBundle);
+        // Update product customFields to mark as bundle
+        await this.productService.update(ctx, {
+            id: input.shellProductId,
+            customFields: {
+                isBundle: true,
+                bundleId: String(savedBundle.id)
+            }
+        });
+        
+        // Create variant if product has no variants
+        if (!shellProduct.variants || shellProduct.variants.length === 0) {
+            await this.productVariantService.create(ctx, [{
+                productId: input.shellProductId,
+                sku: `BUNDLE-${savedBundle.id}`,
+                price: 0,
+                trackInventory: GlobalFlag.FALSE,
+                translations: shellProduct.translations.map(t => ({
+                    languageCode: t.languageCode,
+                    name: t.name
+                }))
+            }]);
+        }
         
         // Sync bundle data to shell product (pricing, availability, components)
         const bundleWithShell = await this.findOne(ctx, savedBundle.id);
