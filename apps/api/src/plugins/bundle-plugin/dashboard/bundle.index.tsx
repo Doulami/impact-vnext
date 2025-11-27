@@ -817,14 +817,6 @@ function BundleForm({ bundle, productName, onSave, onCancel, isSaving }: BundleF
         queryFn: () => api.query(activeChannelQuery, {}),
     });
     const currencyCode = channelData?.activeChannel?.currencyCode || 'USD';
-    
-    // Debug: log currency code changes
-    useEffect(() => {
-        console.log('=== BUNDLE FORM CURRENCY DEBUG ===');
-        console.log('channelData:', JSON.stringify(channelData, null, 2));
-        console.log('currencyCode:', currencyCode);
-        console.log('==================================');
-    }, [channelData, currencyCode]);
 
     const [formData, setFormData] = useState({
         discountType: bundle?.discountType || 'fixed',
