@@ -38,7 +38,8 @@ export class BundleReservationService {
     ): Promise<void> {
         try {
             const bundle = await this.connection.getRepository(ctx, Bundle).findOne({
-                where: { id: bundleId }
+                where: { id: bundleId },
+                relations: ['shellProduct']
             });
 
             if (!bundle) {
@@ -65,7 +66,7 @@ export class BundleReservationService {
             // Log warning if reserved exceeds cap
             if (bundle.bundleCap && newReserved > bundle.bundleCap) {
                 Logger.warn(
-                    `Bundle ${bundleId} (${bundle.name}): Reserved (${newReserved}) exceeds Cap (${bundle.bundleCap})! Virtual stock is now 0.`,
+                    `Bundle ${bundleId} (${bundle.shellProduct?.name || 'Unknown'}): Reserved (${newReserved}) exceeds Cap (${bundle.bundleCap})! Virtual stock is now 0.`,
                     BundleReservationService.loggerCtx
                 );
             }
@@ -90,7 +91,8 @@ export class BundleReservationService {
     ): Promise<void> {
         try {
             const bundle = await this.connection.getRepository(ctx, Bundle).findOne({
-                where: { id: bundleId }
+                where: { id: bundleId },
+                relations: ['shellProduct']
             });
 
             if (!bundle) {
@@ -142,7 +144,8 @@ export class BundleReservationService {
     ): Promise<{ oldValue: number; newValue: number; corrected: boolean }> {
         try {
             const bundle = await this.connection.getRepository(ctx, Bundle).findOne({
-                where: { id: bundleId }
+                where: { id: bundleId },
+                relations: ['shellProduct']
             });
 
             if (!bundle) {

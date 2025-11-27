@@ -126,7 +126,7 @@ export class BundleSafetyService implements OnModuleInit {
                 // Log all affected bundles - they will show as broken via computed isBroken property
                 for (const bundle of affectedBundles) {
                     Logger.error(
-                        `Bundle ${bundle.id} (${bundle.name}) will show as broken - component variant ${variantId} was deleted`,
+                        `Bundle ${bundle.id} (${bundle.shellProduct?.name || 'Unknown'}) will show as broken - component variant ${variantId} was deleted`,
                         BundleSafetyService.loggerCtx
                     );
                 }
@@ -168,6 +168,7 @@ export class BundleSafetyService implements OnModuleInit {
             .createQueryBuilder('bundle')
             .leftJoinAndSelect('bundle.items', 'item')
             .leftJoinAndSelect('item.productVariant', 'variant')
+            .leftJoinAndSelect('bundle.shellProduct', 'shellProduct')
             .where('variant.id = :variantId', { variantId })
             .andWhere('bundle.status IN (:...statuses)', { statuses: ['DRAFT', 'ACTIVE'] })
             .getMany();
@@ -339,7 +340,7 @@ export class BundleSafetyService implements OnModuleInit {
                     if (!validation.isValid) {
                         // Log broken bundles - they will show as broken via computed isBroken property
                         Logger.warn(
-                            `Bundle ${bundle.id} (${bundle.name}) failed consistency check: ${validation.issues.map(i => i.message).join(', ')}`,
+                            `Bundle ${bundle.id} (${bundle.shellProduct?.name || 'Unknown'}) failed consistency check: ${validation.issues.map(i => i.message).join(', ')}`,
                             BundleSafetyService.loggerCtx
                         );
                         stats.brokenBundles++;
@@ -382,16 +383,17 @@ export class BundleSafetyService implements OnModuleInit {
             .createQueryBuilder('bundle')
             .leftJoinAndSelect('bundle.items', 'item')
             .leftJoinAndSelect('item.productVariant', 'variant')
+            .leftJoinAndSelect('bundle.shellProduct', 'shellProduct')
             .where('variant.id = :variantId', { variantId })
             .andWhere('bundle.status IN (:...statuses)', { statuses: ['DRAFT', 'ACTIVE'] })
-            .select(['bundle.id', 'bundle.name', 'bundle.status'])
+            .select(['bundle.id', 'bundle.shellProduct', 'bundle.status'])
             .getMany();
         
         return {
             canDelete: blockingBundles.length === 0,
             blockingBundles: blockingBundles.map(b => ({
                 id: b.id,
-                name: b.name,
+                name: b.shellProduct?.name || 'Unknown',
                 status: b.status
             }))
         };

@@ -67,7 +67,7 @@ export class BundleLifecycleService {
             throw new Error(this.translationService.cannotPublishBroken(ctx));
         }
         
-        Logger.info(`Publishing bundle ${bundleId} (${bundle.name})`, BundleLifecycleService.loggerCtx);
+        Logger.info(`Publishing bundle ${bundleId} (${bundle.shellProduct?.name || 'Unknown'})`, BundleLifecycleService.loggerCtx);
         
         // Update bundle to ACTIVE status and increment version
         bundle.status = BundleStatus.ACTIVE;

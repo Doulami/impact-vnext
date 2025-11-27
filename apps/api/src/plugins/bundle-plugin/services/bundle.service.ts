@@ -247,52 +247,6 @@ export class BundleService {
         return result;
     }
     
-    /**
-     * Create shell product for bundle - used for PDP/PLP/SEO
-     * Shell product has customFields.isBundle=true, customFields.bundleId
-     * Single variant with trackInventory=false (never decremented)
-     */
-    private async createShellProduct(ctx: RequestContext, bundle: Bundle): Promise<string> {
-        try {
-            // Create Product with bundle metadata
-            const product = await this.productService.create(ctx, {
-                translations: [{
-                    languageCode: LanguageCode.en,
-                    name: `${bundle.name}`,
-                    slug: bundle.slug || `bundle-${bundle.id}`,
-                    description: bundle.description || `Bundle: ${bundle.name}`
-                }],
-                customFields: {
-                    isBundle: true,
-                    bundleId: String(bundle.id)
-                },
-                enabled: bundle.status === BundleStatus.ACTIVE
-            });
-            
-            // Create single variant with trackInventory=false
-            await this.productVariantService.create(ctx, [{
-                productId: product.id,
-                sku: `BUNDLE-${bundle.id}`,
-                price: 0, // Shell has no price
-                trackInventory: GlobalFlag.FALSE,
-                translations: [{
-                    languageCode: LanguageCode.en,
-                    name: bundle.name
-                }]
-            }]);
-            
-            Logger.info(`Created shell product ${product.id} for bundle ${bundle.id} (${bundle.name})`, 'BundleService');
-            
-            return String(product.id);
-            
-        } catch (error) {
-            Logger.error(
-                `Failed to create shell product for bundle ${bundle.id}: ${error instanceof Error ? error.message : String(error)}`,
-                'BundleService'
-            );
-            throw error;
-        }
-    }
     
     /**
      * Validate component variants and enrich with current pricing data
@@ -353,15 +307,6 @@ export class BundleService {
             throw new Error(this.translationService.bundleNotFound(ctx, String(input.id)));
         }
 
-        // Sync shell Product fields to Bundle if shell exists (Product is source of truth)
-        if (bundle.shellProductId) {
-            const shellProduct = await this.productService.findOne(ctx, bundle.shellProductId);
-            if (shellProduct) {
-                bundle.name = shellProduct.name;
-                bundle.slug = shellProduct.slug;
-                bundle.description = shellProduct.description || '';
-            }
-        }
 
         // Update assets if provided
         if (input.assets && input.assets.length > 0) {
@@ -527,7 +472,7 @@ export class BundleService {
     async findOne(ctx: RequestContext, id: ID): Promise<Bundle | null> {
         const bundle = await this.connection.getRepository(ctx, Bundle).findOne({
             where: { id },
-            relations: ['items'],
+            relations: ['items', 'shellProduct'],
         });
         
         if (!bundle) return null;
@@ -553,7 +498,7 @@ export class BundleService {
     async findAll(ctx: RequestContext, options: BundleListOptions): Promise<PaginatedList<Bundle>> {
         const result = await this.listQueryBuilder
             .build(Bundle, options, {
-                relations: ['items'],
+                relations: ['items', 'shellProduct'],
                 ctx,
             })
             .getManyAndCount();
@@ -870,7 +815,7 @@ export class BundleService {
             throw new Error(this.translationService.bundleNotFound(ctx, String(bundleId)));
         }
         
-        Logger.debug(`Recomputing bundle ${bundleId} (${bundle.name})`, 'BundleService');
+        Logger.debug(`Recomputing bundle ${bundleId} (${bundle.shellProduct?.name || 'Unknown'})`, 'BundleService');
         
         try {
             // Validate all components are still available
@@ -1007,7 +952,7 @@ export class BundleService {
                     price: effectivePricePreTax,
                     translations: [{
                         languageCode: LanguageCode.en,
-                        name: bundle.name
+                        name: bundle.shellProduct?.name || 'Bundle'
                     }]
                 }]);
             }
@@ -1118,7 +1063,7 @@ export class BundleService {
         bundle.publish();
         
         const savedBundle = await this.connection.getRepository(ctx, Bundle).save(bundle);
-        Logger.info(`Bundle ${bundle.name} published to ACTIVE status (version ${bundle.version})`, 'BundleService');
+        Logger.info(`Bundle ${bundle.shellProduct?.name || bundle.id} published to ACTIVE status (version ${bundle.version})`, 'BundleService');
         
         return savedBundle;
     }
@@ -1179,7 +1124,7 @@ export class BundleService {
             customFields: {
                 bundleKey,
                 bundleId: bundleId,
-                bundleName: bundle.name,
+                bundleName: bundle.shellProduct?.name || 'Bundle',
                 bundleVersion: 1, // Default version for now
                 isBundleHeader: true,
                 bundleComponentQty: null,
@@ -1198,7 +1143,7 @@ export class BundleService {
             customFields: {
                 bundleKey,
                 bundleId: bundleId,
-                bundleName: bundle.name,
+                bundleName: bundle.shellProduct?.name || 'Bundle',
                 bundleVersion: 1,
                 isBundleHeader: false,
                 bundleComponentQty: child.componentQty,
@@ -1346,7 +1291,7 @@ export class BundleService {
             
             // Validate that fixed price is lower than component total
             if (totalBundlePrice >= componentData.totalPreDiscount) {
-                Logger.warn(`Fixed price bundle ${bundle.name} has no discount: fixed=${totalBundlePrice}, components=${componentData.totalPreDiscount}`, 'BundleService');
+                Logger.warn(`Fixed price bundle ${bundle.shellProduct?.name || bundle.id} has no discount: fixed=${totalBundlePrice}, components=${componentData.totalPreDiscount}`, 'BundleService');
                 totalDiscount = 0;
             }
         } else {
@@ -1632,7 +1577,7 @@ export class BundleService {
             if (!bundle.isAvailable) {
                 errors.push({
                     bundleId: bundle.id,
-                    bundleName: bundle.name,
+                    bundleName: bundle.shellProduct?.name || 'Unknown',
                     error: `Bundle is not available (status: ${bundle.status})`
                 });
                 continue;
@@ -1643,7 +1588,7 @@ export class BundleService {
             if (!stockValidation.isAvailable) {
                 errors.push({
                     bundleId: bundle.id,
-                    bundleName: bundle.name,
+                    bundleName: bundle.shellProduct?.name || 'Unknown',
                     error: `Insufficient stock. Requested: ${requestedQuantity}, Available: ${stockValidation.maxAvailableQuantity}`,
                     insufficientItems: stockValidation.insufficientItems
                 });
@@ -1691,7 +1636,7 @@ export class BundleService {
                 if (!childLine) {
                     errors.push({
                         bundleId: bundle.id,
-                        bundleName: bundle.name,
+                        bundleName: bundle.shellProduct?.name || 'Unknown',
                         error: `Missing component variant ${bundleItem.productVariantId}`
                     });
                     continue;
@@ -1700,7 +1645,7 @@ export class BundleService {
                 if (childLine.quantity !== expectedQuantity) {
                     errors.push({
                         bundleId: bundle.id,
-                        bundleName: bundle.name,
+                        bundleName: bundle.shellProduct?.name || 'Unknown',
                         error: `Component quantity mismatch for variant ${bundleItem.productVariantId}. Expected: ${expectedQuantity}, Found: ${childLine.quantity}`
                     });
                 }
@@ -1715,7 +1660,7 @@ export class BundleService {
                 if (!bundleItem) {
                     errors.push({
                         bundleId: bundle.id,
-                        bundleName: bundle.name,
+                        bundleName: bundle.shellProduct?.name || 'Unknown',
                         error: `Unexpected component variant ${childLine.productVariantId} not in bundle configuration`
                     });
                 }
@@ -1847,7 +1792,7 @@ export class BundleService {
         const priceChangePercent = oldBundlePrice > 0 ? 
             Math.abs((newBundlePrice - oldBundlePrice) / oldBundlePrice) * 100 : 100;
             
-        if (priceChangePercent > 1) {
+            if (priceChangePercent > 1) {
             // Update bundle price and version
             bundle.price = newBundlePrice;
             // updatedAt is automatically handled by VendureEntity
@@ -1855,7 +1800,7 @@ export class BundleService {
             await this.connection.getRepository(ctx, Bundle).save(bundle);
             
             Logger.info(
-                `Bundle ${bundle.name} pricing updated: $${oldBundlePrice} → $${newBundlePrice} (${priceChangePercent.toFixed(1)}% change)`,
+                `Bundle ${bundle.shellProduct?.name || bundle.id} pricing updated: $${oldBundlePrice} → $${newBundlePrice} (${priceChangePercent.toFixed(1)}% change)`,
                 'BundleService'
             );
             
@@ -2064,7 +2009,7 @@ export class BundleService {
             if (!bundle.isAvailable) {
                 return {
                     success: false,
-                    error: `Bundle "${bundle.name}" is not available (status: ${bundle.status})`
+                    error: `Bundle "${bundle.shellProduct?.name || 'Unknown'}" is not available (status: ${bundle.status})`
                 };
             }
             
@@ -2075,7 +2020,7 @@ export class BundleService {
                     success: false,
                     error: 'Insufficient stock for bundle components',
                     availabilityError: {
-                        bundleName: bundle.name,
+                        bundleName: bundle.shellProduct?.name || 'Unknown',
                         maxAvailable: stockValidation.maxAvailableQuantity,
                         insufficientItems: stockValidation.insufficientItems
                     }
@@ -2091,7 +2036,7 @@ export class BundleService {
             // Step 5: Create actual order lines (would integrate with Order system)
             // Note: This would typically integrate with Vendure's OrderService
             Logger.info(
-                `Bundle "${bundle.name}" added to order ${orderId}: ${quantity} units with ${explodedBundle.childLines.length} components`,
+                `Bundle "${bundle.shellProduct?.name || 'Unknown'}" added to order ${orderId}: ${quantity} units with ${explodedBundle.childLines.length} components`,
                 'BundleService'
             );
             
@@ -2172,7 +2117,7 @@ export class BundleService {
             const updatedBundle = await this.createExplodedBundleV2(ctx, bundle, newQuantity, shellVariant.id, bundleKey);
             
             Logger.info(
-                `Bundle "${bundle.name}" quantity adjusted in order ${orderId}: ${existingBundle.quantity} → ${newQuantity}`,
+                `Bundle "${bundle.shellProduct?.name || 'Unknown'}" quantity adjusted in order ${orderId}: ${existingBundle.quantity} → ${newQuantity}`,
                 'BundleService'
             );
             
@@ -2285,13 +2230,13 @@ export class BundleService {
         }
         
         Logger.warn(
-            `Bundle ${bundle.name} using first component ${variant.name} as header (no shell product found)`,
+            `Bundle ${bundle.shellProduct?.name || bundle.id} using first component ${variant.name} as header (no shell product found)`,
             'BundleService'
         );
         
         return {
             id: variant.id,
-            name: `${bundle.name} Bundle`, // Use bundle name for header
+            name: `${bundle.shellProduct?.name || 'Bundle'} Bundle`, // Use bundle name for header
             isShell: false
         };
     }
@@ -2325,7 +2270,7 @@ export class BundleService {
             customFields: {
                 bundleKey,
                 bundleId: bundle.id,
-                bundleName: bundle.name,
+                bundleName: bundle.shellProduct?.name || 'Bundle',
                 bundleVersion: bundle.version,
                 discountType: bundle.discountType,
                 isBundleHeader: true,
@@ -2352,7 +2297,7 @@ export class BundleService {
             customFields: {
                 bundleKey,
                 bundleId: bundle.id,
-                bundleName: bundle.name,
+                bundleName: bundle.shellProduct?.name || 'Bundle',
                 bundleVersion: bundle.version,
                 discountType: bundle.discountType,
                 isBundleHeader: false,
@@ -2506,7 +2451,7 @@ export class BundleService {
             }
             
             if (!bundle.isAvailable && operation !== 'remove') {
-                errors.push(`Bundle "${bundle.name}" is not available (status: ${bundle.status})`);
+                errors.push(`Bundle "${bundle.shellProduct?.name || 'Unknown'}" is not available (status: ${bundle.status})`);
             }
             
             // Availability validation for add/adjust operations
