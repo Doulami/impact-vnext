@@ -67,8 +67,6 @@ export class BundleLifecycleService {
             throw new Error(this.translationService.cannotPublishBroken(ctx));
         }
         
-        Logger.info(`Publishing bundle ${bundleId} (${bundle.shellProduct?.name || 'Unknown'})`, BundleLifecycleService.loggerCtx);
-        
         // Update bundle to ACTIVE status and increment version
         bundle.status = BundleStatus.ACTIVE;
         bundle.version = bundle.version + 1;
@@ -77,17 +75,6 @@ export class BundleLifecycleService {
         bundle.updatedAt = new Date();
         
         const updatedBundle = await this.connection.getRepository(ctx, Bundle).save(bundle);
-        
-        // Log publish event (simplified event handling)
-        Logger.info(
-            `Bundle published event: ${bundleId} v${updatedBundle.version}`,
-            BundleLifecycleService.loggerCtx
-        );
-        
-        Logger.info(
-            `Bundle ${bundleId} published successfully (version ${updatedBundle.version})`,
-            BundleLifecycleService.loggerCtx
-        );
         
         return updatedBundle;
     }

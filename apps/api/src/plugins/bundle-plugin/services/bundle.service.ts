@@ -410,8 +410,6 @@ export class BundleService {
         
         // If product has no variants, auto-create a default variant
         if (variantCount === 0) {
-            Logger.info(`Product ${productId} has no variants, creating default variant`, 'BundleService');
-            
             await this.productVariantService.create(ctx, [{
                 productId: productId,
                 sku: `${product.slug || productId}-default`,
@@ -426,8 +424,6 @@ export class BundleService {
                     name: product.name || 'Default',
                 }],
             }]);
-            
-            Logger.info(`Created default variant for product ${productId}`, 'BundleService');
         }
 
         // Update product customFields using ProductService (bypasses readonly)
@@ -437,8 +433,6 @@ export class BundleService {
                 isBundle: true,
             },
         });
-        
-        Logger.info(`Activated product ${productId} as bundle`, 'BundleService');
     }
 
     /**
@@ -450,7 +444,6 @@ export class BundleService {
         if (bundle) {
             // Hard delete the bundle entity
             await this.connection.getRepository(ctx, Bundle).delete(bundleId);
-            Logger.info(`Deleted bundle ${bundleId}`, 'BundleService');
         }
 
         // Clear product customFields using ProductService (bypasses readonly)
@@ -461,8 +454,6 @@ export class BundleService {
                 bundleId: null,
             },
         });
-        
-        Logger.info(`Removed bundle from product ${productId}`, 'BundleService');
     }
 
 
@@ -957,11 +948,6 @@ export class BundleService {
                 }]);
             }
             
-            Logger.info(
-                `Synced bundle ${bundle.id} to shell product ${shellProduct.id}: variant price=${effectivePricePreTax} (pre-tax), enabled=${bundle.status === BundleStatus.ACTIVE && bundle.isWithinSchedule()}`,
-                'BundleService'
-            );
-            
         } catch (error) {
             Logger.error(
                 `Failed to sync bundle ${bundle.id} to shell: ${error instanceof Error ? error.message : String(error)}`,
@@ -1063,7 +1049,6 @@ export class BundleService {
         bundle.publish();
         
         const savedBundle = await this.connection.getRepository(ctx, Bundle).save(bundle);
-        Logger.info(`Bundle ${bundle.shellProduct?.name || bundle.id} published to ACTIVE status (version ${bundle.version})`, 'BundleService');
         
         return savedBundle;
     }
@@ -1799,11 +1784,6 @@ export class BundleService {
             
             await this.connection.getRepository(ctx, Bundle).save(bundle);
             
-            Logger.info(
-                `Bundle ${bundle.shellProduct?.name || bundle.id} pricing updated: $${oldBundlePrice} → $${newBundlePrice} (${priceChangePercent.toFixed(1)}% change)`,
-                'BundleService'
-            );
-            
             return {
                 updated: true,
                 oldPrice: oldBundlePrice,
@@ -2035,10 +2015,6 @@ export class BundleService {
             
             // Step 5: Create actual order lines (would integrate with Order system)
             // Note: This would typically integrate with Vendure's OrderService
-            Logger.info(
-                `Bundle "${bundle.shellProduct?.name || 'Unknown'}" added to order ${orderId}: ${quantity} units with ${explodedBundle.childLines.length} components`,
-                'BundleService'
-            );
             
             return {
                 success: true,
@@ -2116,11 +2092,6 @@ export class BundleService {
             const shellVariant = await this.getOrCreateShellVariant(ctx, bundle);
             const updatedBundle = await this.createExplodedBundleV2(ctx, bundle, newQuantity, shellVariant.id, bundleKey);
             
-            Logger.info(
-                `Bundle "${bundle.shellProduct?.name || 'Unknown'}" quantity adjusted in order ${orderId}: ${existingBundle.quantity} → ${newQuantity}`,
-                'BundleService'
-            );
-            
             return {
                 success: true,
                 operation: 'updated',
@@ -2170,11 +2141,6 @@ export class BundleService {
             // Step 3: Remove all bundle lines (header + children)
             // Note: This would integrate with Vendure's OrderService to actually remove lines
             const removedCount = bundleLines.length;
-            
-            Logger.info(
-                `Bundle "${bundleName}" removed from order ${orderId}: ${removedCount} lines (1 header + ${removedCount - 1} components)`,
-                'BundleService'
-            );
             
             return {
                 success: true,

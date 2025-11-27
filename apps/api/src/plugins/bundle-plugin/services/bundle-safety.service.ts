@@ -97,10 +97,9 @@ export class BundleSafetyService implements OnModuleInit {
                     );
                 }
                 
-                // Queue bundle for recomputation (pricing/availability sync)
+            // Queue bundle for recomputation (pricing/availability sync)
                 await this.queueBundleRecomputation(ctx, bundle.id, 'variant_updated');
             }
-            
         } catch (error) {
             Logger.error(
                 `Error handling variant updated event for variant ${variantId}: ${error instanceof Error ? error.message : String(error)}`,
@@ -195,14 +194,6 @@ export class BundleSafetyService implements OnModuleInit {
             // In a real implementation, this would use a job queue
             // For now, we'll do it synchronously with the bundle service
             await this.bundleService.recomputeBundle(ctx, bundleId);
-            
-            Logger.debug(`Bundle ${bundleId} recomputed (${reason})`, BundleSafetyService.loggerCtx);
-            
-            // Log recomputation instead of complex event
-            Logger.info(
-                `Bundle ${bundleId} recomputed successfully: ${reason}`,
-                BundleSafetyService.loggerCtx
-            );
             
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -317,7 +308,6 @@ export class BundleSafetyService implements OnModuleInit {
         fixedBundles: number;
         errors: string[];
     }> {
-        Logger.info('Starting nightly bundle consistency check', BundleSafetyService.loggerCtx);
         
         const stats = {
             totalBundles: 0,
@@ -350,11 +340,6 @@ export class BundleSafetyService implements OnModuleInit {
                     stats.errors.push(`Bundle ${bundle.id}: ${error instanceof Error ? error.message : String(error)}`);
                 }
             }
-            
-            Logger.info(
-                `Consistency check complete: ${stats.totalBundles} checked, ${stats.brokenBundles} broken, ${stats.errors.length} errors`,
-                BundleSafetyService.loggerCtx
-            );
             
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);

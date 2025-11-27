@@ -173,11 +173,6 @@ export class BundleReservationService {
                     { id: bundleId },
                     { bundleReservedOpen: calculatedReserved }
                 );
-
-                Logger.info(
-                    `Synced bundleReservedOpen for bundle ${bundleId}: ${oldReserved} → ${calculatedReserved} (${corrected ? 'CORRECTED' : 'unchanged'})`,
-                    BundleReservationService.loggerCtx
-                );
             }
 
             return {
