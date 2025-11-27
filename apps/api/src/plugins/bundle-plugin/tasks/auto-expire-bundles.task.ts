@@ -40,7 +40,7 @@ export const autoExpireBundlesTask = new ScheduledTask({
                     // Check if bundle has a shell product
                     if (!bundle.shellProductId) {
                         Logger.warn(
-                            `Found orphaned bundle ${bundle.id} (${bundle.name}) - no shellProductId`,
+                            `Found orphaned bundle ${bundle.id} - no shellProductId`,
                             'BundleCleanupTask'
                         );
                         await connection.rawConnection.getRepository(Bundle).delete(bundle.id);
@@ -55,7 +55,7 @@ export const autoExpireBundlesTask = new ScheduledTask({
                     
                     if (!shellProduct) {
                         Logger.warn(
-                            `Found orphaned bundle ${bundle.id} (${bundle.name}) - shell product ${bundle.shellProductId} deleted`,
+                            `Found orphaned bundle ${bundle.id} - shell product ${bundle.shellProductId} deleted`,
                             'BundleCleanupTask'
                         );
                         await connection.rawConnection.getRepository(Bundle).delete(bundle.id);

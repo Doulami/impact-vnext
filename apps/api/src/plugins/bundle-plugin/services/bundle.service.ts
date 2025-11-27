@@ -308,13 +308,6 @@ export class BundleService {
         }
 
 
-        // Update assets if provided
-        if (input.assets && input.assets.length > 0) {
-            const assetEntities = await this.connection.getRepository(ctx, Asset).findByIds(input.assets);
-            bundle.assets = assetEntities;
-            bundle.featuredAsset = assetEntities[0]; // First asset as featured
-            delete (input as any).assets; // Remove from input to avoid Object.assign overwriting
-        }
         
         // Update bundle properties (excluding items which are handled separately)
         const { items, ...bundleProps } = input;
@@ -844,7 +837,6 @@ export class BundleService {
             // Update bundle computed fields
             await this.connection.getRepository(ctx, Bundle)
                 .update(bundleId, {
-                    price: basePrice,
                     lastRecomputedAt: new Date(),
                     updatedAt: new Date()
                 });
@@ -1016,7 +1008,7 @@ export class BundleService {
 
             // Calculate potential savings
             const componentTotal = bundle.items.reduce((sum, item) => sum + item.unitPrice, 0);
-            const potentialSavings = componentTotal - (bundle.price || 0);
+            const potentialSavings = componentTotal - bundle.effectivePrice;
 
             if (matches.length > 0) {
                 opportunities.push({
@@ -1280,9 +1272,9 @@ export class BundleService {
                 totalDiscount = 0;
             }
         } else {
-            // Fallback: use legacy price field
-            totalBundlePrice = (bundle.price || 0) * bundleQuantity * 100; // Convert to cents
-            totalDiscount = componentData.totalPreDiscount - totalBundlePrice;
+            // Fallback: no discount
+            totalBundlePrice = componentData.totalPreDiscount;
+            totalDiscount = 0;
         }
         
         return { totalBundlePrice, totalDiscount, bundlePct };
@@ -1459,7 +1451,7 @@ export class BundleService {
         const parentLine: Partial<OrderLine> = {
             productVariantId: bundleId, // Using bundle ID as variant ID
             quantity,
-            unitPrice: bundle.price,
+            unitPrice: bundle.effectivePrice,
             customFields: {
                 bundleParent: true,
                 bundleId: bundleId,
@@ -1771,15 +1763,15 @@ export class BundleService {
         // Calculate current pricing based on latest component prices
         const pricingData = await this.calculateExplodedBundlePricing(ctx, bundle, 1);
         const newBundlePrice = Math.round(pricingData.totalBundlePrice / 100 * 100) / 100; // Convert to dollars
-        const oldBundlePrice = bundle.price || 0;
+        const oldBundlePrice = bundle.effectivePrice || 0;
         
         // Check if price changed significantly (>1% change)
         const priceChangePercent = oldBundlePrice > 0 ? 
             Math.abs((newBundlePrice - oldBundlePrice) / oldBundlePrice) * 100 : 100;
             
             if (priceChangePercent > 1) {
-            // Update bundle price and version
-            bundle.price = newBundlePrice;
+            // Price changed significantly - log it
+            // Note: We don't store computed price, it's calculated on-the-fly
             // updatedAt is automatically handled by VendureEntity
             
             await this.connection.getRepository(ctx, Bundle).save(bundle);
@@ -2187,7 +2179,7 @@ export class BundleService {
         // TODO: In production, this should create a proper shell product
         const firstComponent = bundle.items[0];
         if (!firstComponent) {
-            throw new Error(`Bundle ${bundle.name} has no components`);
+            throw new Error(`Bundle ${bundle.shellProduct?.name || bundle.id} has no components`);
         }
         
         const variant = await this.productVariantService.findOne(ctx, firstComponent.productVariantId);
@@ -2470,13 +2462,13 @@ export class BundleService {
         
         switch (operation) {
             case 'add':
-                return `Add bundle "${bundle.name}" (${quantity} units, ${componentCount} components)`;
+                return `Add bundle "${bundle.shellProduct?.name || 'Unknown'}" (${quantity} units, ${componentCount} components)`;
             case 'adjust':
-                return `Adjust bundle "${bundle.name}" from ${oldQuantity || 0} to ${quantity} units`;
+                return `Adjust bundle "${bundle.shellProduct?.name || 'Unknown'}" from ${oldQuantity || 0} to ${quantity} units`;
             case 'remove':
-                return `Remove bundle "${bundle.name}" (${componentCount} components)`;
+                return `Remove bundle "${bundle.shellProduct?.name || 'Unknown'}" (${componentCount} components)`;
             default:
-                return `Unknown operation on bundle "${bundle.name}"`;
+                return `Unknown operation on bundle "${bundle.shellProduct?.name || 'Unknown'}"`;
         }
     }
 }

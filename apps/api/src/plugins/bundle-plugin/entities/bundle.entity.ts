@@ -310,7 +310,6 @@ export class Bundle extends VendureEntity implements HasCustomFields {
         }
         this.status = BundleStatus.ACTIVE;
         this.version += 1;
-        this.enabled = true; // Keep backwards compatibility
     }
     
     

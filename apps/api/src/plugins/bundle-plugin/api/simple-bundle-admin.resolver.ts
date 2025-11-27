@@ -120,7 +120,7 @@ export class SimpleBundleAdminResolver {
             totalSavings: savings,
             savingsPercentage: Math.round(savingsPercentage * 100) / 100,
             totalWeight: 0, // Placeholder
-            enabled: bundle.enabled,
+            enabled: bundle.status === 'ACTIVE',
             availabilityStatus: {
                 valid: stockValidation.isAvailable,
                 constrainingVariants: [],

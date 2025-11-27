@@ -44,7 +44,7 @@ export const bundleConsistencyCheckTask = new ScheduledTask({
                     if (bundle.isBroken) {
                         brokenCount++;
                         Logger.warn(
-                            `Bundle ${bundle.id} (${bundle.name}) has broken components - will show as broken in UI`,
+                            `Bundle ${bundle.id} has broken components - will show as broken in UI`,
                             'BundleConsistencyCheckTask'
                         );
                     }
@@ -52,7 +52,7 @@ export const bundleConsistencyCheckTask = new ScheduledTask({
                     // Check computed expired state
                     if (bundle.isExpired) {
                         Logger.info(
-                            `Bundle ${bundle.id} (${bundle.name}) is expired - will show as expired in UI`,
+                            `Bundle ${bundle.id} is expired - will show as expired in UI`,
                             'BundleConsistencyCheckTask'
                         );
                     }
