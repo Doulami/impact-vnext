@@ -1,0 +1,141 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2025-11-28 16:40+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: ar\n"
+
+msgid "Frequently Bought Together"
+msgstr "يتم شراؤها معاً بشكل متكرر"
+
+msgid "Enable Plugin"
+msgstr "تفعيل الإضافة"
+
+msgid "Calculate and show product recommendations"
+msgstr "حساب وعرض توصيات المنتجات"
+
+msgid "Loading..."
+msgstr "جارٍ التحميل..."
+
+msgid "Total Associations"
+msgstr "إجمالي الارتباطات"
+
+msgid "Products Covered"
+msgstr "المنتجات المشمولة"
+
+msgid "Avg per Product"
+msgstr "المتوسط لكل منتج"
+
+msgid "Time Window"
+msgstr "الفترة الزمنية"
+
+msgid "Min Orders"
+msgstr "الحد الأدنى للطلبات"
+
+msgid "Max Recommendations"
+msgstr "الحد الأقصى للتوصيات"
+
+msgid "Last Calculation"
+msgstr "آخر حساب"
+
+msgid "Never"
+msgstr "أبداً"
+
+msgid "Edit Settings"
+msgstr "تعديل الإعدادات"
+
+msgid "Calculate Now"
+msgstr "احسب الآن"
+
+msgid "Calculating..."
+msgstr "جارٍ الحساب..."
+
+msgid "Analysis Time Window (days)"
+msgstr "فترة تحليل (أيام)"
+
+msgid "How far back to analyze order history"
+msgstr "المدة الزمنية لتحليل سجل الطلبات"
+
+msgid "Min Co-occurrences"
+msgstr "الحد الأدنى للتكرارات المشتركة"
+
+msgid "Scoring Weights (always sum to 100%)"
+msgstr "أوزان التقييم (مجموعها دائماً 100%)"
+
+msgid "Frequency"
+msgstr "التكرار"
+
+msgid "Recency"
+msgstr "الحداثة"
+
+msgid "Value"
+msgstr "القيمة"
+
+#. placeholder {0}: totalPercentage
+msgid "Total: {0}%"
+msgstr "المجموع: {0}%"
+
+msgid "Display Locations"
+msgstr "مواقع العرض"
+
+msgid "PDP - Related Section"
+msgstr "PDP - قسم المنتجات ذات الصلة"
+
+msgid "PDP - Under Add to Cart"
+msgstr "PDP - تحت إضافة إلى السلة"
+
+msgid "Cart Page"
+msgstr "صفحة السلة"
+
+msgid "Checkout Page"
+msgstr "صفحة الدفع"
+
+msgid "Fallback to Related Products"
+msgstr "الرجوع إلى المنتجات ذات الصلة"
+
+msgid "Show related products when insufficient associations"
+msgstr "عرض المنتجات ذات الصلة عند عدم كفاية الارتباطات"
+
+msgid "Save Settings"
+msgstr "حفظ الإعدادات"
+
+msgid "Saving..."
+msgstr "جارٍ الحفظ..."
+
+msgid "Cancel"
+msgstr "إلغاء"
+
+msgid "Product Associations Report"
+msgstr "تقرير ارتباطات المنتجات"
+
+msgid "Analytics and insights about frequently bought together recommendations"
+msgstr "تحليلات ورؤى حول توصيات المنتجات المشتراة معاً"
+
+msgid "Loading analytics..."
+msgstr "جارٍ تحميل التحليلات..."
+
+msgid "Status"
+msgstr "الحالة"
+
+msgid "Active"
+msgstr "نشط"
+
+msgid "Disabled"
+msgstr "معطل"
+
+msgid "Timestamp"
+msgstr "الطابع الزمني"
+
+msgid "Duration"
+msgstr "المدة"
+
+msgid "Associations Created"
+msgstr "الارتباطات المنشأة"
+
+msgid "Configuration"
+msgstr "التكوين"
+
+msgid "Scoring Weights"
+msgstr "أوزان التقييم"

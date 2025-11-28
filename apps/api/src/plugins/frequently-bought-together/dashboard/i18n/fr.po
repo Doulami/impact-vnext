@@ -1,0 +1,141 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2025-11-28 16:40+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: fr\n"
+
+msgid "Frequently Bought Together"
+msgstr "Fréquemment achetés ensemble"
+
+msgid "Enable Plugin"
+msgstr "Activer le plugin"
+
+msgid "Calculate and show product recommendations"
+msgstr "Calculer et afficher les recommandations de produits"
+
+msgid "Loading..."
+msgstr "Chargement..."
+
+msgid "Total Associations"
+msgstr "Associations totales"
+
+msgid "Products Covered"
+msgstr "Produits couverts"
+
+msgid "Avg per Product"
+msgstr "Moy. par produit"
+
+msgid "Time Window"
+msgstr "Fenêtre de temps"
+
+msgid "Min Orders"
+msgstr "Commandes min."
+
+msgid "Max Recommendations"
+msgstr "Recommandations max."
+
+msgid "Last Calculation"
+msgstr "Dernier calcul"
+
+msgid "Never"
+msgstr "Jamais"
+
+msgid "Edit Settings"
+msgstr "Modifier les paramètres"
+
+msgid "Calculate Now"
+msgstr "Calculer maintenant"
+
+msgid "Calculating..."
+msgstr "Calcul en cours..."
+
+msgid "Analysis Time Window (days)"
+msgstr "Fenêtre d'analyse (jours)"
+
+msgid "How far back to analyze order history"
+msgstr "Période d'historique des commandes à analyser"
+
+msgid "Min Co-occurrences"
+msgstr "Co-occurrences min."
+
+msgid "Scoring Weights (always sum to 100%)"
+msgstr "Poids de notation (toujours égal à 100%)"
+
+msgid "Frequency"
+msgstr "Fréquence"
+
+msgid "Recency"
+msgstr "Récence"
+
+msgid "Value"
+msgstr "Valeur"
+
+#. placeholder {0}: totalPercentage
+msgid "Total: {0}%"
+msgstr "Total : {0}%"
+
+msgid "Display Locations"
+msgstr "Emplacements d'affichage"
+
+msgid "PDP - Related Section"
+msgstr "PDP - Section produits associés"
+
+msgid "PDP - Under Add to Cart"
+msgstr "PDP - Sous ajouter au panier"
+
+msgid "Cart Page"
+msgstr "Page panier"
+
+msgid "Checkout Page"
+msgstr "Page de paiement"
+
+msgid "Fallback to Related Products"
+msgstr "Revenir aux produits associés"
+
+msgid "Show related products when insufficient associations"
+msgstr "Afficher les produits associés en cas d'associations insuffisantes"
+
+msgid "Save Settings"
+msgstr "Enregistrer les paramètres"
+
+msgid "Saving..."
+msgstr "Enregistrement..."
+
+msgid "Cancel"
+msgstr "Annuler"
+
+msgid "Product Associations Report"
+msgstr "Rapport des associations de produits"
+
+msgid "Analytics and insights about frequently bought together recommendations"
+msgstr "Analyses et informations sur les recommandations d'achats groupés"
+
+msgid "Loading analytics..."
+msgstr "Chargement des analyses..."
+
+msgid "Status"
+msgstr "Statut"
+
+msgid "Active"
+msgstr "Actif"
+
+msgid "Disabled"
+msgstr "Désactivé"
+
+msgid "Timestamp"
+msgstr "Horodatage"
+
+msgid "Duration"
+msgstr "Durée"
+
+msgid "Associations Created"
+msgstr "Associations créées"
+
+msgid "Configuration"
+msgstr "Configuration"
+
+msgid "Scoring Weights"
+msgstr "Poids de notation"

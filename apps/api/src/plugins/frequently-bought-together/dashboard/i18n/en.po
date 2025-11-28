@@ -1,0 +1,141 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2025-11-28 16:40+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en\n"
+
+msgid "Frequently Bought Together"
+msgstr "Frequently Bought Together"
+
+msgid "Enable Plugin"
+msgstr "Enable Plugin"
+
+msgid "Calculate and show product recommendations"
+msgstr "Calculate and show product recommendations"
+
+msgid "Loading..."
+msgstr "Loading..."
+
+msgid "Total Associations"
+msgstr "Total Associations"
+
+msgid "Products Covered"
+msgstr "Products Covered"
+
+msgid "Avg per Product"
+msgstr "Avg per Product"
+
+msgid "Time Window"
+msgstr "Time Window"
+
+msgid "Min Orders"
+msgstr "Min Orders"
+
+msgid "Max Recommendations"
+msgstr "Max Recommendations"
+
+msgid "Last Calculation"
+msgstr "Last Calculation"
+
+msgid "Never"
+msgstr "Never"
+
+msgid "Edit Settings"
+msgstr "Edit Settings"
+
+msgid "Calculate Now"
+msgstr "Calculate Now"
+
+msgid "Calculating..."
+msgstr "Calculating..."
+
+msgid "Analysis Time Window (days)"
+msgstr "Analysis Time Window (days)"
+
+msgid "How far back to analyze order history"
+msgstr "How far back to analyze order history"
+
+msgid "Min Co-occurrences"
+msgstr "Min Co-occurrences"
+
+msgid "Scoring Weights (always sum to 100%)"
+msgstr "Scoring Weights (always sum to 100%)"
+
+msgid "Frequency"
+msgstr "Frequency"
+
+msgid "Recency"
+msgstr "Recency"
+
+msgid "Value"
+msgstr "Value"
+
+#. placeholder {0}: totalPercentage
+msgid "Total: {0}%"
+msgstr "Total: {0}%"
+
+msgid "Display Locations"
+msgstr "Display Locations"
+
+msgid "PDP - Related Section"
+msgstr "PDP - Related Section"
+
+msgid "PDP - Under Add to Cart"
+msgstr "PDP - Under Add to Cart"
+
+msgid "Cart Page"
+msgstr "Cart Page"
+
+msgid "Checkout Page"
+msgstr "Checkout Page"
+
+msgid "Fallback to Related Products"
+msgstr "Fallback to Related Products"
+
+msgid "Show related products when insufficient associations"
+msgstr "Show related products when insufficient associations"
+
+msgid "Save Settings"
+msgstr "Save Settings"
+
+msgid "Saving..."
+msgstr "Saving..."
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Product Associations Report"
+msgstr "Product Associations Report"
+
+msgid "Analytics and insights about frequently bought together recommendations"
+msgstr "Analytics and insights about frequently bought together recommendations"
+
+msgid "Loading analytics..."
+msgstr "Loading analytics..."
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Active"
+msgstr "Active"
+
+msgid "Disabled"
+msgstr "Disabled"
+
+msgid "Timestamp"
+msgstr "Timestamp"
+
+msgid "Duration"
+msgstr "Duration"
+
+msgid "Associations Created"
+msgstr "Associations Created"
+
+msgid "Configuration"
+msgstr "Configuration"
+
+msgid "Scoring Weights"
+msgstr "Scoring Weights"

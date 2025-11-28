@@ -1,0 +1,438 @@
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    defineDashboardExtension,
+    Button,
+    Input,
+    Switch,
+    api,
+} from '@vendure/dashboard';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Settings, Play } from 'lucide-react';
+import { graphql } from '@/gql';
+import { Trans } from '@lingui/react/macro';
+
+// GraphQL Queries
+const settingsQuery = graphql(`
+    query GetAssociationSettings {
+        associationSettings {
+            id
+            enabled
+            jobSchedule
+            analysisTimeWindowDays
+            minCooccurrenceThreshold
+            minScoreThreshold
+            maxRecommendationsPerProduct
+            frequencyWeight
+            recencyWeight
+            valueWeight
+            pdpRelatedSection
+            pdpUnderAddToCart
+            cartPage
+            checkoutPage
+            fallbackToRelatedProducts
+            lastCalculation
+            lastCalculationDurationMs
+            lastCalculationAssociationsCount
+        }
+    }
+`);
+
+const updateSettingsMutation = graphql(`
+    mutation UpdateAssociationSettings($input: UpdateAssociationSettingsInput!) {
+        updateAssociationSettings(input: $input) {
+            id
+            enabled
+            lastCalculation
+        }
+    }
+`);
+
+const triggerCalculationMutation = graphql(`
+    mutation TriggerAssociationCalculation {
+        triggerAssociationCalculation {
+            success
+            associationsCount
+            durationMs
+            message
+        }
+    }
+`);
+
+const statsQuery = graphql(`
+    query GetAssociationStats {
+        associationStats {
+            totalAssociations
+            productsWithRecommendations
+            averageRecommendationsPerProduct
+            lastCalculated
+            lastCalculationDurationMs
+            enabled
+        }
+    }
+`);
+
+// Settings Component
+function FrequentlyBoughtTogetherSettings() {
+    const queryClient = useQueryClient();
+    const [isEditing, setIsEditing] = useState(false);
+
+    const { data, isLoading } = useQuery({
+        queryKey: ['associationSettings'],
+        queryFn: () => api.query(settingsQuery, {}),
+    });
+
+    const { data: statsData } = useQuery({
+        queryKey: ['associationStats'],
+        queryFn: () => api.query(statsQuery, {}),
+    });
+
+    const updateMutation = useMutation({
+        mutationFn: (input: any) => api.mutate(updateSettingsMutation, { input }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['associationSettings'] });
+            queryClient.invalidateQueries({ queryKey: ['associationStats'] });
+            setIsEditing(false);
+        },
+    });
+
+    const triggerMutation = useMutation({
+        mutationFn: () => api.mutate(triggerCalculationMutation, {}),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['associationSettings'] });
+            queryClient.invalidateQueries({ queryKey: ['associationStats'] });
+        },
+    });
+
+    const [formData, setFormData] = useState({
+        enabled: false,
+        jobSchedule: '0 2 * * *',
+        analysisTimeWindowDays: 90,
+        minCooccurrenceThreshold: 5,
+        minScoreThreshold: 0.3,
+        maxRecommendationsPerProduct: 4,
+        frequencyWeight: 0.5,
+        recencyWeight: 0.3,
+        valueWeight: 0.2,
+        pdpRelatedSection: true,
+        pdpUnderAddToCart: true,
+        cartPage: true,
+        checkoutPage: false,
+        fallbackToRelatedProducts: true,
+    });
+
+    useEffect(() => {
+        if (data?.associationSettings) {
+            setFormData({
+                enabled: data.associationSettings.enabled,
+                jobSchedule: data.associationSettings.jobSchedule,
+                analysisTimeWindowDays: data.associationSettings.analysisTimeWindowDays,
+                minCooccurrenceThreshold: data.associationSettings.minCooccurrenceThreshold,
+                minScoreThreshold: data.associationSettings.minScoreThreshold,
+                maxRecommendationsPerProduct: data.associationSettings.maxRecommendationsPerProduct,
+                frequencyWeight: data.associationSettings.frequencyWeight,
+                recencyWeight: data.associationSettings.recencyWeight,
+                valueWeight: data.associationSettings.valueWeight,
+                pdpRelatedSection: data.associationSettings.pdpRelatedSection,
+                pdpUnderAddToCart: data.associationSettings.pdpUnderAddToCart,
+                cartPage: data.associationSettings.cartPage,
+                checkoutPage: data.associationSettings.checkoutPage,
+                fallbackToRelatedProducts: data.associationSettings.fallbackToRelatedProducts,
+            });
+        }
+    }, [data]);
+
+    const handleSave = async () => {
+        await updateMutation.mutateAsync(formData);
+    };
+
+    const handleTrigger = async () => {
+        await triggerMutation.mutateAsync();
+    };
+
+    if (isLoading) {
+        return (
+            <Card>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground"><Trans>Loading...</Trans></p>
+                </CardContent>
+            </Card>
+        );
+    }
+
+    const settings = data?.associationSettings;
+    const stats = statsData?.associationStats;
+
+    return (
+        <div className="space-y-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Settings className="h-5 w-5" />
+                        <Trans>Frequently Bought Together</Trans>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {/* Stats Section */}
+                    {stats && (
+                        <div className="grid grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
+                            <div>
+                                <div className="text-xs text-muted-foreground"><Trans>Total Associations</Trans></div>
+                                <div className="text-2xl font-bold">{stats.totalAssociations}</div>
+                            </div>
+                            <div>
+                                <div className="text-xs text-muted-foreground"><Trans>Products Covered</Trans></div>
+                                <div className="text-2xl font-bold">{stats.productsWithRecommendations}</div>
+                            </div>
+                            <div>
+                                <div className="text-xs text-muted-foreground"><Trans>Avg per Product</Trans></div>
+                                <div className="text-2xl font-bold">{stats.averageRecommendationsPerProduct.toFixed(1)}</div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Enabled Toggle */}
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <div className="font-medium"><Trans>Enable Plugin</Trans></div>
+                            <div className="text-xs text-muted-foreground">
+                                <Trans>Calculate and show product recommendations</Trans>
+                            </div>
+                        </div>
+                        <Switch
+                            checked={formData.enabled}
+                            onCheckedChange={(checked) => {
+                                setFormData({ ...formData, enabled: checked });
+                                if (!isEditing) setIsEditing(true);
+                            }}
+                        />
+                    </div>
+
+                    {!isEditing && settings && (
+                        <div className="space-y-4">
+                            {/* Current Settings Display */}
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <div className="text-muted-foreground"><Trans>Time Window</Trans></div>
+                                    <div className="font-medium">{settings.analysisTimeWindowDays} days</div>
+                                </div>
+                                <div>
+                                    <div className="text-muted-foreground"><Trans>Min Orders</Trans></div>
+                                    <div className="font-medium">{settings.minCooccurrenceThreshold}</div>
+                                </div>
+                                <div>
+                                    <div className="text-muted-foreground"><Trans>Max Recommendations</Trans></div>
+                                    <div className="font-medium">{settings.maxRecommendationsPerProduct}</div>
+                                </div>
+                                <div>
+                                    <div className="text-muted-foreground"><Trans>Last Calculation</Trans></div>
+                                    <div className="font-medium">
+                                        {settings.lastCalculation 
+                                            ? new Date(settings.lastCalculation).toLocaleString()
+                                            : <Trans>Never</Trans>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2 pt-4">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setIsEditing(true)}
+                                >
+                                    <Trans>Edit Settings</Trans>
+                                </Button>
+                                <Button
+                                    onClick={handleTrigger}
+                                    disabled={!settings.enabled || triggerMutation.isPending}
+                                >
+                                    <Play className="h-4 w-4 mr-2" />
+                                    {triggerMutation.isPending ? <Trans>Calculating...</Trans> : <Trans>Calculate Now</Trans>}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {isEditing && (
+                        <div className="space-y-4">
+                            {/* Analysis Settings */}
+                            <div>
+                                <label className="text-sm font-medium block mb-2">
+                                    <Trans>Analysis Time Window (days)</Trans>
+                                </label>
+                                <Input
+                                    type="number"
+                                    min="30"
+                                    max="365"
+                                    value={formData.analysisTimeWindowDays}
+                                    onChange={(e) => setFormData({ ...formData, analysisTimeWindowDays: parseInt(e.target.value) })}
+                                />
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    <Trans>How far back to analyze order history</Trans>
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-sm font-medium block mb-2">
+                                        <Trans>Min Co-occurrences</Trans>
+                                    </label>
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={formData.minCooccurrenceThreshold}
+                                        onChange={(e) => setFormData({ ...formData, minCooccurrenceThreshold: parseInt(e.target.value) })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium block mb-2">
+                                        <Trans>Max Recommendations</Trans>
+                                    </label>
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        max="20"
+                                        value={formData.maxRecommendationsPerProduct}
+                                        onChange={(e) => setFormData({ ...formData, maxRecommendationsPerProduct: parseInt(e.target.value) })}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Scoring Weights */}
+                            <div>
+                                <label className="text-sm font-medium block mb-3">
+                                    <Trans>Scoring Weights (must sum to 1.0)</Trans>
+                                </label>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="text-xs text-muted-foreground block mb-1"><Trans>Frequency</Trans></label>
+                                        <Input
+                                            type="number"
+                                            step="0.1"
+                                            min="0"
+                                            max="1"
+                                            value={formData.frequencyWeight}
+                                            onChange={(e) => setFormData({ ...formData, frequencyWeight: parseFloat(e.target.value) })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-muted-foreground block mb-1"><Trans>Recency</Trans></label>
+                                        <Input
+                                            type="number"
+                                            step="0.1"
+                                            min="0"
+                                            max="1"
+                                            value={formData.recencyWeight}
+                                            onChange={(e) => setFormData({ ...formData, recencyWeight: parseFloat(e.target.value) })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-muted-foreground block mb-1"><Trans>Value</Trans></label>
+                                        <Input
+                                            type="number"
+                                            step="0.1"
+                                            min="0"
+                                            max="1"
+                                            value={formData.valueWeight}
+                                            onChange={(e) => setFormData({ ...formData, valueWeight: parseFloat(e.target.value) })}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Display Locations */}
+                            <div>
+                                <label className="text-sm font-medium block mb-3"><Trans>Display Locations</Trans></label>
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm"><Trans>PDP - Related Section</Trans></span>
+                                        <Switch
+                                            checked={formData.pdpRelatedSection}
+                                            onCheckedChange={(checked) => setFormData({ ...formData, pdpRelatedSection: checked })}
+                                        />
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm"><Trans>PDP - Under Add to Cart</Trans></span>
+                                        <Switch
+                                            checked={formData.pdpUnderAddToCart}
+                                            onCheckedChange={(checked) => setFormData({ ...formData, pdpUnderAddToCart: checked })}
+                                        />
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm"><Trans>Cart Page</Trans></span>
+                                        <Switch
+                                            checked={formData.cartPage}
+                                            onCheckedChange={(checked) => setFormData({ ...formData, cartPage: checked })}
+                                        />
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm"><Trans>Checkout Page</Trans></span>
+                                        <Switch
+                                            checked={formData.checkoutPage}
+                                            onCheckedChange={(checked) => setFormData({ ...formData, checkoutPage: checked })}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Fallback */}
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <div className="text-sm font-medium"><Trans>Fallback to Related Products</Trans></div>
+                                    <div className="text-xs text-muted-foreground">
+                                        <Trans>Show related products when insufficient associations</Trans>
+                                    </div>
+                                </div>
+                                <Switch
+                                    checked={formData.fallbackToRelatedProducts}
+                                    onCheckedChange={(checked) => setFormData({ ...formData, fallbackToRelatedProducts: checked })}
+                                />
+                            </div>
+
+                            <div className="flex gap-2 pt-4">
+                                <Button
+                                    onClick={handleSave}
+                                    disabled={updateMutation.isPending}
+                                >
+                                    {updateMutation.isPending ? <Trans>Saving...</Trans> : <Trans>Save Settings</Trans>}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setIsEditing(false)}
+                                >
+                                    <Trans>Cancel</Trans>
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+// Dashboard Extension Definition
+export default defineDashboardExtension({
+    translations: {
+        en: () => import('./i18n/en'),
+        fr: () => import('./i18n/fr'),
+        ar: () => import('./i18n/ar'),
+    },
+    pageBlocks: [
+        {
+            id: 'frequently-bought-together-settings',
+            location: {
+                pageId: 'global-settings',
+                column: 'main',
+                position: {
+                    blockId: 'main-form',
+                    order: 'after',
+                },
+            },
+            component: FrequentlyBoughtTogetherSettings,
+        },
+    ],
+});

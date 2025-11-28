@@ -21,6 +21,8 @@ import { autoExpireBundlesTask } from './plugins/bundle-plugin/tasks/auto-expire
 import { bundleConsistencyCheckTask } from './plugins/bundle-plugin/tasks/bundle-consistency-check.task';
 import { NutritionBatchPlugin } from './plugins/nutrition-batch-plugin/nutrition-batch.plugin';
 import { ClicToPayPlugin } from './plugins/clictopay-plugin/clictopay.plugin';
+import { FrequentlyBoughtTogetherPlugin } from './plugins/frequently-bought-together/frequently-bought-together.plugin';
+import { calculateAssociationsTask } from './plugins/frequently-bought-together/tasks/calculate-associations.task';
 
 const IS_DEV = process.env.APP_ENV === 'dev';
 const serverPort = +process.env.PORT || 3000;
@@ -73,6 +75,7 @@ export const config: VendureConfig = {
         tasks: [
             autoExpireBundlesTask,
             bundleConsistencyCheckTask,
+            calculateAssociationsTask,
         ],
     },
     paymentOptions: {
@@ -216,6 +219,8 @@ export const config: VendureConfig = {
         FeaturedCollectionPlugin,
         // Nutrition Batch Plugin for nutrition information management
         NutritionBatchPlugin.init(),
+        // Frequently Bought Together Plugin for product recommendations
+        FrequentlyBoughtTogetherPlugin.init(),
         // ClicToPay Payment Gateway Plugin
         ClicToPayPlugin.init({
             enableDebugLogging: IS_DEV,
